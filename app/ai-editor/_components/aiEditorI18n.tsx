@@ -132,6 +132,7 @@ const AI_EDITOR_BN: Record<string, string> = {
   "Studio Lighting": "স্টুডিও আলো",
   "Straighten Head": "মাথার অবস্থান সোজা করুন",
   "Straighten Tilted Photo": "বাঁকা ছবি সোজা করুন",
+  "Studio Straight Pose": "স্টুডিও পোজে সোজা করুন",
   "Keep Marks": "স্বাভাবিক দাগ রাখুন",
   Lipstick: "লিপস্টিক",
   "All categories": "সব বিভাগ",

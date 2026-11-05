@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X, Lightbulb, PlayCircle } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X, Lightbulb, PlayCircle, ScanFace } from "lucide-react";
 import { useAiEditorText } from "./aiEditorI18n";
 import PhotoSizeIcon from "./PhotoSizeIcon";
 import GuideIcon from "./GuideIcon";
@@ -65,6 +65,37 @@ const STAGES4 = [
   { label: "পোশাক", Icon: Shirt },
   { label: "চেহারা", Icon: SlidersHorizontal },
 ];
+
+/** "সব ঠিক করে দিন" path: size -> background -> clothing -> straight studio pose. */
+const STAGES_QUICK = [
+  { label: "ছবির ধরন", Icon: Ruler },
+  { label: "ব্যাকগ্রাউন্ড", Icon: Palette },
+  { label: "পোশাক", Icon: Shirt },
+  { label: "সোজা পোজ", Icon: ScanFace },
+];
+/** The extra guide that re-poses a crooked / tilted / turned person into a straight studio portrait. */
+const POSE_LABEL = "Studio Straight Pose";
+/** Quick path: the pose question sits right after clothing. */
+const QUICK_POSE_STEP = 3;
+
+/** Small drawing: a crooked person vs. a straight studio-pose person. */
+function PoseFigure({ tilted }: { tilted: boolean }) {
+  return (
+    <svg viewBox="0 0 96 110" className="h-full w-full" role="img" aria-label={tilted ? "বাঁকা ছবি" : "সোজা স্টুডিও ছবি"}>
+      <rect x="0" y="0" width="96" height="110" rx="10" fill={tilted ? "#FEF2F2" : "#ECFDF5"} />
+      {!tilted && <line x1="48" y1="4" x2="48" y2="106" stroke="#059669" strokeWidth="1.2" strokeDasharray="4 3" opacity=".7" />}
+      <path d={tilted ? "M6 110 Q8 90 38 82 Q80 66 90 98 L90 110Z" : "M10 110 Q12 76 48 72 Q84 76 86 110Z"} fill="#475569" />
+      <g transform={tilted ? "rotate(18 48 78)" : undefined}>
+        <rect x="41" y="52" width="14" height="26" rx="6" fill="#E0A982" />
+        <ellipse cx="48" cy="36" rx="17" ry="21" fill="#F1C7A1" />
+        <path d="M30.5 34 Q30 11 48 11 Q66 11 65.5 34 Q60 22 48 22 Q36 22 30.5 34Z" fill="#1F2937" />
+        <circle cx="41" cy="38" r="1.9" fill="#1F2937" />
+        <circle cx="55" cy="38" r="1.9" fill="#1F2937" />
+        <path d="M43 47 Q48 50.5 53 47" stroke="#9A4B3A" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      </g>
+    </svg>
+  );
+}
 
 /** One plain yes/no style question per face step, so nobody has to read a paragraph. */
 const STEP_QUESTIONS: Record<string, string> = {
@@ -148,8 +179,8 @@ const STEP_TEXT: Record<string, { hint: string; when: string }> = {
     when: "মুখ ক্লিন করা এবং দাগ, তিল, ব্রণ ও তেলতেলে ভাব দূর করা সবসময় নিজে থেকেই হয়, গায়ের রং একই থাকে। তাই এখানে শুধু ত্বক আরও ফর্সা করতে চাইলে, নির্দিষ্ট গায়ের রং চাইলে, অথবা তিল-দাগ রেখে দিতে চাইলে বাছুন।",
   },
   "head-pose": {
-    hint: "ছবি বা মাথা কাত হলে সোজা করতে বাছুন (ঐচ্ছিক)",
-    when: "ফোন কাত করে ছবি তোলা হলে, অথবা মাথা বা কাঁধ বাঁকা থাকলে বাছুন। ছবি সোজা থাকলে এড়িয়ে যান।",
+    hint: "ছবি কাত বা বাঁকা হলে স্টুডিওর মতো সোজা করতে বাছুন (ঐচ্ছিক)",
+    when: "ছবি কাত বা বাঁকা হলে, ঘাড় বা কাঁধ হেলে থাকলে, অথবা চোখ ক্যামেরার দিকে না থাকলে “স্টুডিও পোজে সোজা করুন” বাছুন। স্টুডিওতে যেভাবে সোজা হয়ে বসে ছবি তোলা হয়, ছবিটা সেভাবে তৈরি হবে। ছবি আগে থেকেই সোজা থাকলে এড়িয়ে যান।",
   },
   "lighting-color": {
     hint: "আলো ও রঙের সমস্যা থাকলে বাছুন (ঐচ্ছিক)",
@@ -288,6 +319,8 @@ export default function PhotoSetupWizard({
   const [intro, setIntro] = useState(true);
   // Quick mode: only size, background and clothing are asked; everything else is automatic.
   const [quick, setQuick] = useState(false);
+  // Quick path, last question: null = not answered yet, "yes" = straighten into a studio pose, "no" = keep my pose.
+  const [poseChoice, setPoseChoice] = useState<"yes" | "no" | null>(null);
 
   useEffect(() => setMounted(true), []);
 
@@ -298,6 +331,7 @@ export default function PhotoSetupWizard({
       setDraft(initial);
       setIntro(true);
       setQuick(false);
+      setPoseChoice(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -331,7 +365,7 @@ export default function PhotoSetupWizard({
   );
   const guideEnd = guideStart + guideCats.length; // index of the confirm step
   // "Choose myself": ONE question (category) per step, the next one comes only after this one is done.
-  const currentCat = step >= guideStart && step < guideEnd ? guideCats[step - guideStart] : null;
+  const currentCat = !quick && step >= guideStart && step < guideEnd ? guideCats[step - guideStart] : null;
 
   // Read-aloud (free, uses the browser's own Bengali voice). Hidden when the device has none.
   const [hasBnVoice, setHasBnVoice] = useState(false);
@@ -354,13 +388,13 @@ export default function PhotoSetupWizard({
   if (!open || !mounted) return null;
 
   const isDual = draft.size === "Dual";
-  const lastStep = quick ? BASE_STEPS.length - 1 : guideEnd;
-  const stageList = quick ? STAGES4.slice(0, 3) : STAGES4;
+  const lastStep = quick ? QUICK_POSE_STEP : guideEnd;
+  const stageList = quick ? STAGES_QUICK : STAGES4;
   const stageOf = (i: number) => (i < guideStart ? i : 3);
   const stage = stageOf(step);
   // Bar fills by the 4 big stages; inside the last stage it fills with every small question.
   const progress = quick
-    ? ((stage + 0.5) / 3) * 100
+    ? ((stage + 0.5) / 4) * 100
     : stage < 3
       ? ((stage + 0.5) / 4) * 100
       : ((3 + (step - guideStart + 1) / (guideCats.length + 1)) / 4) * 100;
@@ -369,9 +403,11 @@ export default function PhotoSetupWizard({
         title: STEP_QUESTIONS[currentCat.id] ?? STEP_TITLES[currentCat.id] ?? t(currentCat.label),
         hint: "যা লাগবে তাতে চাপ দিন। কিছু না লাগলে নিচে “না, দরকার নেই” চাপুন।",
       }
-    : step === lastStep && !quick
-      ? { title: "সব ঠিক আছে তো?", hint: "নিচে আপনার পছন্দ দেখে নিন, তারপর “ছবি তৈরি করুন” চাপুন।" }
-      : BASE_STEPS[step];
+    : quick && step === QUICK_POSE_STEP
+      ? { title: "ছবি কি সোজা স্টুডিও পোজে চান?", hint: "কাত বা বাঁকা ছবি স্টুডিওর মতো সোজা হয়ে যাবে। একটাতে চাপ দিন।" }
+      : step === lastStep && !quick
+        ? { title: "সব ঠিক আছে তো?", hint: "নিচে আপনার পছন্দ দেখে নিন, তারপর “ছবি তৈরি করুন” চাপুন।" }
+        : BASE_STEPS[step];
   const selectedInCat = (catId: string) =>
     draft.guides.filter((g) => EDITING_GUIDES.find((e) => e.label === g)?.category === catId).length;
 
@@ -402,6 +438,14 @@ export default function PhotoSetupWizard({
     }));
   const skinToneName = getSkinToneFromGuides(draft.guides);
   const guideCount = draft.guides.filter((g) => !isOptionEntry(g)).length;
+  const poseOn = draft.guides.includes(POSE_LABEL);
+  const setPose = (on: boolean) => {
+    setPoseChoice(on ? "yes" : "no");
+    setDraft((d) => {
+      const rest = d.guides.filter((g) => g !== POSE_LABEL);
+      return normalizeDraft({ ...d, guides: on ? [...rest, POSE_LABEL] : rest });
+    });
+  };
 
   const goNext = () => {
     // Dual needs two people, so hand control back to the normal Dual screen.
@@ -625,7 +669,7 @@ export default function PhotoSetupWizard({
 
           {quick && (
             <p className="rounded-xl border border-[#059669]/40 bg-[#ECFDF5] px-3 py-2 text-[14px] font-semibold text-[#065F46]">
-              ✓ পোশাক বাছা হলে নিচের “ছবি তৈরি করুন” চাপুন। মুখ ক্লিন, চোখ, চুল ও আলো নিজে থেকেই ঠিক হয়ে যাবে।
+              ✓ পোশাক বাছা হলে নিচের “পরবর্তী” চাপুন। এরপর শুধু ছবির পোজ নিয়ে একটা প্রশ্ন আছে। মুখ ক্লিন, চোখ, চুল ও আলো নিজে থেকেই ঠিক হয়ে যাবে।
             </p>
           )}
 
@@ -662,6 +706,76 @@ export default function PhotoSetupWizard({
               </div>
             </div>
           )}
+        </div>
+      );
+    }
+
+    if (quick && step === QUICK_POSE_STEP) {
+      const yes = poseChoice === "yes";
+      const no = poseChoice === "no";
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <div className="relative mx-auto aspect-[96/110] w-full max-w-[150px] overflow-hidden rounded-xl border-2 border-[#DC2626]/40">
+                <PoseFigure tilted />
+                <span className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#DC2626] text-white shadow">
+                  <X size={14} strokeWidth={3.5} />
+                </span>
+              </div>
+              <p className="text-center text-[13px] font-bold text-[#B91C1C]">কাত / বাঁকা ছবি</p>
+            </div>
+            <div className="space-y-1.5">
+              <div className="relative mx-auto aspect-[96/110] w-full max-w-[150px] overflow-hidden rounded-xl border-2 border-[#059669]/50">
+                <PoseFigure tilted={false} />
+                <span className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#059669] text-white shadow">
+                  <Check size={14} strokeWidth={3.5} />
+                </span>
+              </div>
+              <p className="text-center text-[13px] font-bold text-[#065F46]">সোজা স্টুডিও ছবি</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              aria-pressed={yes}
+              onClick={() => setPose(true)}
+              className={`${optionBase} ${yes ? optionOn : optionOff} flex items-start gap-3 px-3.5 py-3.5 text-left`}
+            >
+              {yes && <CheckBadge />}
+              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#059669] text-white">
+                <ScanFace size={22} />
+              </span>
+              <span className="min-w-0 pr-7">
+                <span className="block text-[16px] font-extrabold leading-tight">হ্যাঁ, স্টুডিওর মতো সোজা করে দিন</span>
+                <span className="mt-1 block text-[13px] leading-snug text-stone-600">
+                  মাথা সোজা, ঘাড় সোজা, দুই কাঁধ সমান, চোখ ক্যামেরার দিকে। স্টুডিওতে সোজা হয়ে বসে তোলা ছবির মতো হবে।
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              aria-pressed={no}
+              onClick={() => setPose(false)}
+              className={`${optionBase} ${no ? optionOn : optionOff} flex items-start gap-3 px-3.5 py-3.5 text-left`}
+            >
+              {no && <CheckBadge />}
+              <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-stone-300 text-stone-600">
+                <Ban size={20} />
+              </span>
+              <span className="min-w-0 pr-7">
+                <span className="block text-[16px] font-extrabold leading-tight">না, আমার ছবির পোজই থাক</span>
+                <span className="mt-1 block text-[13px] leading-snug text-stone-600">
+                  ছবি আগে থেকেই সোজা থাকলে এটা বাছুন। শুধু সাধারণ সোজা করা হবে।
+                </span>
+              </span>
+            </button>
+          </div>
+
+          <p className="rounded-xl border border-[#E3D6B8] bg-[#F7EFD9] px-3 py-2 text-[13px] leading-snug text-[#5A4A32]">
+            টিপ: ছবি কাত হলে, ঘাড় বা কাঁধ হেলে থাকলে অথবা চোখ অন্য দিকে থাকলে “হ্যাঁ” বাছুন। চেহারা একই রাখা হয়। তবে খুব বেশি কাত বা পাশ ফেরা ছবিতে সামান্য পার্থক্য হতে পারে।
+          </p>
         </div>
       );
     }
@@ -896,7 +1010,7 @@ export default function PhotoSetupWizard({
         <div className="flex items-start gap-2.5 rounded-xl bg-[#ECFDF5] border border-[#059669]/40 px-3 py-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#059669] text-[17px] font-extrabold text-white">১</span>
           <p className="text-[14px] sm:text-[16px] leading-snug text-[#3B2F1E]">
-            <b className="text-[#065F46]">ছবি প্রায় ঠিকঠাক আছে, শর্টকাটে কাজ সারতে চান?</b> তাহলে <b>১ নম্বর “সব ঠিক করে দিন”</b> ব্যবহার করুন। মাত্র ৩ ধাপ।
+            <b className="text-[#065F46]">ছবি প্রায় ঠিকঠাক আছে, শর্টকাটে কাজ সারতে চান?</b> তাহলে <b>১ নম্বর “সব ঠিক করে দিন”</b> ব্যবহার করুন। মাত্র ৪ ধাপ।
           </p>
         </div>
         <div className="flex items-start gap-2.5 rounded-xl bg-[#FEF2F2] border border-[#DC2626]/40 px-3 py-2.5">
@@ -937,9 +1051,9 @@ export default function PhotoSetupWizard({
         </span>
         <span className="text-[19px] sm:text-[22px] font-extrabold leading-tight text-[#065F46]">সব ঠিক করে দিন</span>
         <span className="text-[15px] leading-snug text-[#3B2F1E]">
-          শুধু ছবির মাপ, ব্যাকগ্রাউন্ড আর পোশাক বেছে নিন। বাকি সব (মুখ ক্লিন, চোখ, চুল, আলো) নিজে থেকেই ঠিক হয়ে যাবে। গায়ের রং একই থাকবে।
+          শুধু ছবির মাপ, ব্যাকগ্রাউন্ড, পোশাক আর সোজা পোজ বেছে নিন। বাকি সব (মুখ ক্লিন, চোখ, চুল, আলো) নিজে থেকেই ঠিক হয়ে যাবে। গায়ের রং একই থাকবে।
         </span>
-        <span className="rounded-full bg-white/80 px-3 py-1 text-[13px] font-semibold text-[#065F46]">মাত্র ৩টা ধাপ</span>
+        <span className="rounded-full bg-white/80 px-3 py-1 text-[13px] font-semibold text-[#065F46]">মাত্র ৪টা ধাপ</span>
         <span className="rounded-xl bg-[#059669] px-6 py-2.5 text-base font-extrabold text-white">এটাই করুন</span>
       </button>
       <button
@@ -1108,13 +1222,21 @@ export default function PhotoSetupWizard({
                         <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/15" style={{ backgroundColor: draft.clothingColor }} />
                       ) : null,
                   },
-                  {
-                    Icon: SlidersHorizontal,
-                    label: "চেহারার পরিবর্তন",
-                    value: guideCount ? `${bn(guideCount)}টি পরিবর্তন` : "কোনো পরিবর্তন নেই",
-                    set: guideCount > 0,
-                    swatch: null as React.ReactNode,
-                  },
+                  quick
+                    ? {
+                        Icon: ScanFace,
+                        label: "ছবির পোজ",
+                        value: poseOn ? "সোজা স্টুডিও পোজ" : "যেমন আছে তেমন",
+                        set: poseOn,
+                        swatch: null as React.ReactNode,
+                      }
+                    : {
+                        Icon: SlidersHorizontal,
+                        label: "চেহারার পরিবর্তন",
+                        value: guideCount ? `${bn(guideCount)}টি পরিবর্তন` : "কোনো পরিবর্তন নেই",
+                        set: guideCount > 0,
+                        swatch: null as React.ReactNode,
+                      },
                 ].map(({ Icon, label, value, set, swatch }) => (
                   <div key={label} className="flex w-[148px] shrink-0 items-center gap-2 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-2 py-1 md:w-auto md:shrink md:gap-2.5 md:px-2.5 md:py-1.5">
                     <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${set ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-stone-500"}`}>

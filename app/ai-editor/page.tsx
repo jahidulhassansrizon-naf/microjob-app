@@ -1143,6 +1143,8 @@ export default function PhotoEditorPage() {
                 : `a solid ${bgColorName} background (${bgColor})`;
         const plan = planEditingGuides(rawGuides, { backgroundRef, side });
         const { flags } = plan;
+        // User asked for a straight, front-facing studio pose: this overrides every "keep the original pose/angle" rule.
+        const studioPose = plan.appliedLabels.includes("Studio Straight Pose");
         const skinRule = plan.skinTone ? buildSkinToneRule(plan.skinTone) : plan.appliedLabels.includes("Fair & Bright Skin") ? SKIN_RETOUCH_RULE : KEEP_SKIN_COLOR_RETOUCH_RULE;
 
         const instructions = [
@@ -1158,9 +1160,11 @@ export default function PhotoEditorPage() {
             flags.restoration
                 ? "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks. Keep every person who is already in the photo."
                 : "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks.",
-            hasSelectedPhotoSize && !(flags.restoration && !flags.posePreset)
-                ? "Keep the person centered and facing the camera unless the requested edit explicitly changes the head angle."
-                : "Preserve the original framing, subject placement, pose, and camera angle unless the requested edit explicitly requires a change.",
+            studioPose
+                ? "POSE OVERRIDE (highest priority, it beats every instruction to keep the original pose, angle, framing or expression): the person in the input is NOT sitting straight, so the output MUST show a visibly different, corrected pose. Do not just rotate or deskew the whole picture: redraw the head, neck and shoulders so they are truly frontal and symmetrical."
+                : hasSelectedPhotoSize && !(flags.restoration && !flags.posePreset)
+                    ? "Keep the person centered and facing the camera unless the requested edit explicitly changes the head angle."
+                    : "Preserve the original framing, subject placement, pose, and camera angle unless the requested edit explicitly requires a change.",
             "Apart from the professional skin retouch above and the requested edits, avoid any other changes to the person's face.",
         ];
         const clothingIndex = typeof payload.clothing === "number" ? payload.clothing : -1;
@@ -1172,7 +1176,7 @@ export default function PhotoEditorPage() {
                 : "";
             const colorName = CLOTHING_COLOR_NAMES[colorHex] ||
                 (colorHex ? `the selected color (${colorHex})` : "a natural color");
-            instructions.push(`Change only the visible clothing to ${clothingPrompt}, professionally styled, in ${colorName}. Keep the face, ears, neck, body proportions, and pose natural, and keep the hair as it is unless a hair edit is requested below. Make the clothing edges realistic and properly fitted to the body.`);
+            instructions.push(`Change only the visible clothing to ${clothingPrompt}, professionally styled, in ${colorName}. ${studioPose ? "Keep the face, ears, neck, and body proportions natural (the pose follows the studio pose rule)" : "Keep the face, ears, neck, body proportions, and pose natural"}, and keep the hair as it is unless a hair edit is requested below. Make the clothing edges realistic and properly fitted to the body. Changing the clothing must NOT change the skin: keep the face, neck and hands in exactly the same skin color and shade as the original photo, never darker, redder or tinted by the clothing color.`);
             if (plan.tie && TIE_STYLES.includes(clothingName)) {
                 const tieColor = TIE_COLORS.find((c) => c.name === plan.tie);
                 instructions.push(
@@ -1181,6 +1185,14 @@ export default function PhotoEditorPage() {
                         : `The clothing includes a plain, neatly knotted necktie in ${tieColor ? `${tieColor.name.toLowerCase()} (${tieColor.hex})` : plan.tie}, centered, symmetrical, tucked under the shirt collar, with a correct knot and realistic fabric.`,
                 );
             }
+        }
+        if (studioPose && !(clothingIndex >= 0 && CLOTHING_NAMES[clothingIndex])) {
+            // The model only really re-poses the body when it redraws the clothing, so for "keep my clothes" we ask it to
+            // redraw the person's OWN clothing as an identical copy on the straightened body.
+            instructions.push("CLOTHING REDRAW (required for the straight pose): the person keeps their own clothing, but you must REDRAW it from scratch on the newly straightened body, as if replacing the clothes with a perfect identical copy. The copy must be exactly the same garment type, the same exact colors and shades (for example orange stays the same orange, black stays black), the same print or pattern, the same fabric look, the same neckline and collar, and the same head covering (hijab, scarf, burqa, cap) in the same style and color, now hanging neatly and symmetrically on both sides. Do not change the clothing design or color in any way, and do not copy the old slanted shoulder line or the old crooked folds.");
+        }
+        if (studioPose) {
+            instructions.push("SKIN COLOR LOCK FOR THE RE-POSE (very important): the skin of the face, neck and hands must keep EXACTLY the same color, shade, depth and undertone as in the original input photo. Re-posing or redrawing the clothing must not darken, tan, redden, yellow, whiten or tint the skin, and colored clothing or head covering must not cast any color onto it. A fair skin stays fair, a wheatish skin stays wheatish, a dark skin stays dark.");
         }
         if (keepOriginalBackground) {
             if (flags.alteringBackground) {
@@ -1207,6 +1219,16 @@ export default function PhotoEditorPage() {
         }
 
         const sections = [instructions.join(" ")];
+        if (studioPose) {
+            // The pose request goes FIRST (models weigh the start of a prompt most) and is checked again at the very end.
+            sections.unshift([
+                "TOP PRIORITY TASK: STRAIGHTEN THE PERSON INTO A STRICT FRONTAL STUDIO PASSPORT POSE.",
+                "The input photo was taken crooked: the head is tilted or leaning to one side, the neck is slanted, the shoulders are uneven or turned, and the body is not square to the camera. The output must NOT keep that crooked pose. Re-pose the person as if they had sat down on a studio stool in front of a passport photographer and been photographed straight-on.",
+                "Measurable requirements for the output: (1) an imaginary vertical line through the middle of the forehead, the nose, the center of the lips and the chin is perfectly vertical; (2) an imaginary line through the outer corners of both eyes is perfectly horizontal, and both eyes are the same height; (3) the ears are at the same height and both sides of the face are equally visible, with no head turn to the left or right; (4) the neck is straight and vertical, centered between the shoulders; (5) both shoulders are at exactly the same height, square to the camera, symmetrical about the center line, with the torso facing the camera directly; (6) the chin is level, neither raised nor lowered; (7) both eyes look straight into the camera lens.",
+                "How to do it: do NOT merely rotate or deskew the whole picture. Redraw the head, neck and shoulders in the corrected frontal orientation. A head that leans must be brought upright, a turned head must be turned to face the camera, and a raised shoulder must be lowered. Any head covering (hijab, scarf, cap) must be re-draped so it hangs symmetrically on both sides of the face, keeping its same color, fabric and style. The final image must visibly differ from the input in head angle and shoulder line.",
+                "Identity rule for this task: identity means the face itself (facial features, face shape, skin color, eyebrows, eye shape, nose, lips, moles/marks as specified below, apparent age). Changing the head orientation and body pose is explicitly ALLOWED and REQUIRED here, and it does not violate any instruction to keep the person unchanged. The same real person must be recognizable, just sitting straight.",
+            ].join("\n"));
+        }
         if (plan.edits.length > 0) {
             sections.push([
                 plan.edits.length > 1
@@ -1227,6 +1249,9 @@ export default function PhotoEditorPage() {
         if (hasSelectedPhotoSize) {
             const size = typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
             sections.push(`Prepare the composition to suit the selected final document/photo size (${size}). The application will handle the exact pixel dimensions after generation, so do not add any text or size labels.`);
+        }
+        if (studioPose) {
+            sections.push("FINAL POSE CHECK (do this silently before answering): if the head is still tilted, turned or leaning, if the eye line is not horizontal, if one shoulder is higher than the other, if the neck is slanted, or if the person is not looking straight into the lens, the pose is WRONG. Fix it and check again until the pose is perfectly straight and frontal, while the face stays the same real person.");
         }
         return sections.join("\n\n");
     };

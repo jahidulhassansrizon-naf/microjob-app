@@ -141,6 +141,7 @@ export const EDITING_GUIDE_ICONS: Record<string, LucideIcon> = {
   "Lipstick": Paintbrush,
 
   // Eyes & Facial Details
+  "Studio Straight Pose": ScanFace,
   "Straighten Head": ScanFace,
   "Straighten Tilted Photo": RotateCw,
   "Keep Marks": ShieldCheck,
@@ -346,6 +347,7 @@ const RAW_GUIDES: EditingGuidePreset[] = [
   // Eyes & Facial Details (12)
   { label: "Straighten Tilted Photo", category: "eyes-details", prompt: "The photo was taken at a tilt (crooked phone, leaning head or neck, slanted shoulders). Rotate and level the whole subject so the head, neck and shoulders sit naturally upright and symmetrical, facing the camera, with level shoulders and a vertical spine/neck line. Keep the person's identity, facial features, expression, hair and clothing exactly the same; do not change face shape or proportions, and rebuild any edge areas revealed by the rotation naturally." },
   { label: "Straighten Head", category: "eyes-details", prompt: "Correct the head angle so the face is naturally upright and looking toward the camera, preserving facial proportions and a realistic neck and shoulder position." },
+  { label: "Studio Straight Pose", category: "eyes-details", prompt: "STUDIO PORTRAIT POSE (mandatory, the output must visibly differ from the input in head angle and shoulder line; do not just rotate the picture, redraw the head, neck and shoulders upright and frontal). Re-pose the person exactly as if they had sat down in front of a professional passport-studio photographer and been photographed straight-on: the head is perfectly upright and centered with NO tilt, NO lean, NO turn and NO nod; the neck is straight and vertical; both shoulders are level, square to the camera and symmetrical (no slanting, no one shoulder raised or pushed forward, no body turned sideways); the chest and torso face the camera directly; the chin is level (not raised, not lowered); both eyes are open, on the same horizontal line, and look straight into the camera lens with a calm, natural expression. If the original photo is crooked, tilted, rotated, shot from the side or three-quarter angle, from above or below, or the person looks away or leans, rebuild the head angle, neck and shoulders into this straight frontal pose. While re-posing, the face must stay the identical real person: same facial features, face shape, skin color, eyebrows, hairstyle and any hijab, scarf or head covering (same color, style and fabric, now draped symmetrically on both sides), and the same clothing; only the orientation of the head and body changes, so render the same person seen straight-on, never a different, generic or idealized face. The camera is at eye level with a long portrait lens (about 85mm equivalent) and no wide-angle distortion." },
   { label: "Keep Marks", category: "eyes-details", prompt: "Preserve natural identifying marks such as moles, scars, birthmarks, freckles, and other stable facial details exactly where they are. Overall skin brightening, even tone and removal of temporary spots still apply, but never erase these permanent marks." },
   { label: "Brighten Eyes", category: "eyes-details", prompt: "Make the eyes appear a little clearer and more lively with subtle, realistic brightness. Preserve the original eye shape, iris color, gaze, and expression." },
   { label: "Sharpen Eye Details", category: "eyes-details", prompt: "Improve clarity around the eyes, eyelashes, and brows without enlarging, reshaping, recoloring, or artificially redrawing the eyes." },
@@ -576,7 +578,7 @@ const FACE_ORDER: Array<[string, string[]]> = [
     "Reduce Temporary Redness", "Soften Fine Lines", "Preserve Skin Texture", "Keep Marks", "Refine Makeup", "Remove Makeup",
     "Restore Facial Details",
   ]],
-  ["head-pose", ["Straighten Tilted Photo", "Straighten Head"]],
+  ["head-pose", ["Studio Straight Pose", "Straighten Tilted Photo", "Straighten Head"]],
 ];
 
 const RAW_BY_LABEL: Record<string, EditingGuidePreset> = Object.fromEntries(
@@ -626,6 +628,7 @@ export const EDITING_GUIDE_META: Record<string, EditingGuideMeta> = {
   "Lipstick": { conflictsWith: ["Remove Makeup"] },
 
   // Pose
+  "Studio Straight Pose": { changesPose: true, conflictsWith: ["Straighten Head", "Straighten Tilted Photo", "Align Eye Line"] },
   "Straighten Head": { changesPose: true },
   "Straighten Tilted Photo": { changesPose: true },
   "Align Eye Line": { changesPose: true },
