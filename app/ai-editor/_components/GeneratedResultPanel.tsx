@@ -63,7 +63,8 @@ export default function GeneratedResultPanel({ item, onDelete, onPrint, onClose,
 
     // Every export / print uses the photo exactly as the user sees it (filters baked in).
     const currentFilterCss = isNeutralFilters(filters) ? null : filterString(filters);
-    const getEditedItem = () => applyFiltersToExportable(item, currentFilterCss);
+    // rawUrl = the photo before the default brightness was saved into the stored copy, so the slider always works from the real original.
+    const getEditedItem = () => applyFiltersToExportable({ ...item, url: typeof item.rawUrl === "string" && item.rawUrl ? item.rawUrl : item.url }, currentFilterCss);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

@@ -707,6 +707,20 @@ export default function PhotoEditorPage() {
         setActiveTarget(null);
         openImageForCrop(file);
     };
+    // The copy that is saved to "Recent photos" already carries the default brightness. If anything fails, the plain photo is saved instead.
+    const saveBrightenedCopy = async (url: string, bgColor?: string): Promise<string> => {
+        try {
+            const baked = await applyFiltersToExportable({ url, bgColor }, filterString(RESULT_DEFAULT_FILTERS));
+            if (baked.url === url)
+                return url;
+            const uploaded = await uploadToCloudinary(baked.url);
+            return uploaded || url;
+        }
+        catch (error) {
+            console.error("Could not apply the default brightness to the saved copy:", error);
+            return url;
+        }
+    };
     const uploadToCloudinary = async (imageData: string) => {
         if (!imageData)
             return null;
@@ -985,7 +999,7 @@ export default function PhotoEditorPage() {
                 ? { ...prev, ...(savedItem || {}), url: finalUrl }
                 : prev);
             setResultItem((prev) => prev && prev.id === updatedId
-                ? { ...prev, ...(savedItem || {}), url: finalUrl }
+                ? { ...prev, ...(savedItem || {}), url: finalUrl, rawUrl: undefined }
                 : prev);
             // The saved file already contains the edits, so the dropdown values start neutral again.
             if (resultItem && resultItem.id === updatedId)
@@ -1519,8 +1533,9 @@ export default function PhotoEditorPage() {
                 }
                 setDualResultImage(combinedUrl);
                 setOriginalImageForDual(originalLeftImage || leftImage);
+                const savedCombinedUrl = await saveBrightenedCopy(combinedUrl, currentBgHex);
                 const dualDocData = {
-                    url: combinedUrl,
+                    url: savedCombinedUrl,
                     originalUrl: combinedOriginal,
                     size: "90×55 mm",
                     sizeType: selectedSize,
@@ -1553,7 +1568,7 @@ export default function PhotoEditorPage() {
                         ...dualDocData,
                     };
                     setRecentList((prev) => prev.map((item) => item.id === regeneratingId ? { ...item, ...updatedItem } : item));
-                    showGeneratedResult({ ...dualDocData, ...updatedItem } as GeneratedResultItem, combinedUrl);
+                    showGeneratedResult({ ...dualDocData, ...updatedItem, rawUrl: combinedUrl } as GeneratedResultItem, combinedUrl);
                 }
                 else {
                     const response = await fetch("/api/ai-generations", {
@@ -1573,7 +1588,7 @@ export default function PhotoEditorPage() {
                     if (createdItem) {
                         setRecentList((prev) => [createdItem, ...prev]);
                     }
-                    showGeneratedResult({ ...dualDocData, ...(createdItem || {}) } as GeneratedResultItem, combinedUrl);
+                    showGeneratedResult({ ...dualDocData, ...(createdItem || {}), rawUrl: combinedUrl } as GeneratedResultItem, combinedUrl);
                 }
                 generationSucceeded = true;
                 return;
@@ -1594,8 +1609,9 @@ export default function PhotoEditorPage() {
             setOriginalImageForDual(finalOriginal);
             setUploadedImage(generatedUrl);
             setIsDualPreviewActive(false);
+            const savedGeneratedUrl = await saveBrightenedCopy(generatedUrl, currentBgHex);
             const newDocData = {
-                url: generatedUrl,
+                url: savedGeneratedUrl,
                 originalUrl: finalOriginal,
                 size: currentSizeLabel,
                 sizeType: selectedSize,
@@ -1628,7 +1644,7 @@ export default function PhotoEditorPage() {
                     ...newDocData,
                 };
                 setRecentList((prev) => prev.map((item) => item.id === regeneratingId ? { ...item, ...updatedItem } : item));
-                showGeneratedResult({ ...newDocData, ...updatedItem } as GeneratedResultItem, generatedUrl);
+                showGeneratedResult({ ...newDocData, ...updatedItem, rawUrl: generatedUrl } as GeneratedResultItem, generatedUrl);
             }
             else {
                 const response = await fetch("/api/ai-generations", {
@@ -1650,7 +1666,7 @@ export default function PhotoEditorPage() {
                 if (createdItem) {
                     setRecentList((prev) => [createdItem, ...prev]);
                 }
-                showGeneratedResult({ ...newDocData, ...(createdItem || {}) } as GeneratedResultItem, generatedUrl);
+                showGeneratedResult({ ...newDocData, ...(createdItem || {}), rawUrl: generatedUrl } as GeneratedResultItem, generatedUrl);
             }
             generationSucceeded = true;
         }
@@ -2101,7 +2117,7 @@ export default function PhotoEditorPage() {
 
       <AiPrintStudioModal open={!!printSession || !!bulkPrintSources?.length} image={bulkPrintSources?.[0]?.image ?? printSession?.image ?? null} preset={bulkPrintSources?.[0]?.preset ?? printSession?.preset ?? null} images={bulkPrintSources ?? undefined} recentImages={recentPrintImages} onResolveRecent={resolveRecentForPrint} onSaveSession={handleSavePrintSession} initialSnapshot={savedSnapshot} onClose={() => { setPrintSession(null); setBulkPrintSources(null); setSavedSnapshot(null); setActiveSavedId(null); }} onPrintSingle={!bulkPrintSources && resultItem ? async () => {
         try {
-            await printSinglePhoto(await applyFiltersToExportable(resultItem, isNeutralFilters(resultFilters) ? null : filterString(resultFilters)));
+            await printSinglePhoto(await applyFiltersToExportable({ ...resultItem, url: typeof resultItem.rawUrl === "string" && resultItem.rawUrl ? resultItem.rawUrl : resultItem.url }, isNeutralFilters(resultFilters) ? null : filterString(resultFilters)));
         }
         catch (error) {
             setErrorMessage(error instanceof Error ? error.message : "Could not print this image.");
