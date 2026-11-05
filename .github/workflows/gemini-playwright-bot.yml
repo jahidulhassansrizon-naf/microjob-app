@@ -188,16 +188,25 @@ jobs:
       # The website reads it on every request, so no redeploy is needed.
       - name: Publish public URL to Vercel Global Config
         shell: bash
+        env:
+          # Optional. Only needed if the Vercel project lives under a Team.
+          # Set it in GitHub: Settings > Secrets and variables > Actions > Variables.
+          VERCEL_TEAM_SLUG: ${{ vars.VERCEL_TEAM_SLUG }}
         run: |
           if [ -z "$VERCEL_API_TOKEN" ] || [ -z "$EDGE_CONFIG_ID" ]; then
             echo "::error::VERCEL_API_TOKEN or EDGE_CONFIG_ID secret is missing."
             exit 1
           fi
           PUBLIC_URL="$(cat public-url.txt)"
-          # Tries the plain account URL first, then the same URL with the team slug.
+          # Tries the plain account URL first (works for personal/Hobby accounts), then,
+          # only if VERCEL_TEAM_SLUG is set, the same URL with the team slug.
           # For each, "upsert" is tried, then "update" (item exists) and "create" (item missing).
+          SUFFIXES=("")
+          if [ -n "$VERCEL_TEAM_SLUG" ]; then
+            SUFFIXES+=("?slug=${VERCEL_TEAM_SLUG}")
+          fi
           for i in 1 2 3; do
-            for SUFFIX in "" "?slug=devprobd"; do
+            for SUFFIX in "${SUFFIXES[@]}"; do
               for OP in upsert update create; do
                 BODY="$(jq -n --arg op "$OP" --arg v "$PUBLIC_URL" '{items:[{operation:$op,key:"botUrl",value:$v}]}')"
                 CODE="$(curl -sS -o vercel-response.json -w '%{http_code}' -X PATCH \
