@@ -376,7 +376,8 @@ function requireApiKey(req, res, next) {
 //
 // Files: gemini-session-1.json, gemini-session-2.json, gemini-session-3.json
 // (the old single gemini-session.json still works as slot 1).
-// Jobs use session 1 first. When Gemini says "limit resets at ...",
+// Jobs are spread over all sessions (least busy first, max
+// PER_SESSION_CONCURRENCY each). When Gemini says "limit resets at ...",
 // that session is parked until the reset time and the SAME job is
 // retried on the next session. The parked state is saved to
 // session-limits.json so a server restart does not forget it.
@@ -593,11 +594,22 @@ function readIntEnv(name, fallback, min, max) {
   return Math.min(max, Math.max(min, parsed));
 }
 
+// Each Gemini account (session) runs at most this many jobs at the same time.
+// 5 per account was tested and works; 15 on one account made Google block it.
+const PER_SESSION_CONCURRENCY = readIntEnv("PER_SESSION_CONCURRENCY", 5, 1, 20);
+
+// Jobs that start on the same session are spaced this far apart (ms), so one
+// account never opens many Gemini pages in the very same moment.
+const SESSION_START_STAGGER_MS = readIntEnv("SESSION_START_STAGGER_MS", 1000, 0, 10_000);
+
+// Total jobs at once = PER_SESSION_CONCURRENCY x number of sessions
+// (4 sessions x 5 = 20). Set MAX_CONCURRENT_GENERATIONS only if you want
+// a lower or different total.
 const MAX_CONCURRENT_GENERATIONS = readIntEnv(
   "MAX_CONCURRENT_GENERATIONS",
-  15,
+  PER_SESSION_CONCURRENCY * Math.max(1, listSessions().length),
   1,
-  50,
+  200,
 );
 const MAX_QUEUE_LENGTH = readIntEnv("MAX_QUEUE_LENGTH", 100, 0, 1000);
 const QUEUE_WAIT_TIMEOUT_MS = readIntEnv(
@@ -1033,21 +1045,42 @@ async function runGeminiWithSession({
 
     // 3. Open Upload & tools (Gemini sometimes renames this button,
     //    so a few known names are tried)
-    const uploadToolsButton = await findUploadToolsButton(page);
-
-    await uploadToolsButton.click();
-    step("upload menu opened");
-
-    // 4. Click the local uploader and attach the image(s).
-    //    With two images the order is kept: first file, then second file.
+    //    When many pages run at once, the menu sometimes does not appear after
+    //    the click. So: if the "Upload files" item is not there after a few
+    //    seconds, close the menu (Escape) and click "Upload & tools" again.
     const uploaderButton = page.locator(
       '[data-test-id="local-images-files-uploader-button"]',
     );
 
-    await uploaderButton.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
+    let menuOpened = false;
+
+    for (let attempt = 1; attempt <= 3 && !menuOpened; attempt += 1) {
+      const uploadToolsButton = await findUploadToolsButton(page);
+
+      await uploadToolsButton.click();
+      step(attempt === 1 ? "upload menu opened" : `upload menu clicked again (try ${attempt})`);
+
+      try {
+        await uploaderButton.waitFor({
+          state: "visible",
+          timeout: attempt === 3 ? 15000 : 7000,
+        });
+        menuOpened = true;
+      } catch (menuError) {
+        throwIfAborted(signal);
+
+        if (attempt === 3) {
+          throw menuError;
+        }
+
+        step("upload menu did not show, closing it and trying again");
+        await page.keyboard.press("Escape").catch(() => {});
+        await page.waitForTimeout(800);
+      }
+    }
+
+    // 4. Click the local uploader and attach the image(s).
+    //    With two images the order is kept: first file, then second file.
 
     const filesToUpload = imagePaths.length === 1 ? imagePaths[0] : imagePaths;
 
@@ -1204,7 +1237,8 @@ async function runGeminiWithSession({
             Array.from(document.querySelectorAll("button"))
               .map((b) => (b.getAttribute("aria-label") || b.innerText || "").trim())
               .filter(Boolean)
-              .slice(0, 40),
+              .map((name) => name.slice(0, 40))
+              .slice(-30),
           )
           .catch(() => []);
 
@@ -1303,8 +1337,85 @@ async function throwIfLimitShown(page) {
   }
 }
 
-// Tries session 1, then 2, then 3. The user only sees an error
-// if every session is out of limit (or missing).
+// How many jobs are running on each session right now, and when the next
+// job on that session may start (for the start spacing).
+const sessionActive = {};
+const sessionNextStartAt = {};
+
+// Picks the current session; if it is full (PER_SESSION_CONCURRENCY jobs),
+// the job goes to the next usable session (so 20 jobs at the same moment
+// spread 5 / 5 / 5 / 5 over 4 sessions, but 3 jobs all stay on one session).
+// If every usable session is full, the job waits here until one is free.
+// The chosen session is counted as busy BEFORE this function returns, so two
+// jobs can never pick the same last free place.
+// Returns null when no usable session is left (all parked / already tried).
+async function claimSession(signal, triedSlots, forceSlot = 0) {
+  while (true) {
+    throwIfAborted(signal);
+
+    // forceSlot is only for testing one session on its own (see /edit-image).
+    const candidates = listSessions().filter(
+      (s) =>
+        isSessionUsable(s) &&
+        !triedSlots.has(s.slot) &&
+        (!forceSlot || s.slot === forceSlot),
+    );
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    // Stay on the "current" session. Only when it already has
+    // PER_SESSION_CONCURRENCY jobs running, the extra jobs spill over to the
+    // next session (in order), and so on. A session that ran out of limit is
+    // parked, so the pointer moves on to the next one by itself.
+    const allSessions = listSessions();
+    const currentSlot = getCurrentSlot(allSessions);
+    const candidateSlots = new Set(candidates.map((s) => s.slot));
+    const ordered = circularFrom(allSessions, currentSlot).filter((s) =>
+      candidateSlots.has(s.slot),
+    );
+
+    // The first usable session is the new "current" one (this skips parked ones).
+    if (!forceSlot && ordered[0].slot !== currentSlot) {
+      setCurrentSlot(ordered[0].slot);
+    }
+
+    const best = ordered.find(
+      (s) => (sessionActive[s.slot] || 0) < PER_SESSION_CONCURRENCY,
+    );
+
+    if (best) {
+      sessionActive[best.slot] = (sessionActive[best.slot] || 0) + 1;
+      return best;
+    }
+
+    await sleep(500);
+  }
+}
+
+function releaseSession(slot) {
+  sessionActive[slot] = Math.max(0, (sessionActive[slot] || 0) - 1);
+}
+
+// Spreads job starts on one session: the 1st starts now, the 2nd after
+// SESSION_START_STAGGER_MS, the 3rd after twice that, and so on.
+async function waitForStartTurn(slot, signal) {
+  const now = Date.now();
+  const startAt = Math.max(now, sessionNextStartAt[slot] || 0);
+
+  sessionNextStartAt[slot] = startAt + SESSION_START_STAGGER_MS;
+
+  if (startAt > now) {
+    await sleep(startAt - now);
+  }
+
+  throwIfAborted(signal);
+}
+
+// Spreads jobs over all sessions (least busy first). When a session says its
+// limit is reached, the SAME job moves to another session. The user only sees
+// an error if every session is out of limit (or missing).
 async function runGeminiGeneration(options) {
   if (listSessions().length === 0) {
     throw new Error("Session file not found on server.");
@@ -1313,12 +1424,13 @@ async function runGeminiGeneration(options) {
   // Slots this job already tried, so one job can never loop forever.
   const triedSlots = new Set();
   let triedAny = false;
+  let transientRetried = false;
 
   while (true) {
-    const sessions = listSessions();
-    const order = circularFrom(sessions, getCurrentSlot(sessions));
-    const session = order.find(
-      (s) => isSessionUsable(s) && !triedSlots.has(s.slot),
+    const session = await claimSession(
+      options.signal,
+      triedSlots,
+      options.forceSlot || 0,
     );
 
     if (!session) {
@@ -1327,10 +1439,14 @@ async function runGeminiGeneration(options) {
 
     triedSlots.add(session.slot);
     triedAny = true;
-    setCurrentSlot(session.slot);
-    console.log(`Using Gemini session ${session.slot}.`);
 
     try {
+      await waitForStartTurn(session.slot, options.signal);
+
+      console.log(
+        `Using Gemini session ${session.slot} (${sessionActive[session.slot]}/${PER_SESSION_CONCURRENCY} busy).`,
+      );
+
       return await runGeminiWithSession({
         ...options,
         sessionFile: session.file,
@@ -1365,10 +1481,27 @@ async function runGeminiGeneration(options) {
         continue;
       }
 
+      // The upload step timed out BEFORE the message was sent, so no Gemini
+      // quota was used. Try the whole job one more time (once per job).
+      if (
+        !transientRetried &&
+        /local-images-files-uploader-button|input\[name="Filedata"\]/.test(failMessage)
+      ) {
+        transientRetried = true;
+        triedSlots.delete(session.slot);
+        console.log(
+          `Session ${session.slot}: upload step timed out, trying this job once more...`,
+        );
+        continue;
+      }
+
       console.log(
         `Session ${session.slot} failed (not a limit message): ${failMessage}`,
       );
       throw error;
+    } finally {
+      // Always give the place on this session back (success, error or retry).
+      releaseSession(session.slot);
     }
   }
 
@@ -1397,8 +1530,9 @@ async function runGeminiGeneration(options) {
 // Existing AI Editor Gemini generation (one image)
 // --------------------------------------------------
 
-function generateWithGemini(imagePath, prompt, outputDir, signal) {
+function generateWithGemini(imagePath, prompt, outputDir, signal, forceSlot = 0) {
   return runGeminiGeneration({
+    forceSlot,
     imagePaths: [imagePath],
     prompt,
     outputDir,
@@ -1450,8 +1584,10 @@ app.get("/health", (req, res) => {
       maxQueue: MAX_QUEUE_LENGTH,
     },
     currentSession: Number(limitState.current) || null,
+    perSessionConcurrency: PER_SESSION_CONCURRENCY,
     sessions: listSessions().map((x) => ({
       slot: x.slot,
+      active: sessionActive[x.slot] || 0,
       usable: isSessionUsable(x),
       usableAgainAt: x.usableAt > Date.now() ? new Date(x.usableAt).toISOString() : null,
     })),
@@ -1617,6 +1753,11 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
 
   const file = req.file;
 
+  // Testing only: start the server with  $env:ALLOW_FORCE_SLOT="1"  and call
+  // /edit-image?slot=2  to run this one job on Gemini session 2 only.
+  const forceSlot =
+    process.env.ALLOW_FORCE_SLOT === "1" ? Number(req.query.slot) || 0 : 0;
+
   try {
     const result = await runGenerationJob(res, (signal) =>
       withTempDir("gemini-edit-", async (tempDir) => {
@@ -1627,7 +1768,7 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
 
         await fs.writeFile(sourcePath, file.buffer);
 
-        return generateWithGemini(sourcePath, prompt, tempDir, signal);
+        return generateWithGemini(sourcePath, prompt, tempDir, signal, forceSlot);
       }),
     );
 
@@ -1871,6 +2012,9 @@ const server = app.listen(PORT, "127.0.0.1", async () => {
   console.log(`Node API running on internal port ${PORT}`);
   console.log(
     `Generation limits: ${MAX_CONCURRENT_GENERATIONS} at once, ${MAX_QUEUE_LENGTH} waiting.`,
+  );
+  console.log(
+    `Sessions found: ${listSessions().length} (max ${PER_SESSION_CONCURRENCY} jobs per session, ${SESSION_START_STAGGER_MS}ms start spacing).`,
   );
 
   sweepStaleTempDirs().catch(() => {});
