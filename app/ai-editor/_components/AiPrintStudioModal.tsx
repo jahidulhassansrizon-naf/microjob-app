@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AlignCenterHorizontal, AlignLeft, AlignRight, ArrowLeftRight, ChevronDown, Copy, Download, Frame, Grid3X3, Image as ImageIcon, LayoutGrid, Minus, Move, Plus, Printer, Redo2, RotateCw, Ruler, Trash2, Undo2, X, } from "lucide-react";
 import jsPDF from "jspdf";
 import type { PrintSessionSnapshot } from "./printSessionStore";
+import { getAiEditorThumbnailUrl } from "./aiEditorData";
 
 const EXPORT_DPI = 300;
 const MAX_ITEMS = 80;
@@ -1896,7 +1897,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 const count = items.filter((item) => item.sourceKey === entry.key).length;
                 const busy = addingKey === entry.key;
                 return (<button key={entry.key} type="button" onClick={() => { void addRecentPhoto(entry.key); }} disabled={!!addingKey} title={t("Add to print")} className={`relative aspect-[4/5] overflow-hidden rounded-md border bg-[#F2E8D2] cursor-pointer transition ${count ? "border-[#DC2626]" : "border-[#E3D6B8] hover:border-[#DC2626]/60"} disabled:cursor-wait disabled:opacity-60`}>
-                      <img src={entry.url} alt="" loading="lazy" draggable={false} className="h-full w-full object-cover"/>
+                      <img src={getAiEditorThumbnailUrl(entry.url)} alt="" loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover"/>
                       {busy && (<span className="absolute inset-0 flex items-center justify-center bg-white/60"><span className="h-4 w-4 animate-spin rounded-full border-2 border-[#DC2626]/30 border-t-[#DC2626]"/></span>)}
                       {!busy && count > 0 && (<span className="absolute right-0.5 top-0.5 min-w-[18px] rounded-full bg-[#DC2626] px-1 text-[10px] font-extrabold leading-[18px] text-white">×{count}</span>)}
                       {!busy && (<span className="absolute bottom-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-white"><Plus size={10}/></span>)}

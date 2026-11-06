@@ -35,7 +35,12 @@ interface PendingEntry {
 }
 
 const PREFETCH_REFRESH_AFTER_MS = 8_000;
-const IMAGE_PRELOAD_LIMIT = 12;
+// Only the photos visible in the first fold are warmed; the rest load lazily when scrolled to.
+const IMAGE_PRELOAD_LIMIT = 8;
+
+// Width of the Cloudinary thumbnail used everywhere a small preview is shown (strip, gallery,
+// print-studio picker, delete dialog). One shared size means one derived image per photo.
+const AI_EDITOR_THUMBNAIL_WIDTH = 320;
 
 let cacheEntry: CacheEntry | null = null;
 let pendingEntry: PendingEntry | null = null;
@@ -68,7 +73,7 @@ function getAuthIdentity(): string {
   return "cookie-session";
 }
 
-/** Small Cloudinary rendition for the recent-images strip. Originals stay untouched for preview/download. */
+/** Small Cloudinary rendition for small previews. Originals stay untouched for full preview/download. */
 export function getAiEditorThumbnailUrl(url: string): string {
   if (!url) return url;
   try {
@@ -80,7 +85,7 @@ export function getAiEditorThumbnailUrl(url: string): string {
     const looksTransformed =
       firstSegment.includes(",") || /^(?:w|h|c|q|f|g|e|ar|dpr|r|bo|b|fl)_/.test(firstSegment);
     if (looksTransformed) return url;
-    parsed.pathname = parsed.pathname.replace(marker, `${marker}f_auto,q_auto,w_480,c_limit/`);
+    parsed.pathname = parsed.pathname.replace(marker, `${marker}f_auto,q_auto,w_${AI_EDITOR_THUMBNAIL_WIDTH},c_limit/`);
     return parsed.toString();
   } catch {
     return url;

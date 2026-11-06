@@ -3,6 +3,7 @@ import React, { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Trash2, X } from "lucide-react";
 import { AiT } from "./aiEditorI18n";
+import { getAiEditorThumbnailUrl } from "./aiEditorData";
 
 type ConfirmDeleteModalProps = {
   open: boolean;
@@ -60,7 +61,7 @@ export default function ConfirmDeleteModal({
           <div className="relative mx-auto mb-5 w-fit">
             {imageUrl ? (
               <img
-                src={imageUrl}
+                src={getAiEditorThumbnailUrl(imageUrl)}
                 alt=""
                 className="h-24 w-[76px] rounded-2xl object-cover shadow-lg ring-4 ring-white"
               />
