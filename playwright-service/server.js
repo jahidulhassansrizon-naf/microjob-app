@@ -767,6 +767,67 @@ function releaseSlot() {
   }
 }
 
+// --------------------------------------------------
+// Keep-alive (stops Cloudflare 524 on long jobs)
+//
+// A Cloudflare tunnel cuts any request that has not received an answer
+// (HTTP headers) within about 100 seconds and returns error 524. A busy
+// generation can take longer than that. So when the caller sends the header
+//   x-keepalive: 1
+// the bot answers "200" immediately and then writes one blank space every
+// KEEPALIVE_INTERVAL_MS while it works. The real JSON arrives at the end.
+// Blank spaces in front of JSON are ignored by JSON.parse.
+//
+// Because the HTTP status is already sent, the real status travels inside
+// the JSON body ("status" and "retryAfter"). Callers that do not send the
+// header get the old behaviour (real HTTP status, Retry-After header).
+// --------------------------------------------------
+
+const KEEPALIVE_INTERVAL_MS = readIntEnv("KEEPALIVE_INTERVAL_MS", 15_000, 1_000, 60_000);
+
+function startKeepAlive(res) {
+  if (res.headersSent || res.locals.keepAliveStarted) {
+    return;
+  }
+
+  res.locals.keepAliveStarted = true;
+
+  res.writeHead(200, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+    "X-Accel-Buffering": "no",
+  });
+  res.flushHeaders();
+
+  res.locals.keepAliveTimer = setInterval(() => {
+    if (!res.writableEnded && !res.destroyed) {
+      res.write(" ");
+    }
+  }, KEEPALIVE_INTERVAL_MS);
+}
+
+function stopKeepAlive(res) {
+  if (res.locals.keepAliveTimer) {
+    clearInterval(res.locals.keepAliveTimer);
+    res.locals.keepAliveTimer = null;
+  }
+}
+
+// Same as res.status(x).json(y), but also works after keep-alive started.
+function sendJson(res, statusCode, payload) {
+  if (res.locals.keepAliveStarted) {
+    stopKeepAlive(res);
+
+    if (res.writableEnded || res.destroyed) {
+      return;
+    }
+
+    return res.end(JSON.stringify({ ...payload, status: statusCode }));
+  }
+
+  return res.status(statusCode).json(payload);
+}
+
 // Runs `work(signal)` inside a slot. The signal is aborted when:
 //   - the client disconnects (browser closed, route.ts timed out, ...), or
 //   - the job runs longer than GENERATION_TIMEOUT_MS.
@@ -782,6 +843,12 @@ async function runGenerationJob(res, work) {
   };
 
   res.on("close", onClientClose);
+
+  // Caller asked for keep-alive: answer now, so the tunnel never times out
+  // while this request waits in line or while Gemini is working.
+  if (res.req && res.req.get("x-keepalive") === "1") {
+    startKeepAlive(res);
+  }
 
   let acquired = false;
   let timer = null;
@@ -805,6 +872,7 @@ async function runGenerationJob(res, work) {
   } finally {
     clearTimeout(timer);
     res.off("close", onClientClose);
+    stopKeepAlive(res);
 
     if (acquired) {
       releaseSlot();
@@ -822,11 +890,16 @@ function sendGenerationError(res, error, label) {
     console.error(`${label} error:`, error);
   }
 
-  if (res.headersSent || res.writableEnded || res.destroyed) {
+  if (res.writableEnded || res.destroyed) {
     return;
   }
 
-  if (error && error.retryAfter) {
+  // Headers already sent for some other reason (not our keep-alive): nothing to do.
+  if (res.headersSent && !res.locals.keepAliveStarted) {
+    return;
+  }
+
+  if (error && error.retryAfter && !res.headersSent) {
     res.set("Retry-After", String(error.retryAfter));
   }
 
@@ -837,10 +910,11 @@ function sendGenerationError(res, error, label) {
     ? error.message
     : "Image generation is taking longer than usual. Please wait a moment and try again.";
 
-  return res.status(statusCode).json({
+  return sendJson(res, statusCode, {
     success: false,
     error: publicMessage,
     code: error && error.code ? error.code : undefined,
+    retryAfter: error && error.retryAfter ? error.retryAfter : undefined,
   });
 }
 
@@ -1772,7 +1846,7 @@ app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
       }),
     );
 
-    return res.json({
+    return sendJson(res, 200, {
       success: true,
       provider: "gemini-playwright-render",
       image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
@@ -1906,7 +1980,7 @@ app.post(
         }),
       );
 
-      return res.json({
+      return sendJson(res, 200, {
         success: true,
         provider: "gemini-playwright-template",
         image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
@@ -1993,7 +2067,7 @@ app.post(
         }),
       );
 
-      return res.json({
+      return sendJson(res, 200, {
         success: true,
         provider: "gemini-playwright-dual",
         image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,

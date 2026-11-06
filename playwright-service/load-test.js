@@ -1,30 +1,36 @@
 // load-test.js
-// Sends N real image-edit requests at the SAME moment to the local
-// Playwright service and shows how many run at once vs wait in line.
+// Sends N real image-edit requests at the SAME moment to the Playwright
+// service (local http OR a public https URL such as a Cloudflare tunnel)
+// and shows how many run at once vs wait in line.
 //
 // Put this file in the playwright-service folder (next to server.js).
 // Put 1 or more real photos in  playwright-service/test-images/
 // (jpg / png / webp). They are used round-robin.
 //
-// Run (server must already be running in another terminal):
+// Run:
 //   node load-test.js            -> 20 requests
 //   node load-test.js 5          -> 5 requests
 //   node load-test.js 20 /edit-image
 //
 // PowerShell options:
-//   $env:BASE="http://127.0.0.1:4000"
+//   $env:BASE="http://127.0.0.1:4000"                      (local server)
+//   $env:BASE="https://xxxx.trycloudflare.com"             (GitHub bot via tunnel)
 //   $env:ASK_KEY="..."       (only if the server uses ASK_KEY)
 //   $env:PROMPT="Make this a clean passport photo, white background"
 
-const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
+
+const BASE = new URL(process.env.BASE || "http://127.0.0.1:4000");
+const IS_HTTPS = BASE.protocol === "https:";
+// https URLs (Cloudflare tunnel) need the https module, plain http needs http.
+const http = IS_HTTPS ? require("node:https") : require("node:http");
+const BASE_PORT = BASE.port ? Number(BASE.port) : IS_HTTPS ? 443 : 80;
 
 const N = Number(process.argv[2]) || 20;
 // Optional: $env:SLOT="2" sends every request to Gemini session 2 only.
 // (The server must be started with $env:ALLOW_FORCE_SLOT="1".)
 const ENDPOINT = (process.argv[3] || "/edit-image") + (process.env.SLOT ? `?slot=${Number(process.env.SLOT)}` : "");
-const BASE = new URL(process.env.BASE || "http://127.0.0.1:4000");
 const ASK_KEY = process.env.ASK_KEY || "";
 // Different prompts. Request #1 uses prompt 1, #2 uses prompt 2, ...
 // After the last one it starts again from the first. Edit freely.
@@ -97,7 +103,7 @@ function request(method, urlPath, { headers = {}, body } = {}) {
     const req = http.request(
       {
         hostname: BASE.hostname,
-        port: BASE.port,
+        port: BASE_PORT,
         path: urlPath,
         method,
         headers,
@@ -117,7 +123,8 @@ function request(method, urlPath, { headers = {}, body } = {}) {
 
 async function getHealth() {
   try {
-    const r = await request("GET", "/health");
+    const headers = ASK_KEY ? { "x-api-key": ASK_KEY } : {};
+    const r = await request("GET", "/health", { headers });
     return JSON.parse(r.text).generation;
   } catch {
     return null;
@@ -131,9 +138,10 @@ const sec = (ms) => (ms / 1000).toFixed(1).padStart(6) + "s";
   const images = loadImages();
   const before = await getHealth();
   if (!before) {
-    console.error(`Cannot reach ${BASE.origin}/health. Is the server running on this port?`);
+    console.error(`Cannot reach ${BASE.origin}/health. Is the server running / is the URL correct?`);
     process.exit(1);
   }
+  console.log(`Target: ${BASE.origin}`);
   console.log(`Server limits: ${before.maxConcurrent} at once, ${before.maxQueue} waiting`);
   console.log(
     `Sending ${N} requests to ${ENDPOINT} using ${images.length} test image(s) and ${PROMPTS.length} different prompt(s)\n`,
@@ -165,6 +173,9 @@ const sec = (ms) => (ms / 1000).toFixed(1).padStart(6) + "s";
       const { body, contentType } = buildMultipart(image, PROMPTS[promptNo - 1]);
       const headers = { "Content-Type": contentType, "Content-Length": body.length };
       if (ASK_KEY) headers["x-api-key"] = ASK_KEY;
+      // Same as the website route: keeps the Cloudflare tunnel from cutting
+      // long requests (error 524). Set $env:KEEPALIVE="0" to test without it.
+      if (process.env.KEEPALIVE !== "0") headers["x-keepalive"] = "1";
 
       const sentAt = Date.now() - t0;
       let status = 0;
@@ -178,7 +189,9 @@ const sec = (ms) => (ms / 1000).toFixed(1).padStart(6) + "s";
         try {
           json = JSON.parse(r.text);
         } catch {}
-        ok = r.status === 200 && json.success === true && typeof json.image === "string";
+        // With keep-alive the HTTP status is always 200; the real one is in the JSON.
+        if (typeof json.status === "number") status = json.status;
+        ok = status === 200 && json.success === true && typeof json.image === "string";
         if (!ok) {
           error = json.error || r.text.slice(0, 120);
         } else {
@@ -220,6 +233,20 @@ const sec = (ms) => (ms / 1000).toFixed(1).padStart(6) + "s";
   console.log(`Median time (OK ones): ${sec(median).trim()}`);
   console.log(`Total test time      : ${sec(Date.now() - t0).trim()}`);
   console.log(`Result images saved  : ${okCount ? RESULT_DIR : "(none, no request succeeded)"}`);
+
+  // Failures grouped by reason (helps to see timeout vs refusal vs busy)
+  const failed = results.filter((r) => !r.ok);
+  if (failed.length) {
+    const groups = {};
+    for (const f of failed) {
+      const key = `status=${f.status} ${f.error}`.slice(0, 140);
+      groups[key] = (groups[key] || 0) + 1;
+    }
+    console.log("\nFailure reasons:");
+    for (const [reason, count] of Object.entries(groups)) {
+      console.log(`  ${count} x ${reason}`);
+    }
+  }
 
   const limiterVerdict =
     maxActive > before.maxConcurrent

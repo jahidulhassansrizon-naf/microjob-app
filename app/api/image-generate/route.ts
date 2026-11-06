@@ -238,6 +238,12 @@ async function callRenderService(
     headers["x-api-key"] = RENDER_KEY;
   }
 
+  // Ask the bot to answer right away and keep the connection alive while the
+  // image is made. Without this, the Cloudflare tunnel cuts any request that
+  // takes longer than about 100 seconds (error 524). The real status then
+  // travels inside the JSON ("status", "retryAfter").
+  headers["x-keepalive"] = "1";
+
   const endpoint = secondImage ? "/edit-image-dual" : "/edit-image";
 
   // The signal also fires when the visitor closes the page. The image server
@@ -280,6 +286,8 @@ async function callRenderService(
     image?: string;
     error?: string;
     code?: string;
+    status?: number;
+    retryAfter?: number;
   } | null = null;
 
   try {
@@ -301,17 +309,29 @@ async function callRenderService(
       );
     }
 
+    // With keep-alive the HTTP status is always 200, so the bot puts the real
+    // status inside the JSON. Without it (old bot) the HTTP status is used.
+    const botStatus =
+      typeof data?.status === "number" ? data.status : response.status;
+
+    const retryAfter =
+      typeof data?.retryAfter === "number"
+        ? data.retryAfter
+        : Number(response.headers.get("retry-after")) || 0;
+
     // 503 / 504 from the image server mean "busy" or "took too long".
-    // Keep that status so the website can show a friendly retry message.
-    const retryAfter = Number(response.headers.get("retry-after")) || 0;
+    // 524 is the tunnel giving up waiting. Keep these as 503 / 504 so the
+    // website can show a friendly retry message.
     const status =
-      response.status === 503 || response.status === 504
-        ? response.status
-        : 500;
+      botStatus === 503 || botStatus === 504
+        ? botStatus
+        : botStatus === 524
+          ? 504
+          : 500;
 
     // Technical details from the bot stay in the server log only.
     // 503 messages are already written for visitors; everything else is generic.
-    console.error("Image service failure:", response.status, detail);
+    console.error("Image service failure:", botStatus, detail);
     throw new ServiceError(
       status === 503 && data?.error
         ? data.error
