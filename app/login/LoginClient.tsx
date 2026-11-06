@@ -1,6 +1,7 @@
 // app/login/LoginClient.tsx (rendered by app/login/page.tsx)
 "use client";
 import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
+import BrandPanel, { BRAND_FONT } from "./_components/BrandPanel";
 
 import { useState, useEffect, Suspense, type FormEvent } from "react";
 import Link from "next/link";
@@ -12,7 +13,6 @@ import {
   EyeOff,
   ArrowLeft,
   Loader2,
-  ShieldCheck,
 } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import BrandName from "@/app/_components/BrandName";
@@ -240,20 +240,21 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
   };
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50 text-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-5 sm:px-8 sm:py-7">
+    <main className="min-h-screen w-full overflow-x-hidden bg-[#F2E8D2] text-[#3B2F1E] lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]" data-bn={isBn ? "1" : "0"} style={{ fontFamily: BRAND_FONT }}>
+      <BrandPanel isBn={isBn} />
+      <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 py-5 sm:px-8 sm:py-7 lg:max-w-none lg:px-14">
         <header className="flex w-full items-center justify-between">
           <button
             type="button"
             onClick={handleBack}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-white hover:text-blue-700"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#5A4A32] transition-colors hover:bg-white hover:text-[#B91C1C]"
           >
             <ArrowLeft size={17} />
             <span>{text.back}</span>
           </button>
 
           <div
-            className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white/90 p-1 shadow-sm"
+            className="inline-flex items-center gap-1 rounded-xl border border-[#E3D6B8] bg-white/90 p-1 shadow-sm"
             aria-label={text.language}
           >
             <button
@@ -262,8 +263,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
               aria-pressed={locale === "en"}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 locale === "en"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-[#DC2626] text-white shadow-sm"
+                  : "text-[#5A4A32] hover:bg-[#EFE3C8]"
               }`}
             >
               EN
@@ -274,8 +275,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
               aria-pressed={locale === "bn"}
               className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                 locale === "bn"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100"
+                  ? "bg-[#DC2626] text-white shadow-sm"
+                  : "text-[#5A4A32] hover:bg-[#EFE3C8]"
               }`}
             >
               বাংলা
@@ -289,20 +290,15 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
               <Link href="/" className="mb-6 inline-flex items-center">
                 <SiteBrandLogo width={140} height={45} className="h-[45px] w-auto" />
               </Link>
-
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-                <ShieldCheck size={14} />
-                <span>{text.secureSignIn}</span>
-              </div>
-              <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+              <h1 className="text-[1.7rem] font-bold leading-snug tracking-tight text-[#3B2F1E] sm:text-3xl">
                 {text.loginTitle}
               </h1>
-              <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
+              <p className="mt-2 max-w-sm text-sm leading-6 text-[#7A6A50]">
                 {text.loginSubtitle}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-8">
+            <div className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-5 shadow-[0_28px_60px_-34px_rgba(59,47,30,0.45)] sm:p-9">
               {errorMessage && (
                 <div
                   role="alert"
@@ -316,7 +312,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                 <div className="space-y-2">
                   <label
                     htmlFor="login-identifier"
-                    className="block text-sm font-semibold text-slate-700"
+                    className="block text-sm font-semibold text-[#4A3C27]"
                   >
                     {text.identifier} <span className="text-red-500">*</span>
                   </label>
@@ -324,7 +320,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                     <Mail
                       size={17}
                       aria-hidden="true"
-                      className="pointer-events-none absolute left-3.5 text-slate-400"
+                      className="pointer-events-none absolute left-3.5 text-[#9A8A6E]"
                     />
                     <input
                       id="login-identifier"
@@ -337,7 +333,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                       onChange={(e) =>
                         setFormData({ ...formData, identifier: e.target.value })
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                      className="w-full rounded-xl border border-[#E3D6B8] bg-white py-3 pl-10 pr-4 text-sm text-[#3B2F1E] outline-none transition-all placeholder:text-[#9A8A6E] focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10"
                     />
                   </div>
                 </div>
@@ -345,7 +341,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                 <div className="space-y-2">
                   <label
                     htmlFor="login-password"
-                    className="block text-sm font-semibold text-slate-700"
+                    className="block text-sm font-semibold text-[#4A3C27]"
                   >
                     {text.password} <span className="text-red-500">*</span>
                   </label>
@@ -353,7 +349,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                     <Lock
                       size={17}
                       aria-hidden="true"
-                      className="pointer-events-none absolute left-3.5 text-slate-400"
+                      className="pointer-events-none absolute left-3.5 text-[#9A8A6E]"
                     />
                     <input
                       id="login-password"
@@ -366,12 +362,12 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                      className="w-full rounded-xl border border-[#E3D6B8] bg-white py-3 pl-10 pr-12 text-sm text-[#3B2F1E] outline-none transition-all placeholder:text-[#9A8A6E] focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((visible) => !visible)}
-                      className="absolute right-3.5 rounded-md p-1 text-slate-400 transition-colors hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="absolute right-3.5 rounded-md p-1 text-[#9A8A6E] transition-colors hover:text-[#4A3C27] focus:outline-none focus:ring-2 focus:ring-[#DC2626]"
                       aria-label={showPassword ? text.hidePassword : text.showPassword}
                       aria-pressed={showPassword}
                     >
@@ -381,7 +377,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-1 text-sm">
-                  <label className="flex cursor-pointer select-none items-center gap-2 text-slate-600">
+                  <label className="flex cursor-pointer select-none items-center gap-2 text-[#5A4A32]">
                     <input
                       type="checkbox"
                       checked={formData.rememberMe}
@@ -391,14 +387,14 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                           rememberMe: e.target.checked,
                         })
                       }
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                      className="h-4 w-4 rounded border-[#D4C4A0] text-[#DC2626] focus:ring-[#DC2626]"
                     />
                     <span>{text.rememberMe}</span>
                   </label>
 
                   <Link
                     href="/forgot-password"
-                    className="font-semibold text-blue-600 transition-colors hover:text-blue-800 hover:underline"
+                    className="font-semibold text-[#DC2626] transition-colors hover:text-[#991B1B] hover:underline"
                   >
                     {text.forgotPassword}
                   </Link>
@@ -407,7 +403,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-600/25 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E5393B] to-[#B91C1C] px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#DC2626]/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#DC2626]/25 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? (
                     <>
@@ -421,7 +417,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
               </form>
             </div>
 
-            <p className="mt-6 text-center text-sm text-slate-600">
+            <p className="mt-6 text-center text-sm text-[#5A4A32]">
               {text.noAccount}{" "}
               <Link
                 href={
@@ -429,7 +425,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
                     ? `/register?redirect=${encodeURIComponent(callbackUrl)}`
                     : "/register"
                 }
-                className="font-bold text-blue-600 transition-colors hover:text-blue-800 hover:underline"
+                className="font-bold text-[#DC2626] transition-colors hover:text-[#991B1B] hover:underline"
               >
                 {text.signUp}
               </Link>
@@ -437,8 +433,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
           </div>
         </section>
 
-        <footer className="pb-2 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} <BrandName accentClassName="text-slate-400" />. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+        <footer className="pb-2 text-center text-xs text-[#9A8A6E]">
+          © {new Date().getFullYear()} <BrandName accentClassName="text-[#9A8A6E]" />. {isBn ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
         </footer>
       </div>
     </main>

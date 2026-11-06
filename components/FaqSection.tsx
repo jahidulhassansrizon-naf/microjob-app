@@ -1,14 +1,16 @@
 "use client";
 import { T } from "@/components/i18n/I18nProvider";
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { HelpCircle, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Aurora,
+  EASE,
+  GRAD_TEXT,
+  SectionHead,
+} from "@/components/ui/Premium";
 
-export default function FaqSection() {
-  // বাই-ডিফল্ট প্রথম কার্ড (index 0) খোলা রাখার জন্য 0 দেওয়া হলো
-  const [openIndex, setOpenIndex] = useState<number | null>(0);
-
-  const faqs = [
+const faqs = [
       {
           id: "01",
           question: "What is Seba Lagbe and how does it work?",
@@ -79,86 +81,84 @@ export default function FaqSection() {
           question: "Will new tools or features be added in the future?",
           answer: "Absolutely! We regularly release new tools, AI models, and updated templates every week.",
       },
-  ];
+];
 
-  const toggleFaq = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
+
+export default function FaqSection() {
+  // First question is open by default
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
+    <section className="relative isolate overflow-hidden bg-white px-4 py-20 sm:px-6 md:px-12 md:py-28">
+      <Aurora variant="side" />
+
       <div className="mx-auto grid max-w-[1400px] grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
-        {/* Section Header (sticky on desktop) */}
+        {/* Sticky heading */}
+        <div className="lg:sticky lg:top-28 lg:col-span-4 lg:self-start">
+          <SectionHead
+            align="left"
+            icon={<HelpCircle size={12} />}
+            eyebrow={<T>{"FAQ\r\n          "}</T>}
+            title={
+              <>
+                <T>{"Frequently Asked "}</T>
+                <br />
+                <span className={GRAD_TEXT}>
+                  <T>{"Questions"}</T>
+                </span>
+              </>
+            }
+            sub={<T>{"Some common questions about Seba Lagbe.\r\n          "}</T>}
+          />
+        </div>
+
+        {/* Accordion */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-50px" }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="mx-auto max-w-2xl space-y-5 text-center lg:sticky lg:top-28 lg:col-span-4 lg:mx-0 lg:self-start lg:text-left"
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.7, ease: EASE }}
+          className="space-y-2.5 lg:col-span-8"
         >
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-            <span className="h-1.5 w-1.5 rounded-full bg-violet-600" />
-            <T>{"FAQ\r\n          "}</T>
-          </div>
-
-          <h2 className="text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 md:text-5xl">
-            <T>{"Frequently Asked "}</T>
-            <br />
-            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              <T>{"Questions"}</T>
-            </span>
-          </h2>
-
-          <p className="text-base leading-relaxed text-slate-600">
-            <T>{"Some common questions about Seba Lagbe.\r\n          "}</T>
-          </p>
-        </motion.div>
-
-        {/* Accordion List */}
-        <div className="space-y-3 lg:col-span-8">
           {faqs.map((faq, idx) => {
             const isOpen = openIndex === idx;
             return (
               <div
                 key={idx}
-                className={`rounded-2xl border bg-white transition-all duration-200 ${
+                className={`relative overflow-hidden rounded-[22px] bg-white ring-1 transition-all duration-300 ${
                   isOpen
-                    ? "border-blue-200 shadow-md shadow-blue-900/5 ring-1 ring-blue-100"
-                    : "border-slate-200/80 hover:border-slate-300"
+                    ? "shadow-[0_24px_50px_-30px_rgba(67,56,202,0.5)] ring-indigo-200"
+                    : "ring-slate-200/80 hover:ring-slate-300"
                 }`}
               >
+                {/* active accent rail */}
+                <span
+                  aria-hidden
+                  className={`absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-blue-600 via-indigo-600 to-fuchsia-600 transition-opacity duration-300 ${
+                    isOpen ? "opacity-100" : "opacity-0"
+                  }`}
+                />
                 <button
-                  onClick={() => toggleFaq(idx)}
+                  onClick={() => setOpenIndex(isOpen ? null : idx)}
                   aria-expanded={isOpen}
-                  className="flex w-full cursor-pointer items-center justify-between gap-4 px-5 py-4 text-left sm:px-6"
+                  className="flex w-full cursor-pointer items-center justify-between gap-4 px-6 py-5 text-left outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 sm:px-7"
                 >
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`font-mono text-xs font-semibold transition-colors ${
-                        isOpen ? "text-blue-600" : "text-slate-400"
-                      }`}
-                    >
-                      {faq.id}
-                    </span>
-                    <h3 className="text-sm font-semibold leading-snug text-slate-900 sm:text-[15px]">
-                      {<T>{faq.question}</T>}
-                    </h3>
-                  </div>
-
-                  <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition ${
+                  <h3
+                    className={`text-[15px] font-bold leading-snug tracking-[-0.01em] transition-colors sm:text-base ${
+                      isOpen ? "text-slate-950" : "text-slate-800"
+                    }`}
+                  >
+                    <T>{faq.question}</T>
+                  </h3>
+                  <span
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 ${
                       isOpen
-                        ? "bg-blue-600 text-white"
+                        ? "rotate-45 bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-md shadow-indigo-500/30"
                         : "bg-slate-100 text-slate-500"
                     }`}
                   >
-                    <ChevronDown
-                      size={16}
-                      className={`transition-transform duration-200 ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
+                    <Plus size={16} />
+                  </span>
                 </button>
 
                 <AnimatePresence initial={false}>
@@ -167,19 +167,19 @@ export default function FaqSection() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.22, ease: "easeOut" }}
+                      transition={{ duration: 0.28, ease: EASE }}
                       className="overflow-hidden"
                     >
-                      <div className="border-t border-slate-100 px-5 pb-5 pt-3 text-sm font-medium leading-relaxed text-slate-600 sm:px-6">
-                        {<T>{faq.answer}</T>}
-                      </div>
+                      <p className="max-w-3xl px-6 pb-6 text-sm leading-7 text-slate-600 sm:px-7 sm:text-[15px]">
+                        <T>{faq.answer}</T>
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             );
           })}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

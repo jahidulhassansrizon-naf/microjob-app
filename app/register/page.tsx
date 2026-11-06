@@ -1,6 +1,7 @@
 "use client";
 
 import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
+import { BrandFonts, BRAND_FONT } from "@/app/login/_components/BrandPanel";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -336,21 +337,22 @@ export default function RegisterPage() {
     router.push(safeTarget ? `/login?callbackUrl=${encodeURIComponent(safeTarget)}` : "/login");
   };
 
-  const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10";
-  const labelClass = "mb-1.5 block text-xs font-semibold text-slate-700";
+  const inputClass = "w-full rounded-xl border border-[#E3D6B8] bg-white px-3 py-3 text-sm text-[#3B2F1E] placeholder:text-[#9A8A6E] outline-none transition focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/10";
+  const labelClass = "mb-1.5 block text-xs font-semibold text-[#4A3C27]";
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-50 via-[#F7F8FC] to-indigo-50/70 text-slate-900">
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-[#F2E8D2] text-[#3B2F1E]" data-bn={isBn ? "1" : "0"} style={{ fontFamily: BRAND_FONT }}>
+      <BrandFonts />
       {/* Registration form */}
       <main className="relative mx-auto flex min-h-screen w-full max-w-4xl flex-col justify-between p-5 sm:p-8 lg:px-10 lg:py-8 xl:px-12">
         <div className="flex w-full items-center justify-between gap-4">
-          <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 transition hover:text-indigo-600">
+          <Link href="/" className="inline-flex items-center gap-2 text-xs font-semibold text-[#5A4A32] transition hover:text-[#DC2626]">
             <ArrowLeft size={16} />
             <span>{tx("Back to Home", "হোমে ফিরে যান")}</span>
           </Link>
-          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 text-xs font-bold shadow-sm" aria-label={tx("Choose language", "ভাষা নির্বাচন করুন")}>
-            <button type="button" onClick={() => changeLanguage("EN")} aria-pressed={locale === "en"} className={`rounded-lg px-3 py-1.5 transition ${locale === "en" ? "bg-indigo-600 text-white shadow" : "text-slate-600 hover:bg-slate-50"}`}>EN</button>
-            <button type="button" onClick={() => changeLanguage("BN")} aria-pressed={locale === "bn"} className={`rounded-lg px-3 py-1.5 transition ${locale === "bn" ? "bg-indigo-600 text-white shadow" : "text-slate-600 hover:bg-slate-50"}`}>বাংলা</button>
+          <div className="inline-flex rounded-xl border border-[#E3D6B8] bg-white p-1 text-xs font-bold shadow-sm" aria-label={tx("Choose language", "ভাষা নির্বাচন করুন")}>
+            <button type="button" onClick={() => changeLanguage("EN")} aria-pressed={locale === "en"} className={`rounded-lg px-3 py-1.5 transition ${locale === "en" ? "bg-[#DC2626] text-white shadow" : "text-[#5A4A32] hover:bg-[#F6EFDC]"}`}>EN</button>
+            <button type="button" onClick={() => changeLanguage("BN")} aria-pressed={locale === "bn"} className={`rounded-lg px-3 py-1.5 transition ${locale === "bn" ? "bg-[#DC2626] text-white shadow" : "text-[#5A4A32] hover:bg-[#F6EFDC]"}`}>বাংলা</button>
           </div>
         </div>
 
@@ -359,12 +361,12 @@ export default function RegisterPage() {
             <Link href="/" className="mb-3 inline-flex items-center" aria-label={replaceSiteNameInText(isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home", settings.branding.siteName)}>
               <SiteBrandLogo width={140} height={45} className="h-[45px] w-auto" />
             </Link>
-            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{tx("Create your account", "আপনার অ্যাকাউন্ট তৈরি করুন")}</h2>
-            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{replaceSiteNameInText(tx("Join Seba Lagbe to access your digital workspace.", "আপনার ডিজিটাল কর্মক্ষেত্র ব্যবহার করতে ‘সেবা লাগবে’-তে যোগ দিন।"), settings.branding.siteName)}</p>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-[1.75rem]">{tx("Create your account", "আপনার অ্যাকাউন্ট তৈরি করুন")}</h2>
+            <p className="mt-2 max-w-md text-sm leading-6 text-[#7A6A50]">{replaceSiteNameInText(tx("Join Seba Lagbe to access your digital workspace.", "আপনার ডিজিটাল কর্মক্ষেত্র ব্যবহার করতে ‘সেবা লাগবে’-তে যোগ দিন।"), settings.branding.siteName)}</p>
           </div>
 
-          <div className="relative rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xl shadow-slate-200/60 sm:p-7">
-            <div className="absolute inset-x-0 top-0 h-1 rounded-t-2xl bg-gradient-to-r from-blue-600 via-violet-500 to-emerald-400" />
+          <div className="relative rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-5 shadow-[0_28px_60px_-34px_rgba(59,47,30,0.45)] sm:p-8">
+            <div className="absolute inset-x-0 top-0 h-1 rounded-t-2xl bg-gradient-to-r from-[#E5393B] via-[#DC2626] to-[#F0B27A]" />
             {errorMessage && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-center text-xs font-medium text-red-700">{errorMessage}</div>}
 
             <form onSubmit={handleFormSubmit} className="space-y-4">
@@ -373,13 +375,13 @@ export default function RegisterPage() {
                   <label className={labelClass}>{tx("Country", "দেশ")} <span className="text-red-500">*</span></label>
                   <button type="button" aria-haspopup="listbox" aria-expanded={isCountryOpen} onClick={() => setIsCountryOpen((open) => !open)} className={`${inputClass} flex items-center justify-between gap-2 text-left`}>
                     <span className="flex min-w-0 items-center gap-2 truncate"><span className="text-base">{formData.countryFlag}</span><span className="truncate">{displayCountry(formData.countryName)} ({formData.countryCode})</span></span>
-                    <ChevronDown size={15} className={`shrink-0 text-slate-400 transition-transform ${isCountryOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown size={15} className={`shrink-0 text-[#9A8A6E] transition-transform ${isCountryOpen ? "rotate-180" : ""}`} />
                   </button>
                   {isCountryOpen && (
-                    <div className="absolute left-0 right-0 top-full z-50 mt-2 flex max-h-72 flex-col rounded-xl border border-slate-200 bg-white p-2 shadow-2xl" role="listbox">
+                    <div className="absolute left-0 right-0 top-full z-50 mt-2 flex max-h-72 flex-col rounded-xl border border-[#E3D6B8] bg-white p-2 shadow-2xl" role="listbox">
                       <div className="relative mb-2">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="search" value={countrySearch} onChange={(event) => setCountrySearch(event.target.value)} placeholder={tx("Search country or code…", "দেশ বা কোড খুঁজুন…")} autoFocus className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-xs text-slate-900 outline-none focus:border-indigo-500" />
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A8A6E]" />
+                        <input type="search" value={countrySearch} onChange={(event) => setCountrySearch(event.target.value)} placeholder={tx("Search country or code…", "দেশ বা কোড খুঁজুন…")} autoFocus className="w-full rounded-lg border border-[#E3D6B8] bg-[#F6EFDC] py-2 pl-9 pr-3 text-xs text-[#3B2F1E] outline-none focus:border-[#DC2626]" />
                       </div>
                       <div className="max-h-56 space-y-0.5 overflow-y-auto pr-1">
                         {filteredCountries.length ? filteredCountries.map((item) => (
@@ -387,11 +389,11 @@ export default function RegisterPage() {
                             setFormData((previous) => ({ ...previous, countryName: item.name, countryCode: item.code, countryFlag: item.flag }));
                             setIsCountryOpen(false);
                             setCountrySearch("");
-                          }} className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs transition ${formData.countryName === item.name ? "bg-indigo-50 font-bold text-indigo-700" : "text-slate-700 hover:bg-slate-50"}`}>
+                          }} className={`flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-xs transition ${formData.countryName === item.name ? "bg-[#FDECEC] font-bold text-[#B91C1C]" : "text-[#4A3C27] hover:bg-[#F6EFDC]"}`}>
                             <span className="flex min-w-0 items-center gap-2"><span className="text-base">{item.flag}</span><span className="truncate">{displayCountry(item.name)}</span></span>
-                            <span className="shrink-0 text-slate-400">{item.code}</span>
+                            <span className="shrink-0 text-[#9A8A6E]">{item.code}</span>
                           </button>
-                        )) : <p className="px-3 py-5 text-center text-xs text-slate-400">{tx("No country found.", "কোনো দেশ পাওয়া যায়নি।")}</p>}
+                        )) : <p className="px-3 py-5 text-center text-xs text-[#9A8A6E]">{tx("No country found.", "কোনো দেশ পাওয়া যায়নি।")}</p>}
                       </div>
                     </div>
                   )}
@@ -399,109 +401,108 @@ export default function RegisterPage() {
 
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Phone number", "ফোন নম্বর")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="tel" required autoComplete="tel-national" value={formData.phone} onChange={(event) => { setFormData((previous) => ({ ...previous, phone: event.target.value })); setErrorMessage(""); setMethodNotice(""); setOtpError(""); }} placeholder={tx("Enter number without country code", "কান্ট্রি কোড ছাড়া নম্বর লিখুন")} className={`${inputClass} pl-9`} /></div>
+                  <div className="relative"><Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A8A6E]" /><input type="tel" required autoComplete="tel-national" value={formData.phone} onChange={(event) => { setFormData((previous) => ({ ...previous, phone: event.target.value })); setErrorMessage(""); setMethodNotice(""); setOtpError(""); }} placeholder={tx("Enter number without country code", "কান্ট্রি কোড ছাড়া নম্বর লিখুন")} className={`${inputClass} pl-9`} /></div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Email address", "ইমেইল ঠিকানা")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="email" required autoComplete="email" value={formData.email} onChange={(event) => { setFormData((previous) => ({ ...previous, email: event.target.value })); setErrorMessage(""); setMethodNotice(""); setOtpError(""); }} placeholder={tx("you@example.com", "আপনার ইমেইল ঠিকানা")} className={`${inputClass} pl-9`} /></div>
+                  <div className="relative"><Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A8A6E]" /><input type="email" required autoComplete="email" value={formData.email} onChange={(event) => { setFormData((previous) => ({ ...previous, email: event.target.value })); setErrorMessage(""); setMethodNotice(""); setOtpError(""); }} placeholder={tx("you@example.com", "আপনার ইমেইল ঠিকানা")} className={`${inputClass} pl-9`} /></div>
                 </div>
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Full name", "পূর্ণ নাম")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type="text" required autoComplete="name" value={formData.fullName} onChange={(event) => setFormData((previous) => ({ ...previous, fullName: event.target.value }))} placeholder={tx("Enter your full name", "আপনার পূর্ণ নাম লিখুন")} className={`${inputClass} pl-9`} /></div>
+                  <div className="relative"><User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A8A6E]" /><input type="text" required autoComplete="name" value={formData.fullName} onChange={(event) => setFormData((previous) => ({ ...previous, fullName: event.target.value }))} placeholder={tx("Enter your full name", "আপনার পূর্ণ নাম লিখুন")} className={`${inputClass} pl-9`} /></div>
                 </div>
               </div>
 
               <div className="space-y-1">
                 <label className={labelClass}>{tx("District", "জেলা")} <span className="text-red-500">*</span></label>
-                <div className="relative"><MapPin size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><select required value={formData.district} onChange={(event) => setFormData((previous) => ({ ...previous, district: event.target.value }))} className={`${inputClass} appearance-none pl-9 pr-9`}>
+                <div className="relative"><MapPin size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9A8A6E]" /><select required value={formData.district} onChange={(event) => setFormData((previous) => ({ ...previous, district: event.target.value }))} className={`${inputClass} appearance-none pl-9 pr-9`}>
                   <option value="" disabled>{tx("Choose your district", "আপনার জেলা নির্বাচন করুন")}</option>
                   {[
                     ["Dhaka", "ঢাকা"], ["Bogura", "বগুড়া"], ["Chattogram", "চট্টগ্রাম"], ["Sylhet", "সিলেট"], ["Rajshahi", "রাজশাহী"], ["Khulna", "খুলনা"], ["Barishal", "বরিশাল"], ["Rangpur", "রংপুর"], ["Mymensingh", "ময়মনসিংহ"],
                   ].map(([en, bn]) => <option key={en} value={en}>{tx(en, bn)}</option>)}
-                </select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" /></div>
+                </select><ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#9A8A6E]" /></div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Password", "পাসওয়ার্ড")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type={showPassword ? "text" : "password"} required autoComplete="new-password" minLength={8} value={formData.password} onChange={(event) => setFormData((previous) => ({ ...previous, password: event.target.value }))} placeholder={tx("Create a password", "একটি পাসওয়ার্ড তৈরি করুন")} className={`${inputClass} pl-9 pr-10`} /><button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-label={showPassword ? tx("Hide password", "পাসওয়ার্ড লুকান") : tx("Show password", "পাসওয়ার্ড দেখান")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-indigo-600">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
+                  <div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A8A6E]" /><input type={showPassword ? "text" : "password"} required autoComplete="new-password" minLength={8} value={formData.password} onChange={(event) => setFormData((previous) => ({ ...previous, password: event.target.value }))} placeholder={tx("Create a password", "একটি পাসওয়ার্ড তৈরি করুন")} className={`${inputClass} pl-9 pr-10`} /><button type="button" onClick={() => setShowPassword((shown) => !shown)} aria-label={showPassword ? tx("Hide password", "পাসওয়ার্ড লুকান") : tx("Show password", "পাসওয়ার্ড দেখান")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9A8A6E] transition hover:text-[#DC2626]">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
                 </div>
                 <div className="space-y-1">
                   <label className={labelClass}>{tx("Confirm password", "পাসওয়ার্ড নিশ্চিত করুন")} <span className="text-red-500">*</span></label>
-                  <div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" /><input type={showConfirmPassword ? "text" : "password"} required autoComplete="new-password" minLength={8} value={formData.confirmPassword} onChange={(event) => setFormData((previous) => ({ ...previous, confirmPassword: event.target.value }))} placeholder={tx("Re-enter your password", "আবার পাসওয়ার্ড লিখুন")} className={`${inputClass} pl-9 pr-10`} /><button type="button" onClick={() => setShowConfirmPassword((shown) => !shown)} aria-label={showConfirmPassword ? tx("Hide password", "পাসওয়ার্ড লুকান") : tx("Show password", "পাসওয়ার্ড দেখান")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-indigo-600">{showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
+                  <div className="relative"><Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A8A6E]" /><input type={showConfirmPassword ? "text" : "password"} required autoComplete="new-password" minLength={8} value={formData.confirmPassword} onChange={(event) => setFormData((previous) => ({ ...previous, confirmPassword: event.target.value }))} placeholder={tx("Re-enter your password", "আবার পাসওয়ার্ড লিখুন")} className={`${inputClass} pl-9 pr-10`} /><button type="button" onClick={() => setShowConfirmPassword((shown) => !shown)} aria-label={showConfirmPassword ? tx("Hide password", "পাসওয়ার্ড লুকান") : tx("Show password", "পাসওয়ার্ড দেখান")} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9A8A6E] transition hover:text-[#DC2626]">{showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button></div>
                 </div>
               </div>
 
-              <label className="flex items-start gap-2 pt-1 text-xs leading-5 text-slate-600">
-                <input type="checkbox" required checked={formData.agreeTerms} onChange={(event) => setFormData((previous) => ({ ...previous, agreeTerms: event.target.checked }))} className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 accent-indigo-600" />
-                <span>{tx("I agree to the ", "আমি সম্মত হচ্ছি ")}<Link href="/terms" className="font-semibold text-indigo-600 hover:underline">{tx("Terms of Service", "ব্যবহারের শর্তাবলি")}</Link>{tx(" and ", " এবং ")}<Link href="/privacy-policy" className="font-semibold text-indigo-600 hover:underline">{tx("Privacy Policy", "গোপনীয়তা নীতি")}</Link>.</span>
+              <label className="flex items-start gap-2 pt-1 text-xs leading-5 text-[#5A4A32]">
+                <input type="checkbox" required checked={formData.agreeTerms} onChange={(event) => setFormData((previous) => ({ ...previous, agreeTerms: event.target.checked }))} className="mt-1 h-4 w-4 shrink-0 rounded border-[#D4C4A0] accent-[#DC2626]" />
+                <span>{tx("I agree to the ", "আমি সম্মত হচ্ছি ")}<Link href="/terms" className="font-semibold text-[#DC2626] hover:underline">{tx("Terms of Service", "ব্যবহারের শর্তাবলি")}</Link>{tx(" and ", " এবং ")}<Link href="/privacy-policy" className="font-semibold text-[#DC2626] hover:underline">{tx("Privacy Policy", "গোপনীয়তা নীতি")}</Link>.</span>
               </label>
 
-              <button type="submit" disabled={loading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">
+              <button type="submit" disabled={loading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E5393B] to-[#B91C1C] px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#DC2626]/20 transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">
                 {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />{tx("Please wait…", "অপেক্ষা করুন…")}</> : tx("Create account", "অ্যাকাউন্ট তৈরি করুন")}
               </button>
             </form>
           </div>
 
-          <p className="mt-5 text-center text-sm text-slate-600">{tx("Already have an account?", "আগেই অ্যাকাউন্ট আছে?")} <Link href="/login" className="ml-1 font-bold text-indigo-600 hover:underline">{tx("Sign in", "লগইন করুন")}</Link></p>
+          <p className="mt-5 text-center text-sm text-[#5A4A32]">{tx("Already have an account?", "আগেই অ্যাকাউন্ট আছে?")} <Link href="/login" className="ml-1 font-bold text-[#DC2626] hover:underline">{tx("Sign in", "লগইন করুন")}</Link></p>
         </section>
         <div className="h-2" />
       </main>
 
       {/* OTP method modal */}
       {isMethodModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="otp-method-title">
-          <div className="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-            <button type="button" onClick={() => setIsMethodModalOpen(false)} aria-label={tx("Close dialog", "ডায়ালগ বন্ধ করুন")} className="absolute right-3 top-3 rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600"><KeyRound size={24} /></div>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#3B2F1E]/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="otp-method-title">
+          <div className="relative w-full max-w-sm rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-6 shadow-2xl">
+            <button type="button" onClick={() => setIsMethodModalOpen(false)} aria-label={tx("Close dialog", "ডায়ালগ বন্ধ করুন")} className="absolute right-3 top-3 rounded-lg p-2 text-[#9A8A6E] transition hover:bg-[#EFE3C8] hover:text-[#4A3C27]"><X size={18} /></button>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FDECEC] text-[#DC2626]"><KeyRound size={24} /></div>
             <h3 id="otp-method-title" className="text-center text-lg font-extrabold">{tx("Choose a verification method", "যাচাইয়ের পদ্ধতি বেছে নিন")}</h3>
-            <p className="mb-5 mt-2 text-center text-xs leading-5 text-slate-500">{tx("Where would you like to receive your one-time code?", "আপনি কোথায় একবারের যাচাইকরণ কোডটি পেতে চান?")}</p>
+            <p className="mb-5 mt-2 text-center text-xs leading-5 text-[#7A6A50]">{tx("Where would you like to receive your one-time code?", "আপনি কোথায় একবারের যাচাইকরণ কোডটি পেতে চান?")}</p>
             {methodNotice && <div role="alert" className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"><AlertCircle size={17} className="mt-0.5 shrink-0" /><p>{methodNotice}</p></div>}
             <div className="mb-5 space-y-3">
-              <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition ${otpMethod === "email" ? "border-indigo-500 bg-indigo-50/70" : "border-slate-200 hover:border-slate-300"}`}>
-                <input type="radio" name="otpMethod" value="email" checked={otpMethod === "email"} onChange={() => { setOtpMethod("email"); setMethodNotice(""); }} className="h-4 w-4 accent-indigo-600" />
-                <Mail size={19} className="shrink-0 text-indigo-600" />
-                <span className="min-w-0"><span className="block text-sm font-bold">{tx("Email verification", "ইমেইলের মাধ্যমে যাচাই")}</span><span className="block truncate text-xs text-slate-500">{formData.email || tx("Your email address", "আপনার ইমেইল ঠিকানা")}</span></span>
+              <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition ${otpMethod === "email" ? "border-[#DC2626] bg-[#FDECEC]/70" : "border-[#E3D6B8] hover:border-[#D4C4A0]"}`}>
+                <input type="radio" name="otpMethod" value="email" checked={otpMethod === "email"} onChange={() => { setOtpMethod("email"); setMethodNotice(""); }} className="h-4 w-4 accent-[#DC2626]" />
+                <Mail size={19} className="shrink-0 text-[#DC2626]" />
+                <span className="min-w-0"><span className="block text-sm font-bold">{tx("Email verification", "ইমেইলের মাধ্যমে যাচাই")}</span><span className="block truncate text-xs text-[#7A6A50]">{formData.email || tx("Your email address", "আপনার ইমেইল ঠিকানা")}</span></span>
               </label>
-              <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition ${otpMethod === "phone" ? "border-indigo-500 bg-indigo-50/70" : "border-slate-200 hover:border-slate-300"}`}>
-                <input type="radio" name="otpMethod" value="phone" checked={otpMethod === "phone"} onChange={() => { setOtpMethod("phone"); setMethodNotice(""); }} className="h-4 w-4 accent-indigo-600" />
-                <Phone size={19} className="shrink-0 text-indigo-600" />
-                <span className="min-w-0"><span className="block text-sm font-bold">{tx("Phone verification", "ফোন নম্বরের মাধ্যমে যাচাই")}</span><span className="block truncate text-xs text-slate-500">{formData.countryCode} {formData.phone || tx("Your phone number", "আপনার ফোন নম্বর")}</span></span>
+              <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition ${otpMethod === "phone" ? "border-[#DC2626] bg-[#FDECEC]/70" : "border-[#E3D6B8] hover:border-[#D4C4A0]"}`}>
+                <input type="radio" name="otpMethod" value="phone" checked={otpMethod === "phone"} onChange={() => { setOtpMethod("phone"); setMethodNotice(""); }} className="h-4 w-4 accent-[#DC2626]" />
+                <Phone size={19} className="shrink-0 text-[#DC2626]" />
+                <span className="min-w-0"><span className="block text-sm font-bold">{tx("Phone verification", "ফোন নম্বরের মাধ্যমে যাচাই")}</span><span className="block truncate text-xs text-[#7A6A50]">{formData.countryCode} {formData.phone || tx("Your phone number", "আপনার ফোন নম্বর")}</span></span>
               </label>
             </div>
-            <button type="button" onClick={handleSendOtp} disabled={loading} className="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-indigo-700 disabled:opacity-60">{loading ? tx("Sending code…", "কোড পাঠানো হচ্ছে…") : tx("Send verification code", "যাচাইকরণ কোড পাঠান")}</button>
+            <button type="button" onClick={handleSendOtp} disabled={loading} className="w-full rounded-xl bg-[#DC2626] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#B91C1C] disabled:opacity-60">{loading ? tx("Sending code…", "কোড পাঠানো হচ্ছে…") : tx("Send verification code", "যাচাইকরণ কোড পাঠান")}</button>
           </div>
         </div>
       )}
 
       {/* OTP verification modal */}
       {isOtpModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="otp-title">
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/80 bg-white p-6 shadow-2xl shadow-indigo-950/20 sm:p-8">
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500" />
-            <button type="button" onClick={() => setIsOtpModalOpen(false)} aria-label={tx("Close dialog", "ডায়ালগ বন্ধ করুন")} className="absolute right-3 top-3 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X size={18} /></button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#3B2F1E]/55 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="otp-title">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#E3D6B8] bg-[#FBF6E8] p-6 shadow-2xl shadow-[#450A0A]/20 sm:p-8">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#E5393B] via-[#B91C1C] to-[#F0B27A]" />
+            <button type="button" onClick={() => setIsOtpModalOpen(false)} aria-label={tx("Close dialog", "ডায়ালগ বন্ধ করুন")} className="absolute right-3 top-3 rounded-xl p-2 text-[#9A8A6E] transition hover:bg-[#EFE3C8] hover:text-[#4A3C27]"><X size={18} /></button>
             <div className="mb-5 flex justify-center">
               <Link href="/" aria-label={replaceSiteNameInText(isBn ? "সেবা লাগবে হোম" : "Seba Lagbe home", settings.branding.siteName)} className="inline-flex items-center">
                 <SiteBrandLogo width={140} height={45} className="h-[40px] w-auto" />
               </Link>
             </div>
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-violet-100 text-indigo-600 ring-1 ring-indigo-100"><ShieldCheck size={25} /></div>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FDECEC] to-[#FBD5D5] text-[#DC2626] ring-1 ring-[#FBD5D5]"><ShieldCheck size={25} /></div>
             <div className="mb-5 text-center">
-              <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-blue-700"><ShieldCheck size={12} />{tx("Secure verification", "নিরাপদ যাচাইকরণ")}</div>
-              <h3 id="otp-title" className="text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">{tx("Verify your email", "আপনার ইমেইল যাচাই করুন")}</h3>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">{tx("We sent a 6-digit verification code to", "আমরা ৬ সংখ্যার যাচাইকরণ কোড পাঠিয়েছি")} <span className="break-all font-semibold text-slate-800">{formData.email}</span></p>
+              <h3 id="otp-title" className="text-xl font-extrabold tracking-tight text-[#3B2F1E] sm:text-2xl">{tx("Verify your email", "আপনার ইমেইল যাচাই করুন")}</h3>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#7A6A50]">{tx("We sent a 6-digit verification code to", "আমরা ৬ সংখ্যার যাচাইকরণ কোড পাঠিয়েছি")} <span className="break-all font-semibold text-[#3B2F1E]">{formData.email}</span></p>
             </div>
             {otpError && <div role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-center text-xs font-medium leading-5 text-red-700">{otpError}</div>}
-            <div className="mb-5 rounded-2xl border border-indigo-100 bg-gradient-to-br from-slate-50 to-indigo-50/70 p-4 sm:p-5">
-              <label htmlFor="register-otp" className="mb-2.5 block text-xs font-bold text-slate-700">{tx("Enter 6-digit code", "৬ সংখ্যার কোড লিখুন")}</label>
-              <input id="register-otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="1 2 3 4 5 6" className="w-full rounded-xl border border-indigo-200 bg-white px-4 py-3.5 text-center text-xl font-extrabold tracking-[0.35em] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/15" />
-              <p className="mt-2.5 text-center text-[11px] leading-5 text-slate-500">{tx("The code is valid for 5 minutes. Keep it private.", "কোডটি ৫ মিনিট পর্যন্ত কার্যকর। এটি গোপন রাখুন।")}</p>
+            <div className="mb-5 rounded-2xl border border-[#FBD5D5] bg-gradient-to-br from-[#F6EFDC] to-[#FDECEC]/70 p-4 sm:p-5">
+              <label htmlFor="register-otp" className="mb-2.5 block text-xs font-bold text-[#4A3C27]">{tx("Enter 6-digit code", "৬ সংখ্যার কোড লিখুন")}</label>
+              <input id="register-otp" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="1 2 3 4 5 6" className="w-full rounded-xl border border-[#F5B5B5] bg-white px-4 py-3.5 text-center text-xl font-extrabold tracking-[0.35em] text-[#3B2F1E] outline-none transition placeholder:text-[#9A8A6E] focus:border-[#DC2626] focus:ring-4 focus:ring-[#DC2626]/15" />
+              <p className="mt-2.5 text-center text-[11px] leading-5 text-[#7A6A50]">{tx("The code is valid for 5 minutes. Keep it private.", "কোডটি ৫ মিনিট পর্যন্ত কার্যকর। এটি গোপন রাখুন।")}</p>
             </div>
-            <button type="button" onClick={handleVerifyAndRegister} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{loading ? tx("Verifying…", "যাচাই করা হচ্ছে…") : tx("Verify and create account", "যাচাই করে অ্যাকাউন্ট তৈরি করুন")}</button>
-            <button type="button" onClick={handleSendOtp} disabled={loading} className="mt-3 w-full rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-500 transition hover:text-indigo-600 disabled:opacity-50">{tx("Didn't receive the code? Resend", "কোড পাননি? আবার পাঠান")}</button>
+            <button type="button" onClick={handleVerifyAndRegister} disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E5393B] to-[#B91C1C] px-4 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#DC2626]/25 transition hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60">{loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}{loading ? tx("Verifying…", "যাচাই করা হচ্ছে…") : tx("Verify and create account", "যাচাই করে অ্যাকাউন্ট তৈরি করুন")}</button>
+            <button type="button" onClick={handleSendOtp} disabled={loading} className="mt-3 w-full rounded-xl px-4 py-2.5 text-xs font-semibold text-[#7A6A50] transition hover:text-[#DC2626] disabled:opacity-50">{tx("Didn't receive the code? Resend", "কোড পাননি? আবার পাঠান")}</button>
           </div>
         </div>
 )}
@@ -509,7 +510,7 @@ export default function RegisterPage() {
       {/* Registration success modal: replaces the browser-native alert. */}
       {isSuccessModalOpen && (
         <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-[#3B2F1E]/60 p-4 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-labelledby="registration-success-title"
@@ -518,13 +519,13 @@ export default function RegisterPage() {
             if (event.target === event.currentTarget) continueToSignIn();
           }}
         >
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/80 bg-white shadow-2xl shadow-indigo-950/25">
-            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500" />
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-2xl shadow-[#450A0A]/25">
+            <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#E5393B] via-[#B91C1C] to-[#F0B27A]" />
             <button
               type="button"
               onClick={continueToSignIn}
               aria-label={tx("Continue to sign in", "লগইন পেজে যান")}
-              className="absolute right-3 top-3 rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/15"
+              className="absolute right-3 top-3 rounded-xl p-2 text-[#9A8A6E] transition hover:bg-[#EFE3C8] hover:text-[#4A3C27] focus:outline-none focus:ring-4 focus:ring-[#DC2626]/15"
             >
               <X size={18} />
             </button>
@@ -532,30 +533,26 @@ export default function RegisterPage() {
               <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 ring-8 ring-emerald-50/60">
                 <CheckCircle2 size={42} strokeWidth={1.8} className="text-emerald-600" aria-hidden="true" />
               </div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                {tx("ACCOUNT CREATED", "অ্যাকাউন্ট তৈরি সম্পন্ন")}
-              </div>
-              <h2 id="registration-success-title" className="text-2xl font-extrabold tracking-tight text-slate-950 sm:text-3xl">
+              <h2 id="registration-success-title" className="text-2xl font-extrabold tracking-tight text-[#3B2F1E] sm:text-3xl">
                 {tx("Registration successful", "নিবন্ধন সফল হয়েছে")}
               </h2>
-              <p id="registration-success-description" className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-600">
+              <p id="registration-success-description" className="mx-auto mt-3 max-w-sm text-sm leading-6 text-[#5A4A32]">
                 {tx("Your email has been verified and your account is ready. Sign in to continue to your workspace.", "আপনার ইমেইল যাচাই হয়েছে এবং অ্যাকাউন্ট ব্যবহারের জন্য প্রস্তুত। আপনার ড্যাশবোর্ডে যেতে এখন লগইন করুন।")}
               </p>
-              <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left">
-                <Mail size={16} className="shrink-0 text-slate-500" aria-hidden="true" />
-                <span className="min-w-0 break-all text-xs font-semibold text-slate-700">{formData.email}</span>
+              <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-[#E3D6B8] bg-[#F6EFDC] px-3 py-2.5 text-left">
+                <Mail size={16} className="shrink-0 text-[#7A6A50]" aria-hidden="true" />
+                <span className="min-w-0 break-all text-xs font-semibold text-[#4A3C27]">{formData.email}</span>
               </div>
               <button
                 type="button"
                 autoFocus
                 onClick={continueToSignIn}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-indigo-500/25 active:scale-[0.99]"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#E5393B] to-[#B91C1C] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#DC2626]/25 transition hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-[#DC2626]/25 active:scale-[0.99]"
               >
                 {tx("Continue to sign in", "লগইন করুন")}
                 <ArrowRight size={17} aria-hidden="true" />
               </button>
-              <p className="mt-4 text-[11px] leading-5 text-slate-400">
+              <p className="mt-4 text-[11px] leading-5 text-[#9A8A6E]">
                 {tx("Your account details are saved securely.", "আপনার অ্যাকাউন্টের তথ্য নিরাপদে সংরক্ষিত হয়েছে।")}
               </p>
             </div>

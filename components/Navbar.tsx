@@ -4,7 +4,12 @@ import SiteBrandLogo from "@/app/_components/SiteBrandLogo";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useSpring,
+} from "framer-motion";
 import {
   Star,
   ChevronDown,
@@ -204,13 +209,6 @@ const hiddenPrefixes = [
 
 /* --------------------------- Small helpers --------------------------- */
 
-const navTrigger = (active: boolean) =>
-  `relative flex h-10 items-center gap-1 rounded-xl border px-3.5 text-[13px] font-bold transition-all duration-200 cursor-pointer ${
-    active
-      ? "border-blue-100 bg-blue-50/90 text-blue-700 shadow-sm"
-      : "border-transparent text-slate-600 hover:border-slate-200/80 hover:bg-slate-50 hover:text-slate-950"
-  }`;
-
 const Chevron = ({ open }: { open: boolean }) => (
   <ChevronDown
     size={14}
@@ -311,19 +309,66 @@ function MobileAccordion({
 
 /* ------------------------------ Navbar ------------------------------ */
 
+type MenuKey = "services" | "tools" | "important" | "pricing" | "reviews";
+
+/** Visual shell of a desktop nav item: sliding hover pill + active dot. */
+function Trigger({
+  id,
+  hovered,
+  active,
+  children,
+}: {
+  id: MenuKey;
+  hovered: MenuKey | null;
+  active: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      className={`relative isolate flex h-10 cursor-pointer items-center gap-1 rounded-full px-3.5 text-[13px] font-semibold tracking-[-0.005em] transition-colors duration-200 ${
+        active || hovered === id ? "text-slate-950" : "text-slate-600"
+      }`}
+    >
+      {hovered === id && (
+        <motion.span
+          layoutId="nav-hover-pill"
+          className="absolute inset-0 -z-10 rounded-full bg-slate-900/[0.06]"
+          transition={{ type: "spring", stiffness: 480, damping: 36 }}
+        />
+      )}
+      {children}
+      {active && (
+        <span className="absolute -bottom-[3px] left-1/2 h-[5px] w-[5px] -translate-x-1/2 rounded-full bg-gradient-to-r from-blue-600 to-violet-600" />
+      )}
+    </span>
+  );
+}
+
+const dropdownMotion = {
+  initial: { opacity: 0, y: 10, scale: 0.98, x: "-50%" },
+  animate: { opacity: 1, y: 0, scale: 1, x: "-50%" },
+  exit: { opacity: 0, y: 6, scale: 0.985, x: "-50%" },
+  transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] as const },
+};
+
 export default function Navbar() {
   const { t } = useI18n();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const [isServicesOpen, setIsServicesOpen] = useState(false);
-  const [isToolsOpen, setIsToolsOpen] = useState(false);
-  const [isImportantOpen, setIsImportantOpen] = useState(false);
+  const [hovered, setHovered] = useState<MenuKey | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const [mobileImportantOpen, setMobileImportantOpen] = useState(false);
 
-  // Shrink + add shadow after scrolling
+  // Thin reading-progress line along the bottom edge of the bar
+  const { scrollYProgress } = useScroll();
+  const progress = useSpring(scrollYProgress, {
+    stiffness: 140,
+    damping: 30,
+    mass: 0.3,
+  });
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
@@ -331,15 +376,11 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close everything on route change
   useEffect(() => {
     setIsMobileMenuOpen(false);
-    setIsServicesOpen(false);
-    setIsToolsOpen(false);
-    setIsImportantOpen(false);
+    setHovered(null);
   }, [pathname]);
 
-  // Lock page scroll while the mobile drawer is open
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
     return () => {
@@ -356,71 +397,101 @@ export default function Navbar() {
 
   const toolsActive = pathname.startsWith("/tools");
   const importantActive = pathname.startsWith("/dorkar-link");
+  const pricingActive = pathname.startsWith("/pricing");
+  const reviewsActive = pathname.startsWith("/reviews");
+  const close = () => setHovered(null);
 
   return (
     <>
-      {/* ============ Top Navbar ============ */}
+      {/* ============ Floating island navbar ============ */}
       <motion.header
-        initial={{ y: -80, opacity: 0 }}
+        initial={{ y: -90, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className={`sticky top-0 z-[999] w-full border-b transition-all duration-300 ${
-          scrolled
-            ? "border-slate-200 bg-white/95 shadow-[0_8px_28px_-18px_rgba(15,23,42,0.28)] backdrop-blur-2xl"
-            : "border-slate-200/70 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.025)] backdrop-blur-xl"
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className={`pointer-events-none sticky top-0 z-[999] w-full px-3 pt-3 sm:px-5 ${
+          pathname === "/" ? "-mb-[76px]" : ""
         }`}
       >
         <div
-          className={`relative mx-auto flex max-w-[1480px] items-center justify-between px-4 transition-all duration-300 sm:px-6 lg:px-8 ${
-            scrolled ? "h-14 md:h-[64px]" : "h-[66px] md:h-[74px]"
+          className={`pointer-events-auto relative mx-auto flex h-16 max-w-[1240px] items-center justify-between rounded-full border pl-4 pr-2 ring-1 ring-slate-900/[0.04] backdrop-blur-2xl transition-[background-color,box-shadow,border-color] duration-300 sm:pl-6 ${
+            scrolled
+              ? "border-slate-200/90 bg-white/85 shadow-[0_22px_50px_-22px_rgba(30,41,99,0.45)]"
+              : "border-white/80 bg-white/70 shadow-[0_12px_40px_-26px_rgba(30,41,99,0.35)]"
           }`}
         >
-          {/* Left: Logo */}
-          <Link href="/" className="flex shrink-0 items-center rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4">
-            <SiteBrandLogo width={148} height={46} className="h-[43px] w-auto" />
+          {/* subtle top sheen */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white to-transparent"
+          />
+          {/* scroll progress */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-x-8 bottom-0 h-[2px] overflow-hidden rounded-full"
+          >
+            <motion.span
+              style={{ scaleX: progress }}
+              className="block h-full origin-left bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500"
+            />
+          </span>
+
+          {/* Logo */}
+          <Link
+            href="/"
+            className="flex shrink-0 items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-4"
+          >
+            <SiteBrandLogo width={148} height={46} className="h-[40px] w-auto" />
           </Link>
 
-          {/* Center: Navigation (Desktop) */}
-          <nav className="hidden h-full items-center gap-1.5 lg:flex">
+          {/* Desktop navigation */}
+          <nav
+            onMouseLeave={close}
+            className="hidden items-center gap-0.5 lg:flex"
+          >
             {/* Our Services */}
             <div
-              className="relative flex h-full items-center"
-              onMouseEnter={() => setIsServicesOpen(true)}
-              onMouseLeave={() => setIsServicesOpen(false)}
+              className="relative flex h-16 items-center"
+              onMouseEnter={() => setHovered("services")}
             >
               <button
-                onClick={() => setIsServicesOpen(!isServicesOpen)}
-                className={navTrigger(isServicesOpen)}
+                onClick={() =>
+                  setHovered(hovered === "services" ? null : "services")
+                }
+                aria-expanded={hovered === "services"}
+                className="outline-none"
               >
-                <T>{"Our Services"}</T>
-                <Chevron open={isServicesOpen} />
+                <Trigger id="services" hovered={hovered} active={false}>
+                  <T>{"Our Services"}</T>
+                  <Chevron open={hovered === "services"} />
+                </Trigger>
               </button>
 
               <AnimatePresence>
-                {isServicesOpen && (
+                {hovered === "services" && (
                   <motion.div
-                    initial={{ opacity: 0, y: 8, x: "-50%" }}
-                    animate={{ opacity: 1, y: 0, x: "-50%" }}
-                    exit={{ opacity: 0, y: 6, x: "-50%" }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute left-1/2 top-full z-[1000] pt-2"
+                    {...dropdownMotion}
+                    className="absolute left-1/2 top-full z-[1000] pt-1"
                   >
-                    <div className="w-64 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-2xl shadow-slate-900/10">
+                    <div className="w-[17rem] rounded-[22px] border border-slate-200/80 bg-white/95 p-2 shadow-[0_30px_70px_-24px_rgba(30,41,99,0.4)] backdrop-blur-xl">
                       {serviceItems.map((item, index) => {
                         const Icon = item.icon;
                         return (
                           <Link
                             key={index}
                             href={item.href}
-                            onClick={() => setIsServicesOpen(false)}
-                            className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-semibold text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+                            onClick={close}
+                            className="group flex items-center gap-3 rounded-2xl px-2.5 py-2 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-slate-950"
                           >
-                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-blue-600 group-hover:text-white">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition duration-200 group-hover:bg-gradient-to-br group-hover:from-blue-600 group-hover:to-violet-600 group-hover:text-white group-hover:shadow-md group-hover:shadow-indigo-500/30">
                               <Icon size={16} />
                             </span>
-                            <span>
+                            <span className="flex-1">
                               <T>{item.label}</T>
                             </span>
+                            <ArrowRight
+                              size={14}
+                              className="-translate-x-1 text-indigo-500 opacity-0 transition duration-200 group-hover:translate-x-0 group-hover:opacity-100"
+                            />
                           </Link>
                         );
                       })}
@@ -430,71 +501,74 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
 
-            {/* Seba Lagbe Tools Mega Menu (positioned against the header, not the trigger) */}
+            {/* All Tools mega menu (anchored to the whole bar, not the trigger) */}
             <div
-              className="flex h-full items-center"
-              onMouseEnter={() => setIsToolsOpen(true)}
-              onMouseLeave={() => setIsToolsOpen(false)}
+              className="flex h-16 items-center"
+              onMouseEnter={() => setHovered("tools")}
             >
-              <Link
-                href="/tools"
-                onClick={() => setIsToolsOpen(false)}
-                className={navTrigger(isToolsOpen || toolsActive)}
-              >
-                <T>{"All Tools"}</T>
-                <Chevron open={isToolsOpen} />
+              <Link href="/tools" onClick={close} className="outline-none">
+                <Trigger
+                  id="tools"
+                  hovered={hovered}
+                  active={toolsActive}
+                >
+                  <T>{"All Tools"}</T>
+                  <Chevron open={hovered === "tools"} />
+                </Trigger>
               </Link>
 
               <AnimatePresence>
-                {isToolsOpen && (
+                {hovered === "tools" && (
                   <motion.div
-                    initial={{ opacity: 0, y: 8, x: "-50%" }}
-                    animate={{ opacity: 1, y: 0, x: "-50%" }}
-                    exit={{ opacity: 0, y: 6, x: "-50%" }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute left-1/2 top-full z-[1000] pt-2"
+                    {...dropdownMotion}
+                    className="absolute left-1/2 top-full z-[1000] pt-1"
                   >
-                    <div className="w-[min(1100px,calc(100vw-3rem))] rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl shadow-slate-900/10">
-                      <div className="grid grid-cols-3 gap-5 xl:grid-cols-5">
+                    <div className="w-[min(1120px,calc(100vw-3rem))] overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/95 shadow-[0_40px_90px_-30px_rgba(30,41,99,0.5)] backdrop-blur-xl">
+                      <div className="grid grid-cols-3 gap-x-4 gap-y-6 p-6 xl:grid-cols-5">
                         {sebaLagbeToolsCategories.map((cat, idx) => {
                           const CatIcon = cat.icon;
                           return (
-                            <div key={idx} className="flex flex-col gap-3">
-                              <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3">
+                            <div key={idx} className="flex flex-col gap-2.5">
+                              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
                                 <span
                                   className={`flex h-9 w-9 items-center justify-center rounded-xl ${cat.accent}`}
                                 >
-                                  <CatIcon size={18} />
+                                  <CatIcon size={17} />
                                 </span>
                                 <div className="flex flex-col leading-tight">
-                                  <span className="text-[13px] font-bold text-slate-900">
+                                  <span className="text-[13px] font-extrabold text-slate-900">
                                     <T>{cat.title}</T>
                                   </span>
-                                  <span className="text-[10px] font-semibold text-slate-400">
+                                  <span className="text-[10.5px] font-semibold text-slate-400">
                                     <T>{cat.count}</T>
                                   </span>
                                 </div>
                               </div>
 
-                              <div className="flex flex-col gap-0.5">
+                              <div className="flex flex-col">
                                 {cat.tools.map((tool, tIdx) => (
                                   <Link
                                     key={tIdx}
                                     href={tool.href}
-                                    onClick={() => setIsToolsOpen(false)}
-                                    className="truncate rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-slate-600 transition hover:bg-blue-50 hover:pl-3.5 hover:text-blue-700"
+                                    onClick={close}
+                                    className="group/t flex items-center justify-between truncate rounded-lg px-2 py-1.5 text-[12.5px] font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
                                   >
-                                    <T>{tool.name}</T>
+                                    <span className="truncate">
+                                      <T>{tool.name}</T>
+                                    </span>
+                                    <ArrowRight
+                                      size={12}
+                                      className="shrink-0 -translate-x-1 text-indigo-500 opacity-0 transition duration-200 group-hover/t:translate-x-0 group-hover/t:opacity-100"
+                                    />
                                   </Link>
                                 ))}
                                 {cat.moreText && (
                                   <Link
                                     href="/login?redirect=/sohoj-tools"
-                                    onClick={() => setIsToolsOpen(false)}
-                                    className="flex items-center gap-1 px-2.5 py-1 text-[12px] font-bold text-blue-600 hover:underline"
+                                    onClick={close}
+                                    className="px-2 py-1.5 text-[12px] font-bold text-indigo-600 hover:text-violet-700"
                                   >
                                     <T>{cat.moreText}</T>
-                                    <ArrowRight size={12} />
                                   </Link>
                                 )}
                               </div>
@@ -503,14 +577,20 @@ export default function Navbar() {
                         })}
                       </div>
 
-                      <div className="mt-5 flex items-center justify-between rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-50 px-5 py-3">
-                        <p className="text-xs font-semibold text-slate-600">
+                      {/* Footer band */}
+                      <div className="relative flex items-center justify-between overflow-hidden bg-slate-950 px-6 py-3.5">
+                        <span
+                          aria-hidden
+                          className="absolute -left-10 top-1/2 h-24 w-72 -translate-y-1/2 rounded-full bg-gradient-to-r from-blue-600/50 to-violet-600/40 blur-2xl"
+                        />
+                        <p className="relative flex items-center gap-2 text-xs font-semibold text-slate-200">
+                          <Sparkles size={14} className="text-violet-300" />
                           <T>{"30+ smart tools, one simple place."}</T>
                         </p>
                         <Link
                           href="/login?redirect=/sohoj-tools"
-                          onClick={() => setIsToolsOpen(false)}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
+                          onClick={close}
+                          className="relative inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-slate-900 transition hover:bg-indigo-50"
                         >
                           <T>{"View all tools"}</T>
                           <ArrowRight size={13} />
@@ -524,29 +604,27 @@ export default function Navbar() {
 
             {/* Important Links */}
             <div
-              className="relative flex h-full items-center"
-              onMouseEnter={() => setIsImportantOpen(true)}
-              onMouseLeave={() => setIsImportantOpen(false)}
+              className="relative flex h-16 items-center"
+              onMouseEnter={() => setHovered("important")}
             >
-              <Link
-                href="/dorkar-link"
-                onClick={() => setIsImportantOpen(false)}
-                className={navTrigger(isImportantOpen || importantActive)}
-              >
-                <T>{"Important Links"}</T>
-                <Chevron open={isImportantOpen} />
+              <Link href="/dorkar-link" onClick={close} className="outline-none">
+                <Trigger
+                  id="important"
+                  hovered={hovered}
+                  active={importantActive}
+                >
+                  <T>{"Important Links"}</T>
+                  <Chevron open={hovered === "important"} />
+                </Trigger>
               </Link>
 
               <AnimatePresence>
-                {isImportantOpen && (
+                {hovered === "important" && (
                   <motion.div
-                    initial={{ opacity: 0, y: 8, x: "-50%" }}
-                    animate={{ opacity: 1, y: 0, x: "-50%" }}
-                    exit={{ opacity: 0, y: 6, x: "-50%" }}
-                    transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute left-1/2 top-full z-[1000] pt-2"
+                    {...dropdownMotion}
+                    className="absolute left-1/2 top-full z-[1000] pt-1"
                   >
-                    <div className="flex w-[22rem] flex-col gap-0.5 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-2xl shadow-slate-900/10">
+                    <div className="flex w-[22rem] flex-col gap-0.5 rounded-[22px] border border-slate-200/80 bg-white/95 p-2 shadow-[0_30px_70px_-24px_rgba(30,41,99,0.4)] backdrop-blur-xl">
                       {importantLinksItems.map((item, index) => {
                         const isExternal =
                           !!item.href && item.href.startsWith("http");
@@ -559,31 +637,35 @@ export default function Navbar() {
                           return (
                             <div
                               key={index}
-                              className="group my-1 flex items-center justify-between rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-50 to-indigo-50 p-2.5"
+                              className="group relative my-1 flex items-center justify-between overflow-hidden rounded-2xl bg-slate-950 p-3"
                             >
-                              <div className="flex items-center gap-3">
-                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-indigo-500/25">
+                              <span
+                                aria-hidden
+                                className="absolute -right-6 -top-10 h-28 w-28 rounded-full bg-gradient-to-br from-blue-500/60 to-violet-500/50 blur-2xl"
+                              />
+                              <div className="relative flex items-center gap-3">
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 text-white shadow-lg shadow-indigo-500/40">
                                   <Gift size={17} />
                                 </div>
                                 <div className="flex flex-col">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-[13px] font-bold text-slate-900">
+                                    <span className="text-[13px] font-bold text-white">
                                       <T>{item.title}</T>
                                     </span>
                                     {item.isNew && (
-                                      <span className="rounded-md bg-blue-600 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
+                                      <span className="rounded-md bg-gradient-to-r from-blue-500 to-violet-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
                                         <T>{"NEW"}</T>
                                       </span>
                                     )}
                                   </div>
-                                  <span className="text-[11px] font-medium text-slate-500">
+                                  <span className="text-[11px] font-medium text-slate-400">
                                     <T>{item.subtitle}</T>
                                   </span>
                                 </div>
                               </div>
                               <ArrowRight
                                 size={15}
-                                className="shrink-0 text-blue-600 transition-transform group-hover:translate-x-0.5"
+                                className="relative shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5"
                               />
                             </div>
                           );
@@ -596,11 +678,11 @@ export default function Navbar() {
                             key={index}
                             href={item.href}
                             {...ext}
-                            onClick={() => setIsImportantOpen(false)}
-                            className="group flex items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-slate-50"
+                            onClick={close}
+                            className="group flex items-center justify-between rounded-2xl px-3 py-2.5 transition hover:bg-slate-50"
                           >
                             <div className="flex flex-col">
-                              <span className="text-[13px] font-bold text-slate-800 group-hover:text-blue-700">
+                              <span className="text-[13px] font-bold text-slate-800 group-hover:text-slate-950">
                                 <T>{item.title}</T>
                               </span>
                               <span className="text-[11px] font-medium text-slate-400">
@@ -627,46 +709,62 @@ export default function Navbar() {
 
             <Link
               href="/pricing"
-              className={navTrigger(pathname.startsWith("/pricing"))}
+              onMouseEnter={() => setHovered("pricing")}
+              className="flex h-16 items-center outline-none"
             >
-              <T>{"Package"}</T>
+              <Trigger id="pricing" hovered={hovered} active={pricingActive}>
+                <T>{"Package"}</T>
+              </Trigger>
             </Link>
 
             <Link
               href="/reviews"
-              className={`${navTrigger(pathname.startsWith("/reviews"))} gap-1`}
+              onMouseEnter={() => setHovered("reviews")}
+              className="flex h-16 items-center outline-none"
             >
-              <span>
-                <T>{"5"}</T>
-              </span>
-              <Star size={13} className="fill-amber-400 text-amber-400" />
-              <span>
-                <T>{"Review"}</T>
-              </span>
+              <Trigger id="reviews" hovered={hovered} active={reviewsActive}>
+                <span>
+                  <T>{"5"}</T>
+                </span>
+                <Star size={13} className="fill-amber-400 text-amber-400" />
+                <span>
+                  <T>{"Review"}</T>
+                </span>
+              </Trigger>
             </Link>
           </nav>
 
-          {/* Right: Language, Login, Hamburger */}
+          {/* Right cluster */}
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <LanguageToggle
               layoutId="lang-pill-desktop"
               className="hidden sm:flex"
             />
 
-            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+            <motion.div whileTap={{ scale: 0.97 }}>
               <Link
                 href="/login"
-                className="flex h-10 items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-4 text-xs font-bold tracking-wide text-white shadow-md shadow-indigo-500/25 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/35 sm:gap-2 sm:px-6 sm:text-[13px]"
+                className="group relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-full bg-slate-950 px-5 text-[13px] font-bold tracking-wide text-white shadow-[0_10px_24px_-10px_rgba(30,27,75,0.7)] ring-1 ring-white/10 transition duration-300 hover:shadow-[0_14px_30px_-10px_rgba(79,70,229,0.75)] sm:px-6"
               >
-                <LogIn size={16} strokeWidth={2.2} />
-                <T>{"Login"}</T>
+                <span
+                  aria-hidden
+                  className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                />
+                <span
+                  aria-hidden
+                  className="absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-[420%]"
+                />
+                <LogIn size={16} strokeWidth={2.2} className="relative" />
+                <span className="relative">
+                  <T>{"Login"}</T>
+                </span>
               </Link>
             </motion.div>
 
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setIsMobileMenuOpen(true)}
-              className="cursor-pointer rounded-xl border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 lg:hidden"
+              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 lg:hidden"
               aria-label={t("Open Mobile Menu")}
             >
               <Menu size={20} />

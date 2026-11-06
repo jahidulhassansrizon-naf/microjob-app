@@ -29,9 +29,9 @@ function OfficeContact({
   if (rows.length === 0) return null;
 
   return (
-    <div className="w-full max-w-sm overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+    <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] shadow-[0_20px_50px_-30px_rgba(0,0,0,0.8)] backdrop-blur-xl">
       <div className="flex items-center gap-2.5 border-b border-white/10 px-4 py-2.5">
-        <span aria-hidden className="h-4 w-1 rounded-full bg-sky-400" />
+        <span aria-hidden className="h-4 w-1 rounded-full bg-gradient-to-b from-blue-400 to-fuchsia-400" />
         <span className="text-sm font-semibold text-white">
           <T>{"Office"}</T>
         </span>
@@ -39,7 +39,7 @@ function OfficeContact({
       <ul className="space-y-2.5 px-4 py-3.5">
         {rows.map(({ icon: RowIcon, value, href }, i) => (
           <li key={`${value}-${i}`} className="flex items-start gap-2.5 text-[13px] leading-snug text-slate-200">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-sky-400/10 text-sky-300">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/25 to-fuchsia-500/20 text-indigo-200 ring-1 ring-white/10">
               <RowIcon size={13} />
             </span>
             {href ? (
@@ -58,7 +58,7 @@ function OfficeContact({
 
 function SecureBadge() {
   return (
-    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 ring-1 ring-emerald-400/25">
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 ring-1 ring-emerald-400/25">
       <svg viewBox="0 0 32 32" className="h-6 w-6" fill="none" aria-hidden>
         <defs>
           <linearGradient id="secureShieldFill" x1="16" y1="3" x2="16" y2="29" gradientUnits="userSpaceOnUse">
@@ -146,21 +146,21 @@ export default function Footer() {
 
   // Link style: a small gradient dash slides in on hover
   const linkClass =
-    "group inline-flex cursor-pointer items-center text-[13px] text-slate-300/75 transition-all duration-300 hover:text-white";
+    "group inline-flex cursor-pointer items-center text-[13px] text-slate-400 transition-all duration-300 hover:text-white";
 
   const Dash = () => (
     <span
       aria-hidden
-      className="mr-0 h-[2px] w-0 rounded-full bg-sky-400 transition-all duration-300 group-hover:mr-2.5 group-hover:w-3.5"
+      className="mr-0 h-[2px] w-0 rounded-full bg-gradient-to-r from-blue-400 to-fuchsia-400 transition-all duration-300 group-hover:mr-2.5 group-hover:w-3.5"
     />
   );
 
-  const columnTitle = "mb-4 flex items-center gap-2.5 text-sm font-semibold text-white";
+  const columnTitle = "mb-5 flex items-center gap-2.5 text-sm font-extrabold tracking-tight text-white";
 
   const TitleBar = () => (
     <span
       aria-hidden
-      className="h-4 w-1 rounded-full bg-sky-400"
+      className="h-4 w-1 rounded-full bg-gradient-to-b from-blue-400 to-fuchsia-400"
     />
   );
 
@@ -176,11 +176,24 @@ export default function Footer() {
   };
 
   return (
-    <footer className="navbar-font relative isolate overflow-hidden border-t border-white/10 bg-[#0c1220] text-slate-300">
+    <footer className="navbar-font relative isolate overflow-hidden bg-slate-950 text-slate-300">
+      {/* top gradient hairline + aurora glows */}
+      <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-400/60 to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-40 left-[8%] h-80 w-[34rem] rounded-full bg-gradient-to-r from-blue-600/25 to-indigo-600/20 blur-3xl" />
+        <div className="absolute -top-32 right-[4%] h-72 w-[30rem] rounded-full bg-gradient-to-l from-fuchsia-600/20 to-violet-600/20 blur-3xl" />
+        <div className="absolute inset-0 [background-image:linear-gradient(to_right,rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.035)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(ellipse_80%_55%_at_50%_0%,#000_20%,transparent_100%)]" />
+      </div>
+      {/* giant brand watermark */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 select-none overflow-hidden text-center">
+        <span className="block translate-y-[28%] whitespace-nowrap bg-gradient-to-b from-white/[0.08] to-transparent bg-clip-text text-[19vw] font-black leading-none tracking-[-0.06em] text-transparent">
+          {settings.branding.siteName}
+        </span>
+      </div>
 
-      <div className="relative mx-auto max-w-[1400px] px-4 pb-5 pt-10 sm:px-6 md:px-12">
+      <div className="relative mx-auto max-w-[1400px] px-4 pb-6 pt-16 sm:px-6 md:px-12">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 gap-8 pb-8 md:grid-cols-2 lg:grid-cols-5 lg:gap-8">
+        <div className="grid grid-cols-1 gap-8 pb-8 md:grid-cols-2 lg:grid-cols-5 lg:gap-10">
           {/* Column 1: Logo & Contact Info */}
           <div className="space-y-4 pr-4 lg:col-span-2">
             <Link href="/" className="flex w-fit items-center">
@@ -298,7 +311,7 @@ export default function Footer() {
         </div>
 
         {/* Payment methods: compact, badge + title left, image right */}
-        <div className="mb-6 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 sm:px-6">
+        <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 backdrop-blur-xl sm:px-6">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <div className="flex items-center gap-3">
               <SecureBadge />
@@ -325,7 +338,7 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar: Copyright & Socials */}
-        <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-5 text-xs text-slate-400 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs text-slate-400 sm:flex-row">
           <p>
             <>© {new Date().getFullYear()} {settings.branding.siteName}. {settings.footer.copyrightText}</>
           </p>
@@ -345,7 +358,7 @@ export default function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={s.label}
-                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-slate-300 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-transparent hover:bg-sky-500 hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-slate-300 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-transparent hover:bg-gradient-to-br hover:from-blue-500 hover:to-fuchsia-500 hover:text-white hover:shadow-lg hover:shadow-indigo-500/30"
               >
                 <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
                   <path d={s.path} />
