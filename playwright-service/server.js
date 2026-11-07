@@ -594,6 +594,10 @@ function readIntEnv(name, fallback, min, max) {
   return Math.min(max, Math.max(min, parsed));
 }
 
+// Jobs that start on the same session are spaced this far apart (ms), so one
+// account never opens many Gemini pages in the very same moment.
+const SESSION_START_STAGGER_MS = readIntEnv("SESSION_START_STAGGER_MS", 1000, 0, 10_000);
+
 // Total number of Gemini jobs allowed at the same moment (the machine limit:
 // about 20 headless Chromium pages fit on a 4 vCPU / 16 GB GitHub runner).
 const MAX_CONCURRENT_GENERATIONS = readIntEnv("MAX_CONCURRENT_GENERATIONS", 20, 1, 200);
@@ -933,9 +937,29 @@ async function runGenerationJob(res, work) {
   }
 }
 
+// Last few failures, shown on /health so a failed load test can be explained
+// without opening the GitHub log. Only the short message is kept (no page URLs).
+const recentErrors = [];
+
+function noteRecentError(label, error) {
+  const message = (error instanceof Error ? error.message : String(error))
+    .replace(/\s+/g, " ")
+    .slice(0, 300);
+
+  recentErrors.push({ at: new Date().toISOString(), label, message });
+
+  while (recentErrors.length > 8) {
+    recentErrors.shift();
+  }
+}
+
 function sendGenerationError(res, error, label) {
   const statusCode =
     error && typeof error.statusCode === "number" ? error.statusCode : 500;
+
+  if (statusCode !== 499) {
+    noteRecentError(label, error);
+  }
 
   if (statusCode === 499) {
     console.log(`${label}: client disconnected, job cancelled.`);
@@ -1779,6 +1803,7 @@ app.get("/health", (req, res) => {
     perSessionConcurrency: perSessionLimit(),
     maxJobRetries: MAX_JOB_RETRIES,
     stats,
+    recentErrors,
     sessions: listSessions().map((x) => ({
       slot: x.slot,
       active: sessionActive[x.slot] || 0,
