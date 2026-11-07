@@ -494,6 +494,11 @@ export async function POST(req: Request) {
       {
         success: false,
         error: getErrorMessage(error),
+        // The page uses this to decide whether one quiet automatic retry makes sense.
+        retryAfter:
+          error instanceof ServiceError && error.retryAfter
+            ? error.retryAfter
+            : undefined,
       },
       { status, headers },
     );

@@ -377,7 +377,7 @@ function requireApiKey(req, res, next) {
 // Files: gemini-session-1.json, gemini-session-2.json, gemini-session-3.json
 // (the old single gemini-session.json still works as slot 1).
 // Jobs are spread over all sessions (least busy first, max
-// PER_SESSION_CONCURRENCY each). When Gemini says "limit resets at ...",
+// the per-session limit each). When Gemini says "limit resets at ...",
 // that session is parked until the reset time and the SAME job is
 // retried on the next session. The parked state is saved to
 // session-limits.json so a server restart does not forget it.
@@ -594,23 +594,68 @@ function readIntEnv(name, fallback, min, max) {
   return Math.min(max, Math.max(min, parsed));
 }
 
-// Each Gemini account (session) runs at most this many jobs at the same time.
-// 5 per account was tested and works; 15 on one account made Google block it.
-const PER_SESSION_CONCURRENCY = readIntEnv("PER_SESSION_CONCURRENCY", 5, 1, 20);
+// Total number of Gemini jobs allowed at the same moment (the machine limit:
+// about 20 headless Chromium pages fit on a 4 vCPU / 16 GB GitHub runner).
+const MAX_CONCURRENT_GENERATIONS = readIntEnv("MAX_CONCURRENT_GENERATIONS", 20, 1, 200);
 
-// Jobs that start on the same session are spaced this far apart (ms), so one
-// account never opens many Gemini pages in the very same moment.
-const SESSION_START_STAGGER_MS = readIntEnv("SESSION_START_STAGGER_MS", 1000, 0, 10_000);
+// Highest number of jobs one Google account may run at once. 5 per account was
+// tested and works; 15 on one account made Google block it.
+const PER_SESSION_HARD_MAX = readIntEnv("PER_SESSION_MAX", 5, 1, 20);
 
-// Total jobs at once = PER_SESSION_CONCURRENCY x number of sessions
-// (4 sessions x 5 = 20). Set MAX_CONCURRENT_GENERATIONS only if you want
-// a lower or different total.
-const MAX_CONCURRENT_GENERATIONS = readIntEnv(
-  "MAX_CONCURRENT_GENERATIONS",
-  PER_SESSION_CONCURRENCY * Math.max(1, listSessions().length),
-  1,
-  200,
-);
+// PER_SESSION_CONCURRENCY is optional. If it is NOT set, the limit per account is
+// worked out automatically from the number of session files:
+//   4 sessions  -> 20 / 4  = 5 each
+//   10 sessions -> 20 / 10 = 2 each
+// so adding a session file spreads the same total load over more accounts.
+const PER_SESSION_FIXED = readIntEnv("PER_SESSION_CONCURRENCY", 0, 0, 20);
+
+function perSessionLimit() {
+  if (PER_SESSION_FIXED > 0) {
+    return PER_SESSION_FIXED;
+  }
+
+  const count = Math.max(1, listSessions().length);
+
+  return Math.min(
+    PER_SESSION_HARD_MAX,
+    Math.max(1, Math.ceil(MAX_CONCURRENT_GENERATIONS / count)),
+  );
+}
+
+// How many jobs may run right now: only sessions that are not parked / logged
+// out count, and never more than MAX_CONCURRENT_GENERATIONS. This stops the bot
+// from accepting 20 jobs when only 3 sessions work (and leaving 5 stuck).
+function currentCapacity() {
+  const usable = listSessions().filter(isSessionUsable).length;
+
+  if (usable === 0) {
+    return MAX_CONCURRENT_GENERATIONS;
+  }
+
+  return Math.max(
+    1,
+    Math.min(MAX_CONCURRENT_GENERATIONS, usable * perSessionLimit()),
+  );
+}
+
+// How many times one job may be tried again on ANOTHER session after Gemini
+// refuses it or it times out (each retry only if enough job time is left).
+const MAX_JOB_RETRIES = readIntEnv("MAX_JOB_RETRIES", 2, 0, 5);
+const RETRY_MIN_REMAINING_MS = readIntEnv("RETRY_MIN_REMAINING_MS", 80_000, 0, 600_000);
+
+// Counters shown on /health so a load test shows WHY jobs failed.
+const stats = {
+  jobs: 0,
+  jobsOk: 0,
+  jobsFailed: 0,
+  retries: 0,
+  attemptsRefused: 0,
+  attemptsTimedOut: 0,
+  limitHits: 0,
+  loggedOutSessions: 0,
+  otherErrors: 0,
+};
+
 const MAX_QUEUE_LENGTH = readIntEnv("MAX_QUEUE_LENGTH", 100, 0, 1000);
 const QUEUE_WAIT_TIMEOUT_MS = readIntEnv(
   "QUEUE_WAIT_TIMEOUT_MS",
@@ -710,7 +755,7 @@ function acquireSlot(signal) {
       return reject(abortReason(signal));
     }
 
-    if (activeJobs < MAX_CONCURRENT_GENERATIONS) {
+    if (activeJobs < currentCapacity()) {
       activeJobs += 1;
       return resolve();
     }
@@ -749,23 +794,29 @@ function acquireSlot(signal) {
   });
 }
 
-function releaseSlot() {
-  const next = waitingJobs.shift();
+// Lets waiting requests in while there is free capacity. Capacity changes
+// when a session gets parked or comes back, so this also runs on a timer.
+function pumpWaiters() {
+  while (waitingJobs.length > 0 && activeJobs < currentCapacity()) {
+    const next = waitingJobs[0];
 
-  if (next) {
-    // Hand the slot straight to the next person in line.
-    clearTimeout(next.timer);
-    next.signal.removeEventListener("abort", next.onAbort);
+    removeWaiter(next);
+    activeJobs += 1;
     next.resolve();
-    return;
   }
+}
 
+function releaseSlot() {
   activeJobs = Math.max(0, activeJobs - 1);
+
+  pumpWaiters();
 
   if (activeJobs === 0) {
     recycleBrowserIfIdle().catch(() => {});
   }
 }
+
+setInterval(pumpWaiters, 2000).unref();
 
 // --------------------------------------------------
 // Keep-alive (stops Cloudflare 524 on long jobs)
@@ -865,6 +916,8 @@ async function runGenerationJob(res, work) {
         ),
       );
     }, GENERATION_TIMEOUT_MS);
+
+    controller.signal.deadlineAt = Date.now() + GENERATION_TIMEOUT_MS;
 
     throwIfAborted(controller.signal);
 
@@ -1416,13 +1469,14 @@ async function throwIfLimitShown(page) {
 const sessionActive = {};
 const sessionNextStartAt = {};
 
-// Picks the current session; if it is full (PER_SESSION_CONCURRENCY jobs),
-// the job goes to the next usable session (so 20 jobs at the same moment
-// spread 5 / 5 / 5 / 5 over 4 sessions, but 3 jobs all stay on one session).
+// Picks the least busy usable session (so 20 jobs at the same moment spread
+// 5 / 5 / 5 / 5 over 4 sessions, and 3 jobs go to 3 different sessions).
 // If every usable session is full, the job waits here until one is free.
 // The chosen session is counted as busy BEFORE this function returns, so two
 // jobs can never pick the same last free place.
 // Returns null when no usable session is left (all parked / already tried).
+const sessionLastClaimAt = {};
+
 async function claimSession(signal, triedSlots, forceSlot = 0) {
   while (true) {
     throwIfAborted(signal);
@@ -1439,28 +1493,23 @@ async function claimSession(signal, triedSlots, forceSlot = 0) {
       return null;
     }
 
-    // Stay on the "current" session. Only when it already has
-    // PER_SESSION_CONCURRENCY jobs running, the extra jobs spill over to the
-    // next session (in order), and so on. A session that ran out of limit is
-    // parked, so the pointer moves on to the next one by itself.
-    const allSessions = listSessions();
-    const currentSlot = getCurrentSlot(allSessions);
-    const candidateSlots = new Set(candidates.map((s) => s.slot));
-    const ordered = circularFrom(allSessions, currentSlot).filter((s) =>
-      candidateSlots.has(s.slot),
-    );
+    // Least busy session first, so jobs spread evenly over all accounts.
+    // On a tie, the session that was used longest ago goes first (round robin).
+    const limit = perSessionLimit();
+    const free = candidates
+      .filter((s) => (sessionActive[s.slot] || 0) < limit)
+      .sort(
+        (a, b) =>
+          (sessionActive[a.slot] || 0) - (sessionActive[b.slot] || 0) ||
+          (sessionLastClaimAt[a.slot] || 0) - (sessionLastClaimAt[b.slot] || 0) ||
+          a.slot - b.slot,
+      );
 
-    // The first usable session is the new "current" one (this skips parked ones).
-    if (!forceSlot && ordered[0].slot !== currentSlot) {
-      setCurrentSlot(ordered[0].slot);
-    }
-
-    const best = ordered.find(
-      (s) => (sessionActive[s.slot] || 0) < PER_SESSION_CONCURRENCY,
-    );
+    const best = free[0];
 
     if (best) {
       sessionActive[best.slot] = (sessionActive[best.slot] || 0) + 1;
+      sessionLastClaimAt[best.slot] = Date.now();
       return best;
     }
 
@@ -1487,10 +1536,46 @@ async function waitForStartTurn(slot, signal) {
   throwIfAborted(signal);
 }
 
+// Is this a failure worth trying again on another session?
+function retryKind(error) {
+  if (error instanceof GeminiRefusedError) {
+    return "refused";
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (
+    /Timed out waiting for the generated image|returned an empty image/i.test(message) ||
+    (error && error.name === "TimeoutError") ||
+    /Timeout \d+ms exceeded/i.test(message)
+  ) {
+    return "timeout";
+  }
+
+  return "";
+}
+
 // Spreads jobs over all sessions (least busy first). When a session says its
-// limit is reached, the SAME job moves to another session. The user only sees
-// an error if every session is out of limit (or missing).
+// limit is reached, the SAME job moves to another session. When Gemini refuses
+// the image or the attempt times out, the job is tried again on a different
+// session (up to MAX_JOB_RETRIES times, only if enough job time is left).
+// The user only sees an error if every attempt fails.
 async function runGeminiGeneration(options) {
+  stats.jobs += 1;
+
+  try {
+    const result = await runGeminiGenerationInner(options);
+    stats.jobsOk += 1;
+    return result;
+  } catch (error) {
+    if (!(error && error.statusCode === 499)) {
+      stats.jobsFailed += 1;
+    }
+    throw error;
+  }
+}
+
+async function runGeminiGenerationInner(options) {
   if (listSessions().length === 0) {
     throw new Error("Session file not found on server.");
   }
@@ -1499,6 +1584,8 @@ async function runGeminiGeneration(options) {
   const triedSlots = new Set();
   let triedAny = false;
   let transientRetried = false;
+  let retriesUsed = 0;
+  let lastRetryableError = null;
 
   while (true) {
     const session = await claimSession(
@@ -1518,7 +1605,7 @@ async function runGeminiGeneration(options) {
       await waitForStartTurn(session.slot, options.signal);
 
       console.log(
-        `Using Gemini session ${session.slot} (${sessionActive[session.slot]}/${PER_SESSION_CONCURRENCY} busy).`,
+        `Using Gemini session ${session.slot} (${sessionActive[session.slot]}/${perSessionLimit()} busy).`,
       );
 
       return await runGeminiWithSession({
@@ -1527,17 +1614,15 @@ async function runGeminiGeneration(options) {
         slot: session.slot,
       });
     } catch (error) {
+      if (options.signal && options.signal.aborted) {
+        throw abortReason(options.signal);
+      }
+
       if (error instanceof GeminiLimitError) {
+        stats.limitHits += 1;
         markSessionLimited(session.slot, error.resetAt);
         console.log(`Session ${session.slot} is out of limit, moving to the next one...`);
         continue;
-      }
-
-      if (error instanceof GeminiRefusedError) {
-        console.log(
-          `Session ${session.slot}: Gemini refused this image ("hard time fulfilling your request"). Asking the visitor to retry.`,
-        );
-        throw error;
       }
 
       const failMessage =
@@ -1547,6 +1632,7 @@ async function runGeminiGeneration(options) {
       // Logged-out / expired session: skip it for 6 hours and try the next one,
       // so one dead account never blocks the others.
       if (/signInVisible: true|accounts\.google\.com/i.test(failMessage)) {
+        stats.loggedOutSessions += 1;
         limitState[session.slot] = Date.now() + 6 * 60 * 60 * 1000;
         saveLimitState();
         console.log(
@@ -1569,6 +1655,33 @@ async function runGeminiGeneration(options) {
         continue;
       }
 
+      // Gemini refused the image or the attempt timed out: try another session.
+      const kind = retryKind(error);
+
+      if (kind) {
+        if (kind === "refused") stats.attemptsRefused += 1;
+        else stats.attemptsTimedOut += 1;
+
+        const deadlineAt = options.signal && options.signal.deadlineAt;
+        const remainingMs = deadlineAt ? deadlineAt - Date.now() : Infinity;
+
+        if (retriesUsed < MAX_JOB_RETRIES && remainingMs >= RETRY_MIN_REMAINING_MS) {
+          retriesUsed += 1;
+          stats.retries += 1;
+          lastRetryableError = error;
+          console.log(
+            `Session ${session.slot}: ${kind}. Retry ${retriesUsed}/${MAX_JOB_RETRIES} on another session (${Math.round(remainingMs / 1000)}s of job time left)...`,
+          );
+          continue;
+        }
+
+        console.log(
+          `Session ${session.slot}: ${kind}. No more retries (used ${retriesUsed}/${MAX_JOB_RETRIES}).`,
+        );
+        throw error;
+      }
+
+      stats.otherErrors += 1;
       console.log(
         `Session ${session.slot} failed (not a limit message): ${failMessage}`,
       );
@@ -1577,6 +1690,11 @@ async function runGeminiGeneration(options) {
       // Always give the place on this session back (success, error or retry).
       releaseSession(session.slot);
     }
+  }
+
+  // No other session left to retry on: report the real failure, not "out of limit".
+  if (lastRetryableError) {
+    throw lastRetryableError;
   }
 
   // Every session is parked or just hit its limit.
@@ -1655,10 +1773,12 @@ app.get("/health", (req, res) => {
       active: activeJobs,
       waiting: waitingJobs.length,
       maxConcurrent: MAX_CONCURRENT_GENERATIONS,
+      currentCapacity: currentCapacity(),
       maxQueue: MAX_QUEUE_LENGTH,
     },
-    currentSession: Number(limitState.current) || null,
-    perSessionConcurrency: PER_SESSION_CONCURRENCY,
+    perSessionConcurrency: perSessionLimit(),
+    maxJobRetries: MAX_JOB_RETRIES,
+    stats,
     sessions: listSessions().map((x) => ({
       slot: x.slot,
       active: sessionActive[x.slot] || 0,
@@ -2085,10 +2205,10 @@ app.post(
 const server = app.listen(PORT, "127.0.0.1", async () => {
   console.log(`Node API running on internal port ${PORT}`);
   console.log(
-    `Generation limits: ${MAX_CONCURRENT_GENERATIONS} at once, ${MAX_QUEUE_LENGTH} waiting.`,
+    `Generation limits: up to ${MAX_CONCURRENT_GENERATIONS} at once, ${MAX_QUEUE_LENGTH} waiting.`,
   );
   console.log(
-    `Sessions found: ${listSessions().length} (max ${PER_SESSION_CONCURRENCY} jobs per session, ${SESSION_START_STAGGER_MS}ms start spacing).`,
+    `Sessions found: ${listSessions().length} (${perSessionLimit()} jobs per session, capacity now ${currentCapacity()}, up to ${MAX_JOB_RETRIES} retries per job, ${SESSION_START_STAGGER_MS}ms start spacing).`,
   );
 
   sweepStaleTempDirs().catch(() => {});

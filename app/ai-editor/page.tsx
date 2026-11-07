@@ -1389,7 +1389,11 @@ export default function PhotoEditorPage() {
         let normalized: Awaited<ReturnType<typeof normalizeImageToExactPhysicalSize>> | null = null;
         const formData = new FormData();
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 180000);
+        // The bot can queue a request (up to ~200s when many people generate at once)
+        // and may retry on another Gemini account, so wait up to 5 minutes.
+        const GENERATE_TIMEOUT_MS = 300000;
+        const generateStartedAt = Date.now();
+        const timeoutId = window.setTimeout(() => controller.abort(), GENERATE_TIMEOUT_MS);
 
         try {
             prompt = `${QUALITY_PREFIX}\n\n${buildAiEditingPrompt(payload)}\n\n${QUALITY_SUFFIX}`;
@@ -1413,13 +1417,33 @@ export default function PhotoEditorPage() {
             }
             formData.append("prompt", prompt);
 
-            const response = await fetch("/api/image-generate", {
-                method: "POST",
-                body: formData,
-                signal: controller.signal,
-                cache: "no-store",
-            });
-            result = await response.json().catch(() => null);
+            let response: Response;
+            let autoRetried = false;
+            while (true) {
+                response = await fetch("/api/image-generate", {
+                    method: "POST",
+                    body: formData,
+                    signal: controller.signal,
+                    cache: "no-store",
+                });
+                result = await response.json().catch(() => null);
+                // One quiet automatic retry for temporary failures (bot busy, gateway timeout).
+                // Not for "Gemini could not make this image" (422): the bot already tried
+                // other accounts for that. Not when the subscription is
+                // missing, when the bot says to wait long, or when a lot of time is already used.
+                const retryAfterSeconds = Number(result?.retryAfter) || Number(response.headers.get("retry-after")) || 0;
+                const canRetry = !response.ok &&
+                    [502, 503, 504].includes(response.status) &&
+                    result?.code !== "SUBSCRIPTION_REQUIRED" &&
+                    retryAfterSeconds <= 30 &&
+                    Date.now() - generateStartedAt < 150000;
+                if (canRetry && !autoRetried) {
+                    autoRetried = true;
+                    await new Promise((resolve) => window.setTimeout(resolve, 3000));
+                    continue;
+                }
+                break;
+            }
             if (!response.ok || !result?.success || typeof result.image !== "string") {
                 if (response.status === 403 && result?.code === "SUBSCRIPTION_REQUIRED") {
                     window.dispatchEvent(new Event("sohozkaj:subscription-required"));
