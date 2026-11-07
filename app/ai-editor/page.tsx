@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import SubscriptionLock from "./_components/SubscriptionLock";
 import GenerationSettings from "./_components/GenerationSettings";
-import { buildSkinToneRule, buildStandardFinishRule, KEEP_SKIN_COLOR_RETOUCH_RULE, planEditingGuides, TIE_COLORS, TIE_STYLES } from "./_components/editingGuides";
+import { buildExpressionRule, buildSkinToneRule, buildStandardFinishRule, expressionChangesFace, KEEP_SKIN_COLOR_RETOUCH_RULE, planEditingGuides, TIE_COLORS, TIE_STYLES } from "./_components/editingGuides";
 import PhotoPreviewArea from "./_components/PhotoPreviewArea";
 import QrCodeSidebar from "./_components/QrCodeSidebar";
 import PhotoSetupWizard, { type WizardResult } from "./_components/PhotoSetupWizard";
@@ -1117,10 +1117,11 @@ export default function PhotoEditorPage() {
             "INPUTS: The FIRST attached photo shows Person A, who must appear on the LEFT side of the final image. The SECOND attached photo shows Person B, who must appear on the RIGHT side. Each attached photo contains exactly one person. Use each person's own photo as the one and only reference for that person's face.",
             "OUTPUT: Return exactly ONE image. It is a single photograph of both people sitting side by side in the same frame, as if one camera took one shot of them posing together. It is NOT a collage, NOT a split screen, NOT two separate photos placed next to each other, and has no divider, gap, border, frame, or line between them. Never return the attached photos unchanged.",
             "CANVAS: landscape, aspect ratio exactly 90:55 (about 1.64 : 1). The backdrop must fill the ENTIRE canvas edge to edge. No white, black, or colored bars, margins, strips, or letterboxing at the top, bottom, or sides.",
-            "IDENTITY LOCK (highest priority for face structure): Each person's face must remain exactly the same real person. Keep the exact face shape, jaw, cheeks, forehead, eyes and eye shape, nose, lips, teeth, ears, moles, scars, birthmarks and apparent age. Also keep the eyebrows, facial hair, hairline and hairstyle (unless an eyebrow, beard/facial-hair, hair style or hair color edit is requested below; if one is requested, apply it fully to the person it is meant for). Do NOT slim, enlarge, age, reshape, or re-draw any face. Do NOT average, blend, or swap features between the two people. Do NOT create a generic or idealized face. If you must choose between a nicer-looking result and a different face, choose the identical face structure. Both faces must be clearly recognizable as the people in their own photos. (Skin cleanliness and brightness are improved separately, see SKIN RETOUCH.)",
-            `${skinRule} Apply this to BOTH people, keeping each person's own natural skin color exactly (never copy one person's skin color onto the other), with the same level of cleanliness, so the two people look consistent side by side.`,
+            `IDENTITY LOCK (highest priority for face structure): Each person's face must remain exactly the same real person. Keep the exact face shape, jaw, cheeks, forehead, eyes and eye shape, nose, lips, teeth, ears, moles, scars, birthmarks and apparent age. Also keep the eyebrows, facial hair, hairline and hairstyle (unless an eyebrow, beard/facial-hair, hair style or hair color edit is requested below; if one is requested, apply it fully to the person it is meant for). Do NOT slim, enlarge, age, reshape, or re-draw any face. Do NOT average, blend, or swap features between the two people. Do NOT create a generic or idealized face. If you must choose between a nicer-looking result and a different face, choose the identical face structure. Both faces must be clearly recognizable as the people in their own photos. (Skin cleanliness and brightness are improved separately, see SKIN RETOUCH.)${plan.expression && expressionChangesFace(plan.expression) ? " The only exception is the facial expression, which follows the EXPRESSION rule." : ""}`,
+            `${skinRule} ${plan.skinTone ? "Apply this chosen skin color to BOTH people, with the same level of cleanliness, so the two people look consistent side by side." : "Apply this to BOTH people, keeping each person's own natural skin color exactly (never copy one person's skin color onto the other), with the same level of cleanliness, so the two people look consistent side by side."}`,
+            ...(plan.expression ? [`${buildExpressionRule(plan.expression)} Apply this expression to BOTH people.`] : []),
             `${buildStandardFinishRule(plan, { sized: true })} Apply this to BOTH people.`,
-            "POSE AND CAMERA: classic passport-studio pose for BOTH people. Sitting upright with straight backs, shoulders square to the camera and level, necks long and relaxed, heads perfectly straight with no tilt, turn, or lean, chin level, eyes open and looking directly into the lens, natural neutral expression with the mouth closed (a very slight natural smile at most). If a person's original photo is tilted, turned, or leaning, re-pose only the head and body to face the camera straight while keeping the face identical. The camera is at eye level, shot with a long portrait lens (about 85mm equivalent), no wide-angle distortion.",
+            `POSE AND CAMERA: classic passport-studio pose for BOTH people. Sitting upright with straight backs, shoulders square to the camera and level, necks long and relaxed, heads perfectly straight with no tilt, turn, or lean, chin level, eyes open and looking directly into the lens, ${plan.expression ? "with the expression described in the EXPRESSION rule" : "natural neutral expression with the mouth closed (a very slight natural smile at most)"}. If a person's original photo is tilted, turned, or leaning, re-pose only the head and body to face the camera straight while keeping the face identical. The camera is at eye level, shot with a long portrait lens (about 85mm equivalent), no wide-angle distortion.`,
             "FRAMING: Person A is centered in the left half and Person B is centered in the right half, sitting close together so their shoulders almost touch (a very slight overlap of shoulders is fine) with no faces overlapping or hidden. Both people are at exactly the same scale, with their eyes on the same horizontal line and the tops of their heads at the same height, with a small even headroom above. Show each person from the top of the head down to the upper chest. Both are fully inside the frame with nothing cut off.",
             backgroundRule,
             "LIGHTING: soft, even, frontal studio lighting on both faces, identical color temperature and exposure for both people, no harsh shadows on faces, no shadow cast on the backdrop, no color cast. Clean, bright, natural-looking skin, sharp focus, realistic DSLR photo quality.",
@@ -1202,7 +1203,8 @@ export default function PhotoEditorPage() {
                 : hasSelectedPhotoSize
                     ? "Edit the provided portrait photo for a professional ID/passport-style result."
                     : "Edit the provided image naturally, preserving its original composition and aspect ratio unless the requested edits require a change.",
-            `${plan.appliedLabels.includes("Keep Marks") ? SKIN_IDENTITY_RULE : SKIN_IDENTITY_RULE.replace("apparent age and permanent marks (moles, birthmarks, scars) unchanged", "and apparent age unchanged")} ${skinRule}`,
+            `${(plan.appliedLabels.includes("Keep Marks") ? SKIN_IDENTITY_RULE : SKIN_IDENTITY_RULE.replace("apparent age and permanent marks (moles, birthmarks, scars) unchanged", "and apparent age unchanged")).replace(expressionChangesFace(plan.expression) ? "ears, expression, " : "\u0000", "ears, ")} ${skinRule}`,
+            ...(plan.expression ? [buildExpressionRule(plan.expression)] : []),
             buildStandardFinishRule(plan, { sized: hasSelectedPhotoSize }),
             flags.restoration
                 ? "Do not add extra people, duplicate facial features, text, logos, frames, borders, or watermarks. Keep every person who is already in the photo."
@@ -1212,7 +1214,9 @@ export default function PhotoEditorPage() {
                 : hasSelectedPhotoSize && !(flags.restoration && !flags.posePreset)
                     ? "Keep the person centered and facing the camera unless the requested edit explicitly changes the head angle."
                     : "Preserve the original framing, subject placement, pose, and camera angle unless the requested edit explicitly requires a change.",
-            "Apart from the professional skin retouch above and the requested edits, avoid any other changes to the person's face.",
+            plan.expression
+                ? "Apart from the professional skin retouch above, the requested edits and the requested expression, avoid any other changes to the person's face."
+                : "Apart from the professional skin retouch above and the requested edits, avoid any other changes to the person's face.",
         ];
         const clothingIndex = typeof payload.clothing === "number" ? payload.clothing : -1;
         if (clothingIndex >= 0 && CLOTHING_NAMES[clothingIndex]) {
@@ -1223,7 +1227,7 @@ export default function PhotoEditorPage() {
                 : "";
             const colorName = CLOTHING_COLOR_NAMES[colorHex] ||
                 (colorHex ? `the selected color (${colorHex})` : "a natural color");
-            instructions.push(`Change only the visible clothing to ${clothingPrompt}, professionally styled, in ${colorName}. ${studioPose ? "Keep the face, ears, neck, and body proportions natural (the pose follows the studio pose rule)" : "Keep the face, ears, neck, body proportions, and pose natural"}, and keep the hair as it is unless a hair edit is requested below. Make the clothing edges realistic and properly fitted to the body. Changing the clothing must NOT change the skin: keep the face, neck and hands in exactly the same skin color and shade as the original photo, never darker, redder or tinted by the clothing color.`);
+            instructions.push(`Change only the visible clothing to ${clothingPrompt}, professionally styled, in ${colorName}. ${studioPose ? "Keep the face, ears, neck, and body proportions natural (the pose follows the studio pose rule)" : "Keep the face, ears, neck, body proportions, and pose natural"}, and keep the hair as it is unless a hair edit is requested below. Make the clothing edges realistic and properly fitted to the body. ${plan.skinTone ? "Changing the clothing must NOT tint the skin: the clothing color must cast no color onto the face, neck or hands, and the skin color follows the chosen skin color rule above." : "Changing the clothing must NOT change the skin: keep the face, neck and hands in exactly the same skin color and shade as the original photo, never darker, redder or tinted by the clothing color."}`);
             if (plan.tie && TIE_STYLES.includes(clothingName)) {
                 const tieColor = TIE_COLORS.find((c) => c.name === plan.tie);
                 instructions.push(
@@ -1242,7 +1246,9 @@ export default function PhotoEditorPage() {
             instructions.push(poseHeadCoverRule);
         }
         if (studioPose) {
-            instructions.push("SKIN COLOR LOCK FOR THE RE-POSE (very important): the skin of the face, neck and hands must keep EXACTLY the same color, shade, depth and undertone as in the original input photo. Re-posing or redrawing the clothing must not darken, tan, redden, yellow, whiten or tint the skin, and colored clothing or head covering must not cast any color onto it. A fair skin stays fair, a wheatish skin stays wheatish, a dark skin stays dark.");
+            instructions.push(plan.skinTone
+                ? "SKIN COLOR FOR THE RE-POSE (very important): the skin of the face, neck, ears and hands must have the chosen skin color from the skin rule above, the same shade on all of them. Re-posing or redrawing the clothing must not make the skin darker, redder, yellower or paler than that chosen color, and colored clothing or head covering must not cast any color onto it."
+                : "SKIN COLOR LOCK FOR THE RE-POSE (very important): the skin of the face, neck and hands must keep EXACTLY the same color, shade, depth and undertone as in the original input photo. Re-posing or redrawing the clothing must not darken, tan, redden, yellow, whiten or tint the skin, and colored clothing or head covering must not cast any color onto it. A fair skin stays fair, a wheatish skin stays wheatish, a dark skin stays dark.");
         }
         if (keepOriginalBackground) {
             if (flags.alteringBackground) {
@@ -1396,7 +1402,10 @@ export default function PhotoEditorPage() {
         const timeoutId = window.setTimeout(() => controller.abort(), GENERATE_TIMEOUT_MS);
 
         try {
-            prompt = `${QUALITY_PREFIX}\n\n${buildAiEditingPrompt(payload)}\n\n${QUALITY_SUFFIX}`;
+            const chosenSkinTone = Array.isArray(payload.editingGuides) && payload.editingGuides.some((item) => typeof item === "string" && item.startsWith("Skin Tone:"));
+            const qualityPrefix = chosenSkinTone ? QUALITY_PREFIX.replace("and the same skin color.", "and the skin color chosen in the skin rule below.") : QUALITY_PREFIX;
+            const qualitySuffix = chosenSkinTone ? QUALITY_SUFFIX.replace("Keep the exact same skin color as the original photo.", "Use the skin color chosen in the skin rule above on the whole face, neck and ears.") : QUALITY_SUFFIX;
+            prompt = `${qualityPrefix}\n\n${buildAiEditingPrompt(payload)}\n\n${qualitySuffix}`;
             if (/^https?:\/\//i.test(image)) {
                 formData.append("imageUrl", image);
             }

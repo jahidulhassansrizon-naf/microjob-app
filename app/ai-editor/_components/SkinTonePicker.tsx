@@ -33,7 +33,7 @@ export default function SkinTonePicker({ value, onChange, compact = false, class
   // Big, clearly visible swatches, each with its own name underneath so every colour is easy to tell apart.
   const size = compact ? "h-9 w-9" : "h-11 w-11";
   const labelCls = compact ? "text-[11px]" : "text-[11.5px]";
-  // Short names under the swatches so all 11 fit in ONE row (full names show in the header when selected).
+  // Short names under the swatches (full names show in the header when selected).
   const shortName = (name: string, bn: string) => ({ "Rosy Fair": "গোলাপি ফর্সা", "Deep Dark": "ঘন কালো" } as Record<string, string>)[name] || bn;
   return (
     <div className={`rounded-xl border border-[#E3D6B8] bg-[#FBF6E8] ${compact ? "p-2.5" : "p-3"} ${className}`}>
@@ -43,7 +43,7 @@ export default function SkinTonePicker({ value, onChange, compact = false, class
           {selected ? selected.bn : "মূল রং একই থাকবে"}
         </p>
       </div>
-      <div className={`grid ${compact ? "grid-cols-6 gap-x-1 gap-y-2" : "grid-cols-6 gap-x-1 gap-y-2 sm:grid-cols-11"}`}>
+      <div className={`grid ${compact ? "grid-cols-6 gap-x-1 gap-y-2" : "grid-cols-6 gap-x-1 gap-y-2 sm:grid-cols-7"}`}>
         <button
           type="button"
           aria-pressed={!selected}

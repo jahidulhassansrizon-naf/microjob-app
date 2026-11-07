@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X, Lightbulb, PlayCircle, ScanFace } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X, Lightbulb, PlayCircle, ScanFace, Smile, Sun } from "lucide-react";
 import { useAiEditorText } from "./aiEditorI18n";
 import PhotoSizeIcon from "./PhotoSizeIcon";
 import GuideIcon from "./GuideIcon";
 import { CLOTHING_NAMES } from "./clothingStyles";
-import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDE_META, AUTO_APPLIED_GUIDES, EDITING_GUIDES, LIPSTICK_COLORS, LIPSTICK_COLOR_PREFIX, isOptionEntry } from "./editingGuides";
+import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDE_META, AUTO_APPLIED_GUIDES, EDITING_GUIDES, EXPRESSIONS, EXPRESSION_PREFIX, LIPSTICK_COLORS, LIPSTICK_COLOR_PREFIX, SKIN_TONES, isOptionEntry } from "./editingGuides";
 import TiePicker, { canHaveTie, getTieFromGuides, withTie } from "./TiePicker";
 import SkinTonePicker, { getSkinToneFromGuides, withSkinTone } from "./SkinTonePicker";
 import { CLOTHING_COLORS, RawSvgClothingPreview } from "./GenerationSettings";
@@ -66,17 +66,43 @@ const STAGES4 = [
   { label: "চেহারা", Icon: SlidersHorizontal },
 ];
 
-/** "সব ঠিক করে দিন" path: size -> background -> clothing -> straight studio pose. */
+/** "সব ঠিক করে দিন" path: size -> background -> clothing -> straight studio pose -> skin color -> expression. */
 const STAGES_QUICK = [
   { label: "ছবির ধরন", Icon: Ruler },
   { label: "ব্যাকগ্রাউন্ড", Icon: Palette },
   { label: "পোশাক", Icon: Shirt },
   { label: "সোজা পোজ", Icon: ScanFace },
+  { label: "গায়ের রং", Icon: Sun },
+  { label: "অভিব্যক্তি", Icon: Smile },
 ];
 /** The extra guide that re-poses a crooked / tilted / turned person into a straight studio portrait. */
 const POSE_LABEL = "Studio Straight Pose";
-/** Quick path: the pose question sits right after clothing. */
+/** Quick path: the pose question sits right after clothing, then skin color, then expression (the last step). */
 const QUICK_POSE_STEP = 3;
+const QUICK_SKIN_STEP = 4;
+const QUICK_EXPRESSION_STEP = 5;
+
+/** Fairest -> darkest, as one smooth strip, so the order of the skin colors is clear at a glance. */
+const SKIN_STRIP_GRADIENT = `linear-gradient(to right, ${SKIN_TONES.map((tone) => tone.hex).join(", ")})`;
+
+/** Small face drawing for the expression choices (only the mouth and eyes differ). */
+function ExpressionFace({ kind }: { kind: "big" | "soft" | "neutral" }) {
+  return (
+    <svg viewBox="0 0 64 64" className="h-full w-full" aria-hidden="true">
+      <circle cx="32" cy="32" r="26" fill="#F1C7A1" />
+      <circle cx="23" cy="26" r="2.6" fill="#1F2937" />
+      <circle cx="41" cy="26" r="2.6" fill="#1F2937" />
+      {kind === "big" && (
+        <>
+          <path d="M20 38 Q32 52 44 38 Z" fill="#7F1D1D" stroke="#9A4B3A" strokeWidth="1.5" strokeLinejoin="round" />
+          <path d="M23 38.6 Q32 42.4 41 38.6 L40 41 Q32 44.2 24 41 Z" fill="#fff" />
+        </>
+      )}
+      {kind === "soft" && <path d="M23 40 Q32 47 41 40" stroke="#9A4B3A" strokeWidth="2.4" fill="none" strokeLinecap="round" />}
+      {kind === "neutral" && <path d="M24 42 L40 42" stroke="#9A4B3A" strokeWidth="2.4" fill="none" strokeLinecap="round" />}
+    </svg>
+  );
+}
 
 /** Small drawing: a crooked person vs. a straight studio-pose person. */
 function PoseFigure({ tilted }: { tilted: boolean }) {
@@ -388,13 +414,13 @@ export default function PhotoSetupWizard({
   if (!open || !mounted) return null;
 
   const isDual = draft.size === "Dual";
-  const lastStep = quick ? QUICK_POSE_STEP : guideEnd;
+  const lastStep = quick ? QUICK_EXPRESSION_STEP : guideEnd;
   const stageList = quick ? STAGES_QUICK : STAGES4;
-  const stageOf = (i: number) => (i < guideStart ? i : 3);
+  const stageOf = (i: number) => (quick ? i : i < guideStart ? i : 3);
   const stage = stageOf(step);
   // Bar fills by the 4 big stages; inside the last stage it fills with every small question.
   const progress = quick
-    ? ((stage + 0.5) / 4) * 100
+    ? ((stage + 0.5) / stageList.length) * 100
     : stage < 3
       ? ((stage + 0.5) / 4) * 100
       : ((3 + (step - guideStart + 1) / (guideCats.length + 1)) / 4) * 100;
@@ -405,6 +431,10 @@ export default function PhotoSetupWizard({
       }
     : quick && step === QUICK_POSE_STEP
       ? { title: "ছবি কি সোজা স্টুডিও পোজে চান?", hint: "কাত বা বাঁকা ছবি স্টুডিওর মতো সোজা হয়ে যাবে। একটাতে চাপ দিন।" }
+      : quick && step === QUICK_SKIN_STEP
+        ? { title: "গায়ের রং কেমন চান?", hint: "খুব ফর্সা থেকে ধীরে ধীরে কালো, যেকোনো একটা রঙে চাপ দিন। না চাইলে “মূল রং” থাকবে।" }
+        : quick && step === QUICK_EXPRESSION_STEP
+          ? { title: "ছবিতে মুখের ভাব কেমন চান?", hint: "যেমন আছে তেমন রাখতে পারেন, অথবা হাসিমুখ, হালকা হাসি বা নরমাল বেছে নিন।" }
       : step === lastStep && !quick
         ? { title: "সব ঠিক আছে তো?", hint: "নিচে আপনার পছন্দ দেখে নিন, তারপর “ছবি তৈরি করুন” চাপুন।" }
         : BASE_STEPS[step];
@@ -438,6 +468,14 @@ export default function PhotoSetupWizard({
     }));
   const skinToneName = getSkinToneFromGuides(draft.guides);
   const guideCount = draft.guides.filter((g) => !isOptionEntry(g)).length;
+  const expressionName = draft.guides.find((g) => g.startsWith(EXPRESSION_PREFIX))?.slice(EXPRESSION_PREFIX.length).trim() ?? "";
+  const setExpression = (name: string) =>
+    setDraft((d) => ({
+      ...d,
+      guides: [...d.guides.filter((g) => !g.startsWith(EXPRESSION_PREFIX)), ...(name ? [`${EXPRESSION_PREFIX} ${name}`] : [])],
+    }));
+  const selectedExpression = EXPRESSIONS.find((e) => e.name === expressionName) ?? EXPRESSIONS[0];
+  const selectedSkinTone = SKIN_TONES.find((tone) => tone.name === skinToneName);
   const poseOn = draft.guides.includes(POSE_LABEL);
   const setPose = (on: boolean) => {
     setPoseChoice(on ? "yes" : "no");
@@ -706,6 +744,95 @@ export default function PhotoSetupWizard({
               </div>
             </div>
           )}
+        </div>
+      );
+    }
+
+    if (quick && step === QUICK_SKIN_STEP) {
+      const keepOriginal = !selectedSkinTone;
+      return (
+        <div className="space-y-4">
+          <div>
+            <div className="h-3.5 w-full rounded-full border border-black/10 shadow-inner" style={{ background: SKIN_STRIP_GRADIENT }} aria-hidden="true" />
+            <div className="mt-1 flex justify-between text-[12.5px] font-bold text-stone-600">
+              <span>সবচেয়ে ফর্সা</span>
+              <span>সবচেয়ে কালো</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            aria-pressed={keepOriginal}
+            onClick={() => setDraft((d) => ({ ...d, guides: withSkinTone(d.guides, "") }))}
+            className={`${optionBase} ${keepOriginal ? optionOn : optionOff} flex w-full items-center gap-3 px-3.5 py-3 text-left`}
+          >
+            {keepOriginal && <CheckBadge />}
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-stone-300 text-stone-600">
+              <Ban size={22} />
+            </span>
+            <span className="min-w-0 pr-7">
+              <span className="block text-[16px] font-extrabold leading-tight">মূল রং, আমার গায়ের রং-ই থাক</span>
+              <span className="mt-1 block text-[13px] leading-snug text-stone-600">ছবির নিজের গায়ের রং একই থাকবে। শুধু মুখ পরিষ্কার ও ক্লিন হবে।</span>
+            </span>
+          </button>
+
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+            {SKIN_TONES.map((tone) => {
+              const on = tone.name === skinToneName;
+              return (
+                <button
+                  key={tone.name}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setDraft((d) => ({ ...d, guides: withSkinTone(d.guides, on ? "" : tone.name) }))}
+                  className={`${optionBase} ${on ? optionOn : optionOff} flex items-center gap-2.5 px-2.5 py-2.5 text-left`}
+                >
+                  {on && <CheckBadge />}
+                  <span className="h-11 w-11 shrink-0 rounded-full border-[3px] border-white shadow-md" style={{ backgroundColor: tone.hex }} />
+                  <span className="min-w-0 pr-5 text-[14.5px] font-extrabold leading-tight">{tone.bn}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="rounded-xl border border-[#E3D6B8] bg-[#F7EFD9] px-3 py-2 text-[13px] leading-snug text-[#5A4A32]">
+            টিপ: রং বাছলে মুখ, গলা ও কান সেই রঙে পরিষ্কারভাবে আসবে। চোখ, দাঁত, ঠোঁট, চুল আর পোশাকের রং বদলাবে না। চেহারা একই রাখা হয়।
+          </p>
+        </div>
+      );
+    }
+
+    if (quick && step === QUICK_EXPRESSION_STEP) {
+      const faces: Record<string, "big" | "soft" | "neutral" | undefined> = { "Big Smile": "big", "Soft Smile": "soft", Neutral: "neutral" };
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {EXPRESSIONS.map((item) => {
+              const on = item.name === selectedExpression.name;
+              const face = faces[item.name];
+              return (
+                <button
+                  key={item.name}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setExpression(item.name)}
+                  className={`${optionBase} ${on ? optionOn : optionOff} flex items-start gap-3 px-3.5 py-3.5 text-left`}
+                >
+                  {on && <CheckBadge />}
+                  <span className="mt-0.5 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+                    {face ? <ExpressionFace kind={face} /> : <ImageIcon size={26} className="text-stone-500" />}
+                  </span>
+                  <span className="min-w-0 pr-7">
+                    <span className="block text-[16px] font-extrabold leading-tight">{item.bn}</span>
+                    <span className="mt-1 block text-[13px] leading-snug text-stone-600">{item.hint}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="rounded-xl border border-[#E3D6B8] bg-[#F7EFD9] px-3 py-2 text-[13px] leading-snug text-[#5A4A32]">
+            টিপ: পাসপোর্ট, ভিসা বা সরকারি ফর্মের ছবিতে সাধারণত স্বাভাবিক বা হালকা হাসি নিরাপদ। ছবি কোথায় দেবেন তার নিয়ম দেখে নিন। শুধু মুখের ভাব বদলায়, চেহারা একই থাকে।
+          </p>
         </div>
       );
     }
@@ -1010,7 +1137,7 @@ export default function PhotoSetupWizard({
         <div className="flex items-start gap-2.5 rounded-xl bg-[#ECFDF5] border border-[#059669]/40 px-3 py-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#059669] text-[17px] font-extrabold text-white">১</span>
           <p className="text-[14px] sm:text-[16px] leading-snug text-[#3B2F1E]">
-            <b className="text-[#065F46]">ছবি প্রায় ঠিকঠাক আছে, শর্টকাটে কাজ সারতে চান?</b> তাহলে <b>১ নম্বর “সব ঠিক করে দিন”</b> ব্যবহার করুন। মাত্র ৪ ধাপ।
+            <b className="text-[#065F46]">ছবি প্রায় ঠিকঠাক আছে, শর্টকাটে কাজ সারতে চান?</b> তাহলে <b>১ নম্বর “সব ঠিক করে দিন”</b> ব্যবহার করুন। মাত্র ৬ ধাপ।
           </p>
         </div>
         <div className="flex items-start gap-2.5 rounded-xl bg-[#FEF2F2] border border-[#DC2626]/40 px-3 py-2.5">
@@ -1051,9 +1178,9 @@ export default function PhotoSetupWizard({
         </span>
         <span className="text-[19px] sm:text-[22px] font-extrabold leading-tight text-[#065F46]">সব ঠিক করে দিন</span>
         <span className="text-[15px] leading-snug text-[#3B2F1E]">
-          শুধু ছবির মাপ, ব্যাকগ্রাউন্ড, পোশাক আর সোজা পোজ বেছে নিন। বাকি সব (মুখ ক্লিন, চোখ, চুল, আলো) নিজে থেকেই ঠিক হয়ে যাবে। গায়ের রং একই থাকবে।
+          শুধু ছবির মাপ, ব্যাকগ্রাউন্ড, পোশাক, সোজা পোজ, গায়ের রং আর মুখের ভাব বেছে নিন। বাকি সব (মুখ ক্লিন, চোখ, চুল, আলো) নিজে থেকেই ঠিক হয়ে যাবে।
         </span>
-        <span className="rounded-full bg-white/80 px-3 py-1 text-[13px] font-semibold text-[#065F46]">মাত্র ৪টা ধাপ</span>
+        <span className="rounded-full bg-white/80 px-3 py-1 text-[13px] font-semibold text-[#065F46]">মাত্র ৬টা ধাপ</span>
         <span className="rounded-xl bg-[#059669] px-6 py-2.5 text-base font-extrabold text-white">এটাই করুন</span>
       </button>
       <button
@@ -1148,8 +1275,8 @@ export default function PhotoSetupWizard({
                       <button
                         type="button"
                         disabled={!done}
-                        onClick={() => setStep(i < 3 ? i : guideStart)}
-                        className={`flex w-[60px] min-[420px]:w-[76px] sm:w-[96px] shrink-0 flex-col items-center gap-0.5 sm:gap-1 ${done ? "cursor-pointer" : "cursor-default"}`}
+                        onClick={() => setStep(quick ? i : i < 3 ? i : guideStart)}
+                        className={`flex ${stageList.length > 4 ? "w-[50px] min-[420px]:w-[62px] sm:w-[84px]" : "w-[60px] min-[420px]:w-[76px] sm:w-[96px]"} shrink-0 flex-col items-center gap-0.5 sm:gap-1 ${done ? "cursor-pointer" : "cursor-default"}`}
                       >
                         <span
                           className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full text-base font-extrabold shadow-sm transition ${
@@ -1222,21 +1349,39 @@ export default function PhotoSetupWizard({
                         <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/15" style={{ backgroundColor: draft.clothingColor }} />
                       ) : null,
                   },
-                  quick
-                    ? {
-                        Icon: ScanFace,
-                        label: "ছবির পোজ",
-                        value: poseOn ? "সোজা স্টুডিও পোজ" : "যেমন আছে তেমন",
-                        set: poseOn,
-                        swatch: null as React.ReactNode,
-                      }
-                    : {
+                  ...(quick
+                    ? [
+                        {
+                          Icon: ScanFace,
+                          label: "ছবির পোজ",
+                          value: poseOn ? "সোজা স্টুডিও পোজ" : "যেমন আছে তেমন",
+                          set: poseOn,
+                          swatch: null as React.ReactNode,
+                        },
+                        {
+                          Icon: Sun,
+                          label: "গায়ের রং",
+                          value: selectedSkinTone ? selectedSkinTone.bn : "মূল রং থাকবে",
+                          set: !!selectedSkinTone,
+                          swatch: selectedSkinTone ? (
+                            <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/15" style={{ backgroundColor: selectedSkinTone.hex }} />
+                          ) : null,
+                        },
+                        {
+                          Icon: Smile,
+                          label: "অভিব্যক্তি",
+                          value: selectedExpression.bn,
+                          set: expressionName !== "" && expressionName !== "Original",
+                          swatch: null as React.ReactNode,
+                        },
+                      ]
+                    : [{
                         Icon: SlidersHorizontal,
                         label: "চেহারার পরিবর্তন",
                         value: guideCount ? `${bn(guideCount)}টি পরিবর্তন` : "কোনো পরিবর্তন নেই",
                         set: guideCount > 0,
                         swatch: null as React.ReactNode,
-                      },
+                      }]),
                 ].map(({ Icon, label, value, set, swatch }) => (
                   <div key={label} className="flex w-[148px] shrink-0 items-center gap-2 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-2 py-1 md:w-auto md:shrink md:gap-2.5 md:px-2.5 md:py-1.5">
                     <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${set ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-stone-500"}`}>

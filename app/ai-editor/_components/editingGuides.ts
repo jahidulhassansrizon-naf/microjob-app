@@ -288,8 +288,10 @@ export const KEEP_SKIN_COLOR_RETOUCH_RULE = "PROFESSIONAL CLEAN-SKIN RETOUCH (al
 export const SKIN_TONE_PREFIX = "Skin Tone:";
 export const SKIN_TONES: { name: string; bn: string; hex: string; prompt: string }[] = [
   { name: "Very Fair", bn: "খুব ফর্সা", hex: "#F7DDC9", prompt: "a very fair, light ivory-beige" },
+  { name: "Light Fair", bn: "হালকা ফর্সা", hex: "#F3D3B8", prompt: "a light fair, soft peachy-beige" },
   { name: "Fair", bn: "ফর্সা", hex: "#EFC8A6", prompt: "a fair, light warm-beige" },
   { name: "Rosy Fair", bn: "গোলাপি আভার ফর্সা", hex: "#EDBBA6", prompt: "a fair skin with a soft natural rosy-pink undertone" },
+  { name: "Medium Fair", bn: "মাঝারি ফর্সা", hex: "#E4B58F", prompt: "a medium fair, warm light-honey" },
   { name: "Light Wheatish", bn: "হালকা শ্যামলা", hex: "#DDAE84", prompt: "a light wheatish, golden-beige" },
   { name: "Wheatish", bn: "উজ্জ্বল শ্যামলা", hex: "#C99468", prompt: "a medium wheatish, warm golden-brown" },
   { name: "Olive", bn: "জলপাই রং", hex: "#B58A5C", prompt: "a medium olive, slightly greenish-golden" },
@@ -297,7 +299,54 @@ export const SKIN_TONES: { name: string; bn: string; hex: string; prompt: string
   { name: "Brown", bn: "শ্যামলা বাদামি", hex: "#8A5A3A", prompt: "a medium-deep natural brown" },
   { name: "Dark Brown", bn: "গাঢ় শ্যামলা", hex: "#6B4129", prompt: "a deep dark brown" },
   { name: "Deep Dark", bn: "ঘন কালো-বাদামি", hex: "#4A2C1C", prompt: "a very deep, dark espresso-brown" },
+  { name: "Very Dark", bn: "গাঢ় কালো", hex: "#33200F", prompt: "an extremely deep, rich dark ebony-brown" },
 ];
+
+/**
+ * Optional facial expression chosen by the user (quick wizard, last step). It travels in the same selected-guides
+ * list as an entry like "Expression: Soft Smile"; it is never a tile of its own. No entry = keep the photo's expression.
+ */
+export const EXPRESSION_PREFIX = "Expression:";
+export const EXPRESSIONS: { name: string; bn: string; hint: string; prompt: string; changes: boolean }[] = [
+  {
+    name: "Original",
+    bn: "যেমন আছে তেমন",
+    hint: "ছবিতে যেরকম মুখের ভাব আছে, ঠিক সেরকমই থাকবে।",
+    changes: false,
+    prompt:
+      "EXPRESSION LOCK (requested by the user): keep the person's facial expression exactly as it is in the original photo: the same mouth shape, the same amount of smile (or no smile), teeth visible only if they are visible in the original, and the same relaxed look in the eyes. Do not make the person smile more or less than in the original and do not change the mouth.",
+  },
+  {
+    name: "Big Smile",
+    bn: "হাসিমুখ",
+    hint: "স্বাভাবিক, আন্তরিক হাসি। দাঁত হালকা দেখা যাবে।",
+    changes: true,
+    prompt:
+      "EXPRESSION OVERRIDE (requested by the user, it beats every other mention of expression in this request, including any calm, neutral or closed-mouth wording): give the person a natural, warm, friendly, genuine smile. The lips are gently parted with the upper teeth naturally visible, the mouth corners are lifted evenly on both sides, the cheeks are lightly raised, and the eyes look relaxed and happy without squinting. It must be a believable real smile, never a wide grin, never forced, never exaggerated. Teeth must be real-looking, natural in shape and size, evenly spaced, naturally clean (not artificially white) and not too many, and the lips keep their original shape and color. Only the mouth, cheeks and eye-area expression change; the face shape, features, skin color, age and identity stay exactly the same real person.",
+  },
+  {
+    name: "Soft Smile",
+    bn: "হালকা হাসি",
+    hint: "ঠোঁট বন্ধ রেখে খুব হালকা, ভদ্র হাসি।",
+    changes: true,
+    prompt:
+      "EXPRESSION OVERRIDE (requested by the user, it beats every other mention of expression in this request): give the person a slight, soft, pleasant closed-mouth smile. The lips stay together with NO teeth visible, the mouth corners are lifted only a little and evenly on both sides, and the eyes look calm, friendly and relaxed. It must look natural and real, never a grin, never forced. Only the mouth and the area around the eyes change slightly; the face shape, features, skin color, age and identity stay exactly the same real person.",
+  },
+  {
+    name: "Neutral",
+    bn: "স্বাভাবিক / নরমাল",
+    hint: "শান্ত, সাধারণ মুখ। হাসি নেই, রাগ বা মন খারাপের ভাবও নেই।",
+    changes: true,
+    prompt:
+      "EXPRESSION OVERRIDE (requested by the user, it beats every other mention of expression in this request): give the person a calm, natural, relaxed neutral expression. The mouth is closed with the lips resting together and relaxed, the mouth corners are level (no smile, no frown), no teeth are visible, the jaw and cheeks are relaxed, and both eyes are open, relaxed and looking straight into the camera. It must not look stern, angry, sad or tense. Only the mouth and the area around the eyes change; the face shape, features, skin color, age and identity stay exactly the same real person.",
+  },
+];
+/** Prompt rule for the chosen expression ("" or an unknown name = no expression rule at all). */
+export function buildExpressionRule(name: string): string {
+  return EXPRESSIONS.find((item) => item.name === name)?.prompt ?? "";
+}
+/** True when the chosen expression really changes the face (so "keep the expression" rules must step aside). */
+export const expressionChangesFace = (name: string) => EXPRESSIONS.some((item) => item.name === name && item.changes);
 
 /**
  * Optional necktie for suit-like clothing. It travels in the same selected-guides list as an entry like
@@ -318,7 +367,7 @@ export const TIE_COLORS: { name: string; bn: string; hex: string }[] = [
 ];
 /** True for every "option" entry that is not a tile of its own (lipstick colour, skin tone, tie). */
 export const isOptionEntry = (entry: string) =>
-  entry.startsWith("Lipstick Color:") || entry.startsWith(SKIN_TONE_PREFIX) || entry.startsWith(TIE_PREFIX);
+  entry.startsWith("Lipstick Color:") || entry.startsWith(SKIN_TONE_PREFIX) || entry.startsWith(EXPRESSION_PREFIX) || entry.startsWith(TIE_PREFIX);
 
 /** Prompt rule used instead of the default skin retouch when the user picks a specific skin color. */
 export function buildSkinToneRule(toneName: string): string {
@@ -770,7 +819,7 @@ export function buildStandardFinishRule(plan: EditingGuidePlan, opts: { sized: b
     ? ""
     : " The face must be completely free of marks: remove moles, dark spots, freckles, age spots, pigmentation patches, scars and any rough or uneven patches from the forehead, cheeks, nose, chin, jaw, neck and ears, rebuilding the skin underneath with realistic pores and the same skin color, so there is not a single visible mark and the face looks perfectly clean at first glance (the face structure, beard and eyebrows themselves never change).";
   const parts = [
-    `STANDARD FINISH (always applied, no need to be asked): (a) the whole face, neck and ears are completely clean, clear and even (no dirt-looking patches, spots, acne marks, oily shine or dark circles under the eyes), in the person's own skin color;${marksRule}`+" (b) the eyes are clear, bright and sharp with natural whites, and the eye color is unchanged; (c) stray, flyaway and fuzzy hairs around the head are neatly tidied without changing the hairstyle; (d) teeth, if visible, look natural and clean, never artificially white; (e) the face is evenly lit and sharp with natural, realistic detail.",
+    `STANDARD FINISH (always applied, no need to be asked): (a) the whole face, neck and ears are completely clean, clear and even (no dirt-looking patches, spots, acne marks, oily shine or dark circles under the eyes), ${plan.skinTone ? "in the chosen skin color described in the skin rule" : "in the person's own skin color"};${marksRule}`+" (b) the eyes are clear, bright and sharp with natural whites, and the eye color is unchanged; (c) stray, flyaway and fuzzy hairs around the head are neatly tidied without changing the hairstyle; (d) teeth, if visible, look natural and clean, never artificially white"+(plan.expression === "Big Smile" ? " (the requested smile may show them)" : "")+"; (e) the face is evenly lit and sharp with natural, realistic detail.",
   ];
   const customSkin = Boolean(plan.skinTone) || labels.has("Fair & Bright Skin");
   parts.push(
@@ -779,7 +828,7 @@ export function buildStandardFinishRule(plan: EditingGuidePlan, opts: { sized: b
       : "SKIN AND FACE LOCK (important): keep the skin color, skin tone, brightness and the whole face EXACTLY the same as in the original photo. Do NOT lighten, brighten, whiten, darken, tan or tint the skin, and add NO glow, NO shine, NO gloss, NO glossy highlights and NO beauty-filter look. The skin must look natural and real, exactly like the original photo, only cleaner (spotless and even). Never make it fairer, glossy, airbrushed, waxy, plastic or AI-like.",
   );
   if (!labels.has("Low-Key Studio Look") && !plan.flags.monochrome) {
-    parts.push("Exposure: correct dull or underexposed lighting so the face is clearly and evenly lit, without making it flat or overexposed, and without changing the skin color.");
+    parts.push(`Exposure: correct dull or underexposed lighting so the face is clearly and evenly lit, without making it flat or overexposed${plan.skinTone ? "" : ", and without changing the skin color"}.`);
   }
   if (opts.sized && !plan.flags.posePreset) {
     parts.push("Pose: if the head or photo is tilted, straighten it so the head is upright and the eyes are level, keeping the face identical.");
@@ -825,6 +874,8 @@ export interface EditingGuidePlan {
   skinTone: string;
   /** Necktie choice: "" = style default, "None" = no tie, otherwise a TIE_COLORS name. */
   tie: string;
+  /** Expression picked by the user ("" = no choice, otherwise an EXPRESSIONS name). */
+  expression: string;
   /** Presets that survived conflict resolution, in application order. */
   appliedLabels: string[];
   flags: {
@@ -851,6 +902,7 @@ export function planEditingGuides(
   let lipstickColor = "";
   let skinTone = "";
   let tie = "";
+  let expression = "";
   const presets: string[] = [];
   for (const entry of selected) {
     if (typeof entry !== "string") continue;
@@ -866,6 +918,11 @@ export function planEditingGuides(
     if (entry.startsWith(SKIN_TONE_PREFIX)) {
       const name = entry.slice(SKIN_TONE_PREFIX.length).trim();
       skinTone = SKIN_TONES.some((tone) => tone.name === name) ? name : "";
+      continue;
+    }
+    if (entry.startsWith(EXPRESSION_PREFIX)) {
+      const name = entry.slice(EXPRESSION_PREFIX.length).trim();
+      expression = EXPRESSIONS.some((item) => item.name === name) ? name : "";
       continue;
     }
     if (entry.startsWith(CUSTOM_PREFIX)) {
@@ -894,6 +951,12 @@ export function planEditingGuides(
   // A chosen skin color decides the complexion, so the generic "make fairer" preset cannot also apply.
   if (skinTone) {
     const index = kept.indexOf("Fair & Bright Skin");
+    if (index !== -1) kept.splice(index, 1);
+  }
+
+  // A chosen expression decides the face's expression, so the generic "keep the original expression" rule cannot also apply.
+  if (expressionChangesFace(expression)) {
+    const index = kept.indexOf("Preserve Natural Expression");
     if (index !== -1) kept.splice(index, 1);
   }
 
@@ -932,6 +995,7 @@ export function planEditingGuides(
     customInstruction,
     skinTone,
     tie,
+    expression,
     appliedLabels: ordered,
     flags: {
       restoration: has((_, preset) => preset.category === "old-photo"),
