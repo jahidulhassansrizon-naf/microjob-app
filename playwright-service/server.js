@@ -645,6 +645,11 @@ function currentCapacity() {
 // How many times one job may be tried again on ANOTHER session after Gemini
 // refuses it or it times out (each retry only if enough job time is left).
 const MAX_JOB_RETRIES = readIntEnv("MAX_JOB_RETRIES", 2, 0, 5);
+// How long ONE attempt waits for Gemini's image after the prompt is sent. A stuck
+// attempt must give up early enough that the job still has time for a retry on
+// another session (in the 20-at-once test, good images were done in under 90s,
+// the stuck ones waited 150s and then had no time left to retry).
+const IMAGE_WAIT_MS = readIntEnv("IMAGE_WAIT_MS", 100_000, 30_000, 300_000);
 const RETRY_MIN_REMAINING_MS = readIntEnv("RETRY_MIN_REMAINING_MS", 80_000, 0, 600_000);
 
 // Counters shown on /health so a load test shows WHY jobs failed.
@@ -1277,7 +1282,7 @@ async function runGeminiWithSession({
     // 6. Wait for the generated image (or a limit message)
     step("message sent, waiting for the generated image");
 
-    const waitDeadline = Date.now() + 150000;
+    const waitDeadline = Date.now() + IMAGE_WAIT_MS;
     let downloadButton = null;
     let printedButtons = false;
     const waitStartedAt = Date.now();
