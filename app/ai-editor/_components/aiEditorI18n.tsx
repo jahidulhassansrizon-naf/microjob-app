@@ -478,6 +478,8 @@ const AI_EDITOR_BN: Record<string, string> = {
   "Fitting the clothing": "কাপড় পরানো হচ্ছে",
   "Refining the details": "ছোট ছোট ডিটেইল ঠিক করা হচ্ছে",
   "Upload a Photo": "একটি ছবি আপলোড করুন",
+  "Or drag and drop a photo here": "অথবা ছবি এখানে ড্র্যাগ করে ছেড়ে দিন",
+  "Drop the photo here": "ছবিটা এখানে ছেড়ে দিন",
   "Upload 2 separate images": "২টি আলাদা ছবি আপলোড করুন",
   "Remove left photo": "বাম পাশের ছবি সরান",
   "Upload left photo": "বাম পাশের ছবি আপলোড করুন",

@@ -19,6 +19,8 @@ interface PhotoPreviewAreaProps {
     rightImage: string | null;
     setRightImage: React.Dispatch<React.SetStateAction<string | null>>;
     triggerUpload: (target: "single" | "left" | "right") => void;
+    /** A photo file was dropped onto an empty upload box (drag and drop). */
+    onDropFile?: (target: "single" | "left" | "right", file: File) => void;
     enableDualMode: () => void;
     exitDualMode: () => void;
     activeBoxInfo: BoxInfo;
@@ -473,25 +475,66 @@ function FitFrame({ info, imageSrc, className = "", style, children, }: {
       </div>
     </div>);
 }
-function EmptyUploadBox({ title, subtitle, onUpload, }: {
+function EmptyUploadBox({ title, subtitle, onUpload, onFile, }: {
     title: string;
     subtitle?: string;
     onUpload: () => void;
+    /** When given, a photo file can be dragged and dropped onto the box. */
+    onFile?: (file: File) => void;
 }) {
     const { t } = useAiEditorText();
-    return (<div className="flex h-full min-h-[250px] flex-col items-center justify-center bg-[#E3D6B8] p-4 text-center xl:min-h-0 xl:p-2">
-      <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F2E8D2] text-[#DC2626]">
+    const [dragging, setDragging] = React.useState(false);
+    // dragenter/dragleave also fire for every child element, so count them to know when the file really left the box.
+    const depth = React.useRef(0);
+    const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
+    const dragProps = onFile
+        ? {
+            onDragEnter: (e: React.DragEvent) => {
+                if (!hasFiles(e)) return;
+                e.preventDefault();
+                depth.current += 1;
+                setDragging(true);
+            },
+            onDragOver: (e: React.DragEvent) => {
+                if (!hasFiles(e)) return;
+                // Without this the browser refuses the drop and just opens the photo in a new tab.
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "copy";
+            },
+            onDragLeave: (e: React.DragEvent) => {
+                if (!hasFiles(e)) return;
+                depth.current = Math.max(0, depth.current - 1);
+                if (depth.current === 0) setDragging(false);
+            },
+            onDrop: (e: React.DragEvent) => {
+                if (!hasFiles(e)) return;
+                e.preventDefault();
+                depth.current = 0;
+                setDragging(false);
+                const files: File[] = Array.from(e.dataTransfer.files ?? []) as File[];
+                // Take the first real photo; if there is none, still pass the first file so the normal "not an image" message shows.
+                const file = files.find((f) => f.type.startsWith("image/")) ?? files[0];
+                if (file) onFile(file);
+            },
+        }
+        : {};
+    return (<div {...dragProps} className={`relative flex h-full min-h-[250px] flex-col items-center justify-center p-4 text-center transition-colors xl:min-h-0 xl:p-2 ${dragging ? "bg-[#F6D9A8] ring-4 ring-inset ring-[#DC2626]/60" : "bg-[#E3D6B8]"}`}>
+      <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F2E8D2] text-[#DC2626] transition-transform ${dragging ? "scale-125" : ""}`}>
         <Upload size={18}/>
       </div>
 
-      <h3 className="mb-1 text-sm font-medium text-[#3B2F1E]"><AiT>{title}</AiT></h3>
+      <h3 className="mb-1 text-sm font-medium text-[#3B2F1E]">{dragging ? t("Drop the photo here") : <AiT>{title}</AiT>}</h3>
 
-      {subtitle && (<p className="mb-3 text-[12px] leading-tight text-[#3B2F1E]/70">
+      {subtitle && !dragging && (<p className="mb-1 text-[12px] leading-tight text-[#3B2F1E]/70">
           <AiT>{subtitle}</AiT>
         </p>)}
 
-      <button type="button" onClick={onUpload} className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#DC2626] px-3.5 py-1.5 text-[13px] font-medium text-white shadow-md transition hover:bg-[#DC2626]/90 active:scale-95">
-        <Upload size={12}/><AiT>{"Upload Photo\n      "}</AiT></button>
+      {onFile && !dragging && (<p className="mb-3 text-[12px] font-medium leading-tight text-[#B91C1C]">
+          <AiT>{"Or drag and drop a photo here"}</AiT>
+        </p>)}
+
+      {!dragging && (<button type="button" onClick={onUpload} className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#DC2626] px-3.5 py-1.5 text-[13px] font-medium text-white shadow-md transition hover:bg-[#DC2626]/90 active:scale-95">
+        <Upload size={12}/><AiT>{"Upload Photo\n      "}</AiT></button>)}
     </div>);
 }
 function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = true, isScanning = false, filter, }: {
@@ -547,7 +590,7 @@ function ResultInfoChips({ info }: { info: { size: string; bgColor: string; clot
     </div>);
 }
 export default function PhotoPreviewArea({
-    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive, dualResultImage = null, setDualResultImage, resultFilter, resultInfo = null,
+    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, onDropFile, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive, dualResultImage = null, setDualResultImage, resultFilter, resultInfo = null,
 }: PhotoPreviewAreaProps) {
     const { t } = useAiEditorText();
     const handleRemoveSingle = () => {
@@ -593,7 +636,7 @@ export default function PhotoPreviewArea({
                   <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#3B2F1E]/70 px-2 py-0.5 text-[11px] text-white backdrop-blur-sm">
                     {activeBoxInfo.text}
                   </div>
-                </div>) : (<EmptyUploadBox title="Upload a Photo" subtitle={`Click or scan QR code to upload (${activeBoxInfo.text})`} onUpload={() => triggerUpload("single")}/>)}
+                </div>) : (<EmptyUploadBox title="Upload a Photo" subtitle={`Click or scan QR code to upload (${activeBoxInfo.text})`} onUpload={() => triggerUpload("single")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("single", file) : undefined}/>)}
 
               <GateOverlay active={isGenerating} image={uploadedImage} background={currentBgColorValue}/>
             </FitFrame>)}
@@ -647,7 +690,7 @@ export default function PhotoPreviewArea({
                     <button type="button" onClick={() => setLeftImage(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Remove left photo")}>
                       <X size={14}/>
                     </button>
-                  </div>) : (<EmptyUploadBox title="Upload left photo" onUpload={() => triggerUpload("left")}/>)}
+                  </div>) : (<EmptyUploadBox title="Upload left photo" onUpload={() => triggerUpload("left")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("left", file) : undefined}/>)}
 
                 <GateOverlay active={isGenerating && !!leftImage} image={leftImage} background={currentBgColorValue}/>
               </FitFrame>
@@ -663,7 +706,7 @@ export default function PhotoPreviewArea({
                     <button type="button" onClick={() => setRightImage(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Remove right photo")}>
                       <X size={14}/>
                     </button>
-                  </div>) : (<EmptyUploadBox title="Upload right photo" onUpload={() => triggerUpload("right")}/>)}
+                  </div>) : (<EmptyUploadBox title="Upload right photo" onUpload={() => triggerUpload("right")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("right", file) : undefined}/>)}
 
                 <GateOverlay active={isGenerating && !!rightImage} image={rightImage} background={currentBgColorValue}/>
               </FitFrame>
