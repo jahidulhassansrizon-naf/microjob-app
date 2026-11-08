@@ -18,6 +18,10 @@ const SESSION_FILE = path.resolve(
   process.env.FB_SESSION_FILE || path.join(__dirname, "facebook-session.json"),
 );
 const RECIPIENT = (process.env.FB_RECIPIENT || "").trim();
+// Chat PIN of the bot account (only digits are used). Needed because every GitHub run is a
+// "new device" for Messenger. Keep it in the GitHub secret FB_MESSENGER_PIN, never in the code.
+const MESSENGER_PIN = (process.env.FB_MESSENGER_PIN || "").replace(/\D/g, "");
+const PIN_SCREEN_RE = /enter your pin|restore (your )?chats|restore messages|\bPIN\b/i;
 
 const MAX_MESSAGES_PER_HOUR = 12;
 const CHECK_EVERY_MS = 60_000;
@@ -174,9 +178,91 @@ async function sendViaMessenger(getBrowser, text) {
       throw new Error("facebook-logged-out: session expired, save a new one");
     }
 
+    // On a new device (like the GitHub runner) Messenger may show a "restore chats /
+    // enter your PIN" screen. Our chat with the owner is a normal chat, so we first
+    // try to close that screen and only give up if the message box stays unusable.
     const bodyText = (await page.locator("body").innerText().catch(() => "")) || "";
-    if (/enter your pin|restore (your )?chats|restore messages/i.test(bodyText)) {
-      throw new Error("messenger-pin-required: Messenger asks for the chat PIN on this device");
+    const pinScreen = PIN_SCREEN_RE.test(bodyText);
+    let pinInfo = "";
+
+    if (pinScreen) {
+      // Generic dialog wording only (never the chat list), so it is safe to log.
+      const dialogText = (
+        (await page.locator('[role="dialog"]').first().innerText().catch(() => "")) || ""
+      )
+        .replace(/\s+/g, " ")
+        .slice(0, 160);
+      pinInfo = ` [dialog: ${dialogText || "none"}]`;
+      console.log("[notifier] PIN-like screen seen." + pinInfo);
+
+      // 1) If we know the PIN, type it in (once).
+      if (MESSENGER_PIN) {
+        console.log("[notifier] entering the Messenger PIN.");
+        try {
+          const field = page
+            .locator(
+              [
+                '[role="dialog"] input',
+                'input[type="password"]',
+                'input[inputmode="numeric"]',
+                'input[autocomplete="one-time-code"]',
+              ].join(", "),
+            )
+            .first();
+          await field.waitFor({ state: "visible", timeout: 10_000 });
+          await field.click();
+          await page.keyboard.type(MESSENGER_PIN, { delay: 150 });
+          await page.waitForTimeout(600);
+
+          const go = page
+            .locator('[role="dialog"] [role="button"], [role="dialog"] button')
+            .filter({ hasText: /^(continue|confirm|next|done|submit|restore|ok)$/i })
+            .first();
+          if ((await go.count().catch(() => 0)) > 0) {
+            await go.click({ timeout: 4000 }).catch(() => {});
+          } else {
+            await page.keyboard.press("Enter");
+          }
+        } catch {
+          console.log("[notifier] could not find a PIN field on that screen.");
+        }
+
+        // Wait (up to 30s) until the PIN screen has gone away.
+        for (let i = 0; i < 30; i += 1) {
+          await page.waitForTimeout(1000);
+          const t = (await page.locator("body").innerText().catch(() => "")) || "";
+          if (!PIN_SCREEN_RE.test(t)) break;
+        }
+        await page.waitForTimeout(3000);
+      }
+
+      // 2) Otherwise (or if it is still there) try to close the screen.
+      await page.keyboard.press("Escape").catch(() => {});
+      await page.waitForTimeout(800);
+
+      const closers = page
+        .locator('[role="dialog"] [role="button"], [role="dialog"] button, [role="dialog"] [aria-label="Close"]')
+        .filter({ hasText: /^(not now|close|skip|cancel|maybe later|dismiss|don.t restore|no thanks)$/i });
+
+      if ((await closers.count().catch(() => 0)) > 0) {
+        await closers.first().click({ timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(1200);
+      }
+    }
+
+    // An old chat (made before end-to-end encryption) shows a blue "Continue" button
+    // instead of the message box ("You can't reply..."). Press it so the box appears.
+    for (let i = 0; i < 3; i += 1) {
+      const cont = page
+        .locator('[role="button"], button')
+        .filter({ hasText: /^continue$/i })
+        .first();
+
+      if (!(await cont.isVisible().catch(() => false))) break;
+
+      console.log("[notifier] pressing the Continue button (chat upgrade).");
+      await cont.click({ timeout: 5000 }).catch(() => {});
+      await page.waitForTimeout(4000);
     }
 
     const box = page
@@ -189,8 +275,16 @@ async function sendViaMessenger(getBrowser, text) {
       )
       .first();
 
-    await box.waitFor({ state: "visible", timeout: 30_000 });
-    await box.click();
+    try {
+      await box.waitFor({ state: "visible", timeout: 30_000 });
+      await box.click({ timeout: 10_000 });
+    } catch (error) {
+      throw new Error(
+        pinScreen
+          ? `messenger-pin-required: Messenger asks for the chat PIN on this device${pinInfo}`
+          : "message-box-not-found: could not open the message box",
+      );
+    }
 
     const lines = text.split("\n");
     for (let i = 0; i < lines.length; i += 1) {
@@ -210,7 +304,11 @@ async function sendViaMessenger(getBrowser, text) {
       .catch(() => false);
 
     if (!visible) {
-      throw new Error("message-not-confirmed: could not see the sent message in the chat");
+      throw new Error(
+        pinScreen
+          ? `messenger-pin-required: message not delivered, Messenger asks for the chat PIN${pinInfo}`
+          : "message-not-confirmed: could not see the sent message in the chat",
+      );
     }
   } finally {
     await context.close().catch(() => {});
@@ -229,7 +327,7 @@ function enqueue(getBrowser, text) {
           console.log("[notifier] message sent to Messenger.");
           return;
         } catch (error) {
-          const msg = (error instanceof Error ? error.message : String(error)).slice(0, 200);
+          const msg = (error instanceof Error ? error.message : String(error)).slice(0, 400);
           stats.lastError = msg;
           console.log(`[notifier] send failed (attempt ${attempt}/2): ${msg}`);
           // A dead session or a security check will not fix itself within seconds.

@@ -28,8 +28,14 @@ const path = require("path");
   const bytes = fs.statSync(out).size;
   console.log(`Saved ${small.cookies.length} cookies to ${out} (${bytes} bytes).`);
 
-  if (!small.cookies.some((c) => c.name === "c_user")) {
+  const who = small.cookies.find((c) => c.name === "c_user");
+
+  if (!who) {
     console.log("WARNING: no 'c_user' cookie found. Are you logged in to Facebook in that Chrome?");
+  } else {
+    // c_user is just the public Facebook id of the logged-in account. Check that it is
+    // the NEW bot account (open facebook.com/profile.php?id=THIS_NUMBER to see whose it is).
+    console.log(`Logged in as Facebook id: ${who.value}`);
   }
   if (bytes > 48000) {
     console.log("WARNING: file is larger than 48 KB, GitHub will not accept it as a secret.");
