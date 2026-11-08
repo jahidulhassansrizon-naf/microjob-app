@@ -7,6 +7,8 @@ const crypto = require("node:crypto");
 const os = require("node:os");
 const path = require("node:path");
 
+const notifier = require("./notifier");
+
 const app = express();
 
 const PORT = Number(process.env.BOT_PORT) || 3000;
@@ -496,7 +498,11 @@ function circularFrom(sessions, startSlot) {
   return [...sessions.slice(index), ...sessions.slice(0, index)];
 }
 
+// Why a session is parked ("limit" or "logged-out"); only used for status messages.
+const sessionDownReason = {};
+
 function markSessionLimited(slot, resetAt) {
+  sessionDownReason[slot] = "limit";
   const until = resetAt && resetAt > Date.now() ? resetAt : Date.now() + DEFAULT_LIMIT_PARK_MS;
   limitState[slot] = until;
   saveLimitState();
@@ -1663,6 +1669,7 @@ async function runGeminiGenerationInner(options) {
       if (/signInVisible: true|accounts\.google\.com/i.test(failMessage)) {
         stats.loggedOutSessions += 1;
         limitState[session.slot] = Date.now() + 6 * 60 * 60 * 1000;
+        sessionDownReason[session.slot] = "logged-out";
         saveLimitState();
         console.log(
           `Session ${session.slot} looks logged out (re-save it with save-session.js). Skipping it, trying the next one...`,
@@ -1794,6 +1801,40 @@ function generateTemplateWithGemini(
 // API
 // --------------------------------------------------
 
+// What the Messenger monitor looks at (see notifier.js).
+function monitorSnapshot() {
+  return {
+    sessions: listSessions().map((x) => ({
+      slot: x.slot,
+      usable: isSessionUsable(x),
+      until: x.usableAt > Date.now() ? x.usableAt : 0,
+      reason: isSessionUsable(x) ? "" : sessionDownReason[x.slot] || "",
+    })),
+    jobs: stats.jobs,
+    failed: stats.jobsFailed,
+    retries: stats.retries,
+  };
+}
+
+// Only the GitHub watchdog script calls this (it knows a random token made for
+// this run). It sends a short status line to Messenger.
+app.post("/notify", (req, res) => {
+  const token = process.env.NOTIFY_TOKEN || "";
+
+  if (!token || req.get("x-notify-token") !== token) {
+    return res.status(404).end();
+  }
+
+  const text = req.body && typeof req.body.text === "string" ? req.body.text : "";
+
+  if (!text) {
+    return res.status(400).json({ success: false });
+  }
+
+  notifier.notify(text);
+  return res.json({ success: true });
+});
+
 app.get("/health", (req, res) => {
   res.json({
     success: true,
@@ -1808,6 +1849,7 @@ app.get("/health", (req, res) => {
     perSessionConcurrency: perSessionLimit(),
     maxJobRetries: MAX_JOB_RETRIES,
     stats,
+    notifier: notifier.status(),
     recentErrors,
     sessions: listSessions().map((x) => ({
       slot: x.slot,
@@ -2240,6 +2282,8 @@ const server = app.listen(PORT, "127.0.0.1", async () => {
   console.log(
     `Sessions found: ${listSessions().length} (${perSessionLimit()} jobs per session, capacity now ${currentCapacity()}, up to ${MAX_JOB_RETRIES} retries per job, ${SESSION_START_STAGGER_MS}ms start spacing).`,
   );
+
+  notifier.start({ getBrowser: getGenerationBrowser, getSnapshot: monitorSnapshot });
 
   sweepStaleTempDirs().catch(() => {});
 

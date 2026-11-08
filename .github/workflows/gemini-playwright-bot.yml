@@ -69,6 +69,9 @@ jobs:
       GEMINI_SESSION_JSON_10: ${{ secrets.GEMINI_SESSION_JSON_10 }}
       VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
       EDGE_CONFIG_ID: ${{ secrets.EDGE_CONFIG_ID }}
+      # Messenger status messages (optional). Leave both secrets empty to turn them off.
+      FB_SESSION_JSON: ${{ secrets.FB_SESSION_JSON }}
+      FB_RECIPIENT: ${{ secrets.FB_RECIPIENT }}
 
     defaults:
       run:
@@ -110,11 +113,24 @@ jobs:
               chmod 600 "gemini-session-${N}.json"
             fi
           done
+          # Facebook session of the separate "bot" account (only for Messenger messages).
+          if [ -n "$FB_SESSION_JSON" ]; then
+            printf '%s' "$FB_SESSION_JSON" > facebook-session.json
+            chmod 600 facebook-session.json
+            echo "Facebook session restored for Messenger messages."
+          fi
           test -f gemini-session-1.json || {
             echo "GEMINI_SESSION_JSON_1 secret is missing."
             exit 1
           }
           ls gemini-session-*.json
+
+      - name: Create notify token
+        shell: bash
+        run: |
+          NOTIFY_TOKEN="$(openssl rand -hex 16)"
+          echo "::add-mask::$NOTIFY_TOKEN"
+          echo "NOTIFY_TOKEN=$NOTIFY_TOKEN" >> "$GITHUB_ENV"
 
       - name: Start bot server
         shell: bash
@@ -295,6 +311,15 @@ jobs:
             curl -fsS -m 10 "http://127.0.0.1:${BOT_PORT}/health" > /dev/null 2>&1
           }
 
+          # Short status line to Messenger (through the bot; silently ignored if off).
+          notify() {
+            [ -n "$NOTIFY_TOKEN" ] || return 0
+            curl -fsS -m 10 -X POST "http://127.0.0.1:${BOT_PORT}/notify" \
+              -H "x-notify-token: ${NOTIFY_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "$(jq -n --arg t "$1" '{text:$t}')" > /dev/null 2>&1 || true
+          }
+
           publish_url() {
             local URL="$1"
             if [ -z "$VERCEL_API_TOKEN" ] || [ -z "$EDGE_CONFIG_ID" ]; then
@@ -338,6 +363,7 @@ jobs:
             for i in {1..30}; do
               if node_up; then
                 echo "[watchdog] bot server is back."
+                notify "🔁 বট সার্ভার বন্ধ হয়ে গিয়েছিল, নিজে থেকে আবার চালু হয়েছে।"
                 return 0
               fi
               sleep 2
@@ -378,6 +404,7 @@ jobs:
             printf '%s\n' "$NEW_URL" > public-url.txt
             publish_url "$NEW_URL" || return 1
             echo "[watchdog] tunnel replaced and published."
+            notify "🔁 ট্যানেল বন্ধ হয়ে গিয়েছিল, নতুন ঠিকানা তৈরি করে ওয়েবসাইটে দেওয়া হয়েছে।"
             return 0
           }
 

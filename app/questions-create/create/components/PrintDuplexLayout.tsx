@@ -341,6 +341,29 @@ export async function printPaperInIsolatedIframe(sourceRoot: HTMLElement, varian
       page-break-inside: avoid !important;
     }
 
+    /* Thin centre line between the two A5 pages of the A4 landscape sheet. */
+    .print-frame-joint .print-frame-sheet-wrap {
+      position: relative !important;
+    }
+
+    .print-frame-joint .joint-center-divider {
+      position: absolute !important;
+      top: 0 !important;
+      bottom: 0 !important;
+      left: 148mm !important;
+      width: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: 0 !important;
+      border-left: 1px solid #000000 !important;
+      transform: translateX(-0.5px) !important;
+      background: transparent !important;
+      pointer-events: none !important;
+      z-index: 5 !important;
+      print-color-adjust: exact !important;
+      -webkit-print-color-adjust: exact !important;
+    }
+
     .print-frame-joint .print-frame-sheet-wrap:first-child {
       break-before: auto !important;
       page-break-before: auto !important;
@@ -468,6 +491,10 @@ export async function printPaperInIsolatedIframe(sourceRoot: HTMLElement, varian
                 blank.className = "print-frame-sheet";
                 spread.appendChild(blank);
             }
+            const centerDivider = printDocument.createElement("div");
+            centerDivider.className = "joint-center-divider";
+            centerDivider.setAttribute("aria-hidden", "true");
+            spread.appendChild(centerDivider);
             clonedSource.appendChild(spread);
         }
     }
@@ -944,6 +971,8 @@ export default function PrintDuplexLayout({ manager, renderPaper, hideTools = fa
                       <div className="screen-only pointer-events-none absolute left-1/2 top-[-18px] -translate-x-1/2 rounded-full border border-[#D8C9A6] bg-[#F3E9D2] px-3 py-1 text-[12px] font-bold uppercase tracking-wide text-[#5A4A32]"><T>{"Sheet "}</T>{Math.floor(spreadIndex / 2) + 1}<T>{"\u00B7"}</T>{<T>{" "}</T>}
                         {spreadIndex % 2 === 0 ? <T>{"Front"}</T> : <T>{"Back / Flip"}</T>}
                       </div>
+
+                      {spreadPageIndices.length === 2 ? (<div aria-hidden="true" className="joint-center-divider pointer-events-none absolute bottom-0 left-1/2 top-0 z-[5] w-0 -translate-x-1/2 border-l border-black"/>) : null}
 
                       {spreadPageIndices.map((pageIndex, spreadSideIndex) => {
                         const pagePart: "left" | "right" = spreadSideIndex === 0 ? "left" : "right";

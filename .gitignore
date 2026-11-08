@@ -39,3 +39,5 @@ gemini-session*.json
 session-limits.json
 chrome-profile-*/
 **/chrome-profile-*/
+facebook-session.json
+playwright-service/test-results/
