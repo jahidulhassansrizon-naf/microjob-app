@@ -503,6 +503,9 @@ const sessionDownReason = {};
 
 function markSessionLimited(slot, resetAt) {
   sessionDownReason[slot] = "limit";
+  const u = usageOf(slot);
+  if (u.since > 0) u.limitAfter = u.since;
+  u.since = 0;
   const until = resetAt && resetAt > Date.now() ? resetAt : Date.now() + DEFAULT_LIMIT_PARK_MS;
   limitState[slot] = until;
   saveLimitState();
@@ -669,7 +672,26 @@ const stats = {
   limitHits: 0,
   loggedOutSessions: 0,
   otherErrors: 0,
+  peakActive: 0,
+  peakWaiting: 0,
+  totalOkMs: 0,
 };
+
+// Images made per session in this run, and since that session last hit its limit.
+// limitAfter = how many images it made before the last limit message (shows the real daily limit).
+const sessionUsage = {};
+
+function usageOf(slot) {
+  if (!sessionUsage[slot]) {
+    sessionUsage[slot] = { ok: 0, since: 0, limitAfter: 0 };
+  }
+  return sessionUsage[slot];
+}
+
+function notePeaks() {
+  if (activeJobs > stats.peakActive) stats.peakActive = activeJobs;
+  if (waitingJobs.length > stats.peakWaiting) stats.peakWaiting = waitingJobs.length;
+}
 
 const MAX_QUEUE_LENGTH = readIntEnv("MAX_QUEUE_LENGTH", 100, 0, 1000);
 const QUEUE_WAIT_TIMEOUT_MS = readIntEnv(
@@ -772,6 +794,7 @@ function acquireSlot(signal) {
 
     if (activeJobs < currentCapacity()) {
       activeJobs += 1;
+      notePeaks();
       return resolve();
     }
 
@@ -806,6 +829,7 @@ function acquireSlot(signal) {
     signal.addEventListener("abort", waiter.onAbort, { once: true });
 
     waitingJobs.push(waiter);
+    notePeaks();
   });
 }
 
@@ -817,6 +841,7 @@ function pumpWaiters() {
 
     removeWaiter(next);
     activeJobs += 1;
+    notePeaks();
     next.resolve();
   }
 }
@@ -1597,10 +1622,12 @@ function retryKind(error) {
 // The user only sees an error if every attempt fails.
 async function runGeminiGeneration(options) {
   stats.jobs += 1;
+  const startedAt = Date.now();
 
   try {
     const result = await runGeminiGenerationInner(options);
     stats.jobsOk += 1;
+    stats.totalOkMs += Date.now() - startedAt;
     return result;
   } catch (error) {
     if (!(error && error.statusCode === 499)) {
@@ -1643,11 +1670,17 @@ async function runGeminiGenerationInner(options) {
         `Using Gemini session ${session.slot} (${sessionActive[session.slot]}/${perSessionLimit()} busy).`,
       );
 
-      return await runGeminiWithSession({
+      const generated = await runGeminiWithSession({
         ...options,
         sessionFile: session.file,
         slot: session.slot,
       });
+
+      const usage = usageOf(session.slot);
+      usage.ok += 1;
+      usage.since += 1;
+
+      return generated;
     } catch (error) {
       if (options.signal && options.signal.aborted) {
         throw abortReason(options.signal);
@@ -1809,10 +1842,19 @@ function monitorSnapshot() {
       usable: isSessionUsable(x),
       until: x.usableAt > Date.now() ? x.usableAt : 0,
       reason: isSessionUsable(x) ? "" : sessionDownReason[x.slot] || "",
+      ok: usageOf(x.slot).ok,
+      since: usageOf(x.slot).since,
+      limitAfter: usageOf(x.slot).limitAfter,
     })),
     jobs: stats.jobs,
+    ok: stats.jobsOk,
     failed: stats.jobsFailed,
     retries: stats.retries,
+    refused: stats.attemptsRefused,
+    timedOut: stats.attemptsTimedOut,
+    peakActive: stats.peakActive,
+    peakWaiting: stats.peakWaiting,
+    avgSeconds: stats.jobsOk ? Math.round(stats.totalOkMs / stats.jobsOk / 1000) : 0,
   };
 }
 
@@ -1849,6 +1891,9 @@ app.get("/health", (req, res) => {
     perSessionConcurrency: perSessionLimit(),
     maxJobRetries: MAX_JOB_RETRIES,
     stats,
+    imagesPerSession: Object.fromEntries(
+      Object.entries(sessionUsage).map(([slot, u]) => [slot, u.ok]),
+    ),
     notifier: notifier.status(),
     recentErrors,
     sessions: listSessions().map((x) => ({
@@ -2283,7 +2328,13 @@ const server = app.listen(PORT, "127.0.0.1", async () => {
     `Sessions found: ${listSessions().length} (${perSessionLimit()} jobs per session, capacity now ${currentCapacity()}, up to ${MAX_JOB_RETRIES} retries per job, ${SESSION_START_STAGGER_MS}ms start spacing).`,
   );
 
-  notifier.start({ getBrowser: getGenerationBrowser, getSnapshot: monitorSnapshot });
+  notifier.start({
+    getBrowser: getGenerationBrowser,
+    getSnapshot: monitorSnapshot,
+    runStartMs: Number(process.env.JOB_START_EPOCH) > 0
+      ? Number(process.env.JOB_START_EPOCH) * 1000
+      : Date.now(),
+  });
 
   sweepStaleTempDirs().catch(() => {});
 

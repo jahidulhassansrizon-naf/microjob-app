@@ -46,11 +46,43 @@ function dhakaTime(ms) {
 // Monitor logic (pure: easy to test without Facebook)
 // --------------------------------------------------
 
-// snapshot = { sessions: [{ slot, usable, until, reason }], jobs, failed, retries }
-function createMonitor({ getSnapshot, send, now = () => Date.now() }) {
+const SESSION_WARN_AT = Math.max(0, Number(process.env.SESSION_WARN_AT) || 0);
+const DAILY_REPORT_HOUR_DHAKA = 21;
+const RUN_END_REPORT_AFTER_MS = 345 * 60_000;
+
+function dhakaParts(ms) {
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Dhaka",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hour12: false,
+    }).formatToParts(new Date(ms));
+    const get = (t) => parts.find((p) => p.type === t).value;
+    return { date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")) % 24 };
+  } catch {
+    const d = new Date(ms + 6 * 3600_000);
+    return { date: d.toISOString().slice(0, 10), hour: d.getUTCHours() };
+  }
+}
+
+function durationText(ms) {
+  const m = Math.max(0, Math.round(ms / 60_000));
+  return m >= 60 ? `${Math.floor(m / 60)} ঘণ্টা ${m % 60} মিনিট` : `${m} মিনিট`;
+}
+
+// snapshot = { sessions: [{ slot, usable, until, reason, ok, since, limitAfter }],
+//              jobs, ok, failed, retries, refused, timedOut, peakActive, peakWaiting, avgSeconds }
+function createMonitor({ getSnapshot, send, now = () => Date.now(), runStartMs = 0 }) {
+  const startedAt = runStartMs || now();
   let prev = null;
   let history = [];
   let lastFailAlertAt = 0;
+  let lastDailyDate = "";
+  let runEndSent = false;
+  const warned = {};
   const sentTimes = [];
 
   function allowed() {
@@ -74,7 +106,10 @@ function createMonitor({ getSnapshot, send, now = () => Date.now() }) {
       return "লগ-আউট হয়ে গেছে (নতুন সেশন সেভ করতে হবে)";
     }
     if (s.reason === "limit") {
-      return s.until ? `দৈনিক লিমিট শেষ, ${dhakaTime(s.until)} নাগাদ আবার চালু হবে` : "দৈনিক লিমিট শেষ";
+      const after = s.limitAfter > 0 ? ` (${s.limitAfter}টা ছবির পর)` : "";
+      return s.until
+        ? `দৈনিক লিমিট শেষ${after}, ${dhakaTime(s.until)} নাগাদ আবার চালু হবে`
+        : `দৈনিক লিমিট শেষ${after}`;
     }
     return s.until ? `সাময়িক বন্ধ, ${dhakaTime(s.until)} নাগাদ আবার চালু হবে` : "বন্ধ";
   }
@@ -86,6 +121,34 @@ function createMonitor({ getSnapshot, send, now = () => Date.now() }) {
     for (const s of snap.sessions.filter((x) => !x.usable)) {
       lines.push(`⚠️ সেশন ${s.slot}: ${reasonText(s)}`);
     }
+    return lines.join("\n");
+  }
+
+  function summaryText(title) {
+    const snap = getSnapshot();
+    const done = snap.ok || 0;
+    const total = done + (snap.failed || 0);
+    const rate = total ? Math.round((done / total) * 100) : 100;
+    const lines = [
+      `📊 ${title} (এই রান ${durationText(now() - startedAt)} ধরে চলছে)`,
+      `ছবি: ${done} সফল, ${snap.failed || 0} ফেল (সাফল্য ${rate}%)`,
+    ];
+    if (snap.retries) {
+      lines.push(`রিট্রাই: ${snap.retries} বার (রিফিউজ ${snap.refused || 0}, টাইমআউট ${snap.timedOut || 0})`);
+    }
+    if (done) {
+      lines.push(`গড় সময়: ${snap.avgSeconds || 0} সেকেন্ড`);
+      lines.push(`সর্বোচ্চ একসাথে: ${snap.peakActive || 0}, লাইনে সর্বোচ্চ: ${snap.peakWaiting || 0}`);
+    }
+    lines.push(
+      "সেশন: " +
+        snap.sessions
+          .map((s) => `${s.slot}: ${s.ok || 0}টা ${s.usable ? "🟢" : "🔴"}`)
+          .join(" | "),
+    );
+    const down = snap.sessions.filter((s) => !s.usable);
+    for (const s of down) lines.push(`⚠️ সেশন ${s.slot}: ${reasonText(s)}`);
+    if (!down.length) lines.push("সব সেশন ঠিক আছে।");
     return lines.join("\n");
   }
 
@@ -117,7 +180,24 @@ function createMonitor({ getSnapshot, send, now = () => Date.now() }) {
       }
     }
 
-    // 2) Failure rate over the last 10 minutes
+    // 2) Early warning: a session is close to its daily limit.
+    //    The limit is learned from this run's limit message (80% of it), or set with SESSION_WARN_AT.
+    const warnLines = [];
+    for (const s of snap.sessions) {
+      const threshold = s.limitAfter > 0 ? Math.floor(s.limitAfter * 0.8) : SESSION_WARN_AT;
+      if (!s.usable || !(s.since > 0) || !(threshold > 0)) {
+        if (!s.usable || !(s.since > 0)) warned[s.slot] = false;
+        continue;
+      }
+      if (s.since >= threshold && !warned[s.slot]) {
+        warned[s.slot] = true;
+        const limitPart = s.limitAfter > 0 ? ` (আগের লিমিট ${s.limitAfter}টায়)` : "";
+        warnLines.push(`⏳ সেশন ${s.slot}: ${s.since}টা ছবি হয়ে গেছে${limitPart}, লিমিটের কাছাকাছি`);
+      }
+    }
+    if (warnLines.length) say(warnLines.join("\n"));
+
+    // 3) Failure rate over the last 10 minutes
     history.push({ t, jobs: snap.jobs, failed: snap.failed });
     history = history.filter((h) => t - h.t <= FAIL_WINDOW_MS + CHECK_EVERY_MS);
     const first = history[0];
@@ -133,10 +213,26 @@ function createMonitor({ getSnapshot, send, now = () => Date.now() }) {
       say(`⚠️ গত ১০ মিনিটে ${dJobs}টার মধ্যে ${dFailed}টা ছবি ফেল হয়েছে। লগ দেখুন।`);
     }
 
+    // 4) Daily report (21:00 Dhaka time, once a day) and a report when this run is about to end.
+    const dh = dhakaParts(t);
+    const dailyDue = dh.hour >= DAILY_REPORT_HOUR_DHAKA && lastDailyDate !== dh.date;
+    const endDue = !runEndSent && t - startedAt >= RUN_END_REPORT_AFTER_MS;
+
+    if (dailyDue) lastDailyDate = dh.date;
+    if (endDue) runEndSent = true;
+
+    if (dailyDue && endDue) {
+      say(summaryText("দৈনিক আপডেট, এই রান শেষ হচ্ছে"));
+    } else if (dailyDue) {
+      say(summaryText("দৈনিক আপডেট"));
+    } else if (endDue) {
+      say(summaryText("এই রান শেষ হচ্ছে"));
+    }
+
     prev = snap;
   }
 
-  return { check, startupText, say };
+  return { check, startupText, summaryText, say };
 }
 
 // --------------------------------------------------
@@ -345,7 +441,7 @@ function isEnabled() {
   return Boolean(RECIPIENT) && fs.existsSync(SESSION_FILE);
 }
 
-function start({ getBrowser, getSnapshot }) {
+function start({ getBrowser, getSnapshot, runStartMs }) {
   if (!isEnabled()) {
     console.log(
       "[notifier] disabled (set FB_RECIPIENT and provide facebook-session.json to turn it on).",
@@ -359,6 +455,7 @@ function start({ getBrowser, getSnapshot }) {
   const monitor = createMonitor({
     getSnapshot,
     send: (text) => enqueue(getBrowser, text),
+    runStartMs,
   });
 
   // Wait a little so sessions are loaded, then say hello.
