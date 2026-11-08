@@ -1,4 +1,5 @@
 import { AiT, useAiEditorText } from "./aiEditorI18n";
+import { AiEditorVideoCard } from "./AiEditorVideoGuide";
 import React, { useEffect, useRef, useState } from "react";
 import { Upload, X, ArrowLeftRight, ImageIcon, RefreshCw } from "lucide-react";
 export interface BoxInfo {
@@ -475,10 +476,12 @@ function FitFrame({ info, imageSrc, className = "", style, children, }: {
       </div>
     </div>);
 }
-function EmptyUploadBox({ title, subtitle, onUpload, onFile, }: {
+function EmptyUploadBox({ title, subtitle, onUpload, onFile, extra, }: {
     title: string;
     subtitle?: string;
     onUpload: () => void;
+    /** Optional extra content shown under the upload button (hidden while a file is dragged over). */
+    extra?: React.ReactNode;
     /** When given, a photo file can be dragged and dropped onto the box. */
     onFile?: (file: File) => void;
 }) {
@@ -535,6 +538,8 @@ function EmptyUploadBox({ title, subtitle, onUpload, onFile, }: {
 
       {!dragging && (<button type="button" onClick={onUpload} className="flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#DC2626] px-3.5 py-1.5 text-[13px] font-medium text-white shadow-md transition hover:bg-[#DC2626]/90 active:scale-95">
         <Upload size={12}/><AiT>{"Upload Photo\n      "}</AiT></button>)}
+
+      {!dragging && extra}
     </div>);
 }
 function PhotoCard({ image, label, boxInfo, background, onRemove, showBorder = true, isScanning = false, filter, }: {
@@ -636,7 +641,7 @@ export default function PhotoPreviewArea({
                   <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#3B2F1E]/70 px-2 py-0.5 text-[11px] text-white backdrop-blur-sm">
                     {activeBoxInfo.text}
                   </div>
-                </div>) : (<EmptyUploadBox title="Upload a Photo" subtitle={`Click or scan QR code to upload (${activeBoxInfo.text})`} onUpload={() => triggerUpload("single")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("single", file) : undefined}/>)}
+                </div>) : (<EmptyUploadBox title="Upload a Photo" subtitle={`Click or scan QR code to upload (${activeBoxInfo.text})`} onUpload={() => triggerUpload("single")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("single", file) : undefined} extra={<AiEditorVideoCard />}/>)}
 
               <GateOverlay active={isGenerating} image={uploadedImage} background={currentBgColorValue}/>
             </FitFrame>)}

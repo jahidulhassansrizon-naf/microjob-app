@@ -16,6 +16,7 @@ import {
 import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDES, isOptionEntry } from "./editingGuides";
 import TiePicker, { canHaveTie, getTieFromGuides, withTie } from "./TiePicker";
 import GuideIcon from "./GuideIcon";
+import AiEditorVideoGuide from "./AiEditorVideoGuide";
 import PhotoSizeIcon from "./PhotoSizeIcon";
 import { CLOTHING_NAMES } from "./clothingStyles";
 export interface PhotoSizeOption {
@@ -955,6 +956,7 @@ export default function GenerationSettings({
             <span className="w-1 h-4 bg-[#DC2626] rounded-full" />
             <AiT>{"Generation settings\n          "}</AiT>
           </span>
+          <AiEditorVideoGuide />
         </div>
 
         {/* PHOTO SIZE SECTION */}

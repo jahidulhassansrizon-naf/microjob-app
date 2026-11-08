@@ -152,13 +152,25 @@ const FILTERS: { id: "all" | Group; label: string }[] = [
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// Intro video shown from the AI Editor card in the hero deck (https://youtu.be/agi8E9vrgHU).
+const HERO_YOUTUBE_ID = "agi8E9vrgHU";
+const HERO_YOUTUBE_EMBED = `https://www.youtube-nocookie.com/embed/${HERO_YOUTUBE_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+
 /* ------------------------- Hero visual: tilt deck ------------------------- */
 
-const DECK = [
+const DECK: {
+  src: string;
+  alt: string;
+  pos: string;
+  rotate: number;
+  depth: number;
+  delay: number;
+  video?: boolean;
+}[] = [
   {
     src: "/Herothumbnail/printmedia.png",
     alt: "Print Media preview",
-    pos: "right-0 top-0 w-[72%]",
+    pos: "right-0 top-0 w-[58%]",
     rotate: 5,
     depth: 18,
     delay: 0.25,
@@ -166,22 +178,83 @@ const DECK = [
   {
     src: "/Herothumbnail/aiTemplate.png",
     alt: "AI Template preview",
-    pos: "left-0 top-[31%] w-[72%]",
-    rotate: -4,
-    depth: 34,
+    pos: "left-0 bottom-[1%] w-[58%]",
+    rotate: -5,
+    depth: 30,
     delay: 0.4,
   },
   {
     src: "/Herothumbnail/aiEditor.png",
     alt: "AI Editor preview",
-    pos: "bottom-0 right-[3%] w-[70%]",
-    rotate: 1.5,
-    depth: 52,
+    pos: "inset-x-0 mx-auto top-[15%] w-[76%]",
+    rotate: 0,
+    depth: 70,
     delay: 0.55,
+    video: true,
   },
 ];
 
-function HeroDeck() {
+/* Play overlay: makes a thumbnail read as a video at a glance. */
+function WatchOverlay({ onWatch }: { onWatch: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onWatch}
+      aria-label="Watch the AI Editor video"
+      className="group absolute inset-0 z-10 flex cursor-pointer items-center justify-center bg-gradient-to-t from-slate-950/60 via-slate-950/10 to-slate-950/20 transition-colors duration-300 hover:from-slate-950/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-indigo-300"
+    >
+      {/* play button with a soft pulse so it reads as a video at a glance */}
+      <span className="relative flex h-14 w-14 items-center justify-center lg:h-16 lg:w-16">
+        <span
+          aria-hidden
+          className="absolute inset-0 rounded-full bg-white/60 motion-safe:animate-ping [animation-duration:2.2s]"
+        />
+        <span className="relative flex h-full w-full items-center justify-center rounded-full bg-white text-indigo-600 shadow-2xl shadow-indigo-950/40 ring-4 ring-white/40 transition-transform duration-200 group-hover:scale-110 group-active:scale-95">
+          <Play className="ml-0.5 h-6 w-6 fill-current lg:h-7 lg:w-7" />
+        </span>
+      </span>
+      <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-slate-950/70 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+        <Play size={10} className="fill-current" />
+        <T>{"Watch video"}</T>
+      </span>
+      {/* player-style progress bar */}
+      <span aria-hidden className="absolute inset-x-0 bottom-0 h-1 bg-white/25">
+        <span className="block h-full w-[18%] bg-red-500" />
+      </span>
+    </button>
+  );
+}
+
+function MobileVideoCard({ onWatch }: { onWatch: () => void }) {
+  // Phones skip the tilt deck, so the video is shown first and full width instead.
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: EASE }}
+      className="relative md:hidden"
+    >
+      <div
+        aria-hidden
+        className="absolute inset-x-4 inset-y-6 -z-10 rounded-[32px] bg-gradient-to-br from-blue-400/35 via-indigo-400/25 to-fuchsia-300/35 blur-2xl"
+      />
+      <div className="rounded-[22px] bg-white p-1.5 shadow-[0_28px_50px_-24px_rgba(30,41,99,0.55)] ring-1 ring-slate-900/10">
+        <div className="relative aspect-video overflow-hidden rounded-[17px] bg-slate-100">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/Herothumbnail/aiEditor.png"
+            alt="AI Editor video"
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
+          <WatchOverlay onWatch={onWatch} />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function HeroDeck({ onWatch }: { onWatch: () => void }) {
   const reduce = useReducedMotion();
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
@@ -227,7 +300,7 @@ function HeroDeck() {
             className={`absolute ${c.pos}`}
           >
             <div className="rounded-[22px] bg-white p-1.5 shadow-[0_34px_60px_-26px_rgba(30,41,99,0.55)] ring-1 ring-slate-900/10">
-              <div className="aspect-video overflow-hidden rounded-[17px] bg-slate-100">
+              <div className="relative aspect-video overflow-hidden rounded-[17px] bg-slate-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={c.src}
@@ -235,6 +308,7 @@ function HeroDeck() {
                   className="h-full w-full object-cover"
                   draggable={false}
                 />
+                {c.video && <WatchOverlay onWatch={onWatch} />}
               </div>
             </div>
           </motion.div>
@@ -256,7 +330,7 @@ function HeroDeck() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: 1.15, ease: EASE }}
           style={{ translateZ: 90 }}
-          className="absolute bottom-[6%] left-[3%] flex items-center gap-2 rounded-full bg-slate-950 py-1.5 pl-2 pr-3.5 text-[11.5px] font-bold text-white shadow-[0_18px_34px_-14px_rgba(15,23,42,0.7)]"
+          className="absolute bottom-[3%] right-[3%] flex items-center gap-2 rounded-full bg-slate-950 py-1.5 pl-2 pr-3.5 text-[11.5px] font-bold text-white shadow-[0_18px_34px_-14px_rgba(15,23,42,0.7)]"
         >
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600">
             <Users size={12} />
@@ -403,21 +477,26 @@ function ToolCard({
 
 export default function FeaturedToolsShowcase() {
   const [activeVideo, setActiveVideo] = useState<FeaturedTool | null>(null);
+  const [heroVideoOpen, setHeroVideoOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | Group>("all");
 
+  const modalOpen = Boolean(activeVideo) || heroVideoOpen;
   useEffect(() => {
-    if (!activeVideo) return;
+    if (!modalOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setActiveVideo(null);
+      if (e.key === "Escape") {
+        setActiveVideo(null);
+        setHeroVideoOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKey);
     };
-  }, [activeVideo]);
+  }, [modalOpen]);
 
   const visible =
     filter === "all"
@@ -451,6 +530,7 @@ export default function FeaturedToolsShowcase() {
       <div className="mx-auto max-w-[1240px]">
         {/* ================= HERO ================= */}
         <div className="grid items-center gap-10 pb-12 pt-4 lg:grid-cols-[1.02fr_0.98fr] lg:gap-6 lg:pb-16 lg:pt-8">
+          <MobileVideoCard onWatch={() => setHeroVideoOpen(true)} />
           <div className="max-w-2xl">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -558,7 +638,7 @@ export default function FeaturedToolsShowcase() {
             </motion.dl>
           </div>
 
-          <HeroDeck />
+          <HeroDeck onWatch={() => setHeroVideoOpen(true)} />
         </div>
 
         {/* ================= TOOLS ================= */}
@@ -702,6 +782,59 @@ export default function FeaturedToolsShowcase() {
                 playsInline
                 className="aspect-video w-full bg-black"
               />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* hero YouTube video modal: the iframe only mounts while open, so closing stops playback */}
+      <AnimatePresence>
+        {heroVideoOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) setHeroVideoOpen(false);
+            }}
+            className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI Editor video"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              className="w-full max-w-4xl overflow-hidden rounded-2xl border border-white/15 bg-slate-950 shadow-2xl"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 text-white">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold">
+                    <T>{"AI Editor"}</T>
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    <T>{"Seba Lagbe video guide"}</T>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHeroVideoOpen(false)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+                  aria-label="Close video"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="aspect-video w-full bg-black">
+                <iframe
+                  src={HERO_YOUTUBE_EMBED}
+                  title="Seba Lagbe AI Editor video"
+                  className="h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              </div>
             </motion.div>
           </motion.div>
         )}
