@@ -179,7 +179,7 @@ const MANUAL_EDITOR_BN: Record<string, string> = {
   "ai scan in progress": "এআই স্ক্যান চলছে",
   "drop your photo here": "আপনার ছবি এখানে ছেড়ে দিন",
   "upload a photo": "একটি ছবি আপলোড করুন",
-  "click or drag &amp; drop to upload": "আপলোড করতে ক্লিক করুন অথবা টেনে এনে ছেড়ে দিন",
+  "click or drag & drop to upload": "আপলোড করতে ক্লিক করুন অথবা টেনে এনে ছেড়ে দিন",
   "upload photo": "ছবি আপলোড করুন",
   "jpg, png, webp • max 10 mb": "JPG, PNG, WebP • সর্বোচ্চ ১০ MB",
   "empty": "খালি",

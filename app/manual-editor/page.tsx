@@ -7,6 +7,7 @@ import BackgroundPanel from "./_components/manual-editor/BackgroundPanel";
 import AiToolsPanel from "./_components/manual-editor/AiToolsPanel";
 import PhotoWorkspace from "./_components/manual-editor/PhotoWorkspace";
 import AdjustmentsPanel from "./_components/manual-editor/AdjustmentsPanel";
+import FitToHeight from "./_components/manual-editor/FitToHeight";
 import QrUploadPanel from "./_components/manual-editor/QrUploadPanel";
 import GeneratedPhotosPanel from "./_components/manual-editor/GeneratedPhotosPanel";
 import ScanModal from "./_components/manual-editor/ScanModal";
@@ -104,17 +105,21 @@ function ManualEditorScreen() {
       <DashboardNavbar />
       <div className="w-full p-3 md:p-4 lg:px-4 lg:py-3 flex flex-col gap-5 lg:gap-3 flex-1 lg:min-h-0">
         <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-1 gap-6 lg:gap-4 lg:flex-1 lg:min-h-0">
-          <aside {...leftDragScroll} className="me-left scroll lg:col-span-3 bg-[#F2E8D2] border border-[#E3D6B8] rounded-3xl p-4 md:p-5 lg:p-4 flex flex-col gap-5 lg:gap-3 shadow-sm overflow-visible lg:overflow-y-auto max-h-[85vh] lg:max-h-none lg:h-full lg:min-h-0">
-            <PhotoSizePanel />
-            <BackgroundPanel />
-            <AiToolsPanel />
+          <aside {...leftDragScroll} className="me-left scroll lg:col-span-3 bg-[#F2E8D2] border border-[#E3D6B8] rounded-3xl p-4 md:p-5 lg:p-4 flex flex-col gap-5 lg:gap-3 shadow-sm overflow-visible lg:overflow-hidden max-h-[85vh] lg:max-h-none lg:h-full lg:min-h-0">
+            <FitToHeight className="flex flex-col gap-5 lg:gap-3">
+              <PhotoSizePanel />
+              <BackgroundPanel />
+              <AiToolsPanel />
+            </FitToHeight>
           </aside>
 
           <PhotoWorkspace />
 
-          <aside className="me-right scroll lg:col-span-3 flex flex-col gap-5 lg:gap-2 lg:h-full lg:min-h-0 lg:overflow-y-auto">
-            <QrUploadPanel />
-            <AdjustmentsPanel />
+          <aside className="me-right lg:col-span-3 flex flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
+            <FitToHeight className="flex flex-col gap-5 lg:gap-2">
+              <QrUploadPanel />
+              <AdjustmentsPanel />
+            </FitToHeight>
           </aside>
         </div>
 

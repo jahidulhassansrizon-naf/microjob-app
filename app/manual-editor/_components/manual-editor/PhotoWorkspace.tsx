@@ -514,7 +514,7 @@ export default function PhotoWorkspace() {
               <h3 className="text-[#3B2F1E] text-lg font-bold">
                 {isDragging ? <T>{"Drop your photo here"}</T> : <T>{"Upload a Photo"}</T>}
               </h3>
-              <p className="text-[#6B5A40] text-sm mt-1"><T>{"Click or drag &amp; drop to upload\n              "}</T></p>
+              <p className="text-[#6B5A40] text-sm mt-1"><T>{"Click or drag & drop to upload\n              "}</T></p>
               <div className="mt-2 inline-flex px-3 py-1 rounded-full bg-[#FBF6E8] border border-[#E3D6B8] text-[13px] font-semibold text-[#3B2F1E] shadow-sm">
                 {currentPreset.label}
               </div>
