@@ -598,10 +598,10 @@ export default function AdminDashboardClient() {
   }, [authorized, authHeaders]);
 
   const loadOverview = useCallback(
-    async (quiet = false) => {
+    async (quiet = false, allowCached = false) => {
       if (!quiet) setOverviewLoading(true);
       try {
-        const response = await fetch("/api/admin/overview", {
+        const response = await fetch(allowCached ? "/api/admin/overview?cached=1" : "/api/admin/overview", {
           credentials: "include",
           cache: "no-store",
           headers: authHeaders(),
@@ -1058,10 +1058,6 @@ export default function AdminDashboardClient() {
   useEffect(() => {
     if (!authorized) return;
     void loadOverview();
-    const interval = window.setInterval(() => {
-      void loadOverview(true);
-    }, 60_000);
-    return () => window.clearInterval(interval);
   }, [authorized, loadOverview]);
 
   useEffect(() => {
@@ -1084,13 +1080,15 @@ export default function AdminDashboardClient() {
   // Expired heartbeats disappear after the short lease window.
   useEffect(() => {
     if (!authorized) return;
-    const interval = window.setInterval(() => {
-      void loadOverview(true);
+    // Single visibility-aware poll (was 5s + 60s setInterval running in hidden tabs too).
+    // The server caches the overview briefly, so this stays cheap on Active CPU.
+    const stopPolling = visibleInterval(() => {
+      void loadOverview(true, true);
       if (tab === "users") {
         void loadUsers(userPagination.page, appliedUserSearch, userStatus, true);
       }
-    }, 5_000);
-    return () => window.clearInterval(interval);
+    }, 60_000);
+    return stopPolling;
   }, [
     appliedUserSearch,
     authorized,

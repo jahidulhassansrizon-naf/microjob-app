@@ -17,10 +17,15 @@ type PresenceInput = { userId: string; sessionId: string };
 export async function updatePresenceSnapshot(input: PresenceInput) {
   await connectDB();
   const now = new Date();
-  const existingUser = await User.exists({ _id: input.userId });
-  if (!existingUser) return false;
 
-  await PresenceSession.findOneAndUpdate(
+  // The caller has already verified the session with User.findById, so the separate
+  // User.exists() round-trip was redundant. updateOne(upsert) also avoids returning the
+  // whole PresenceSession document. The User update below doubles as the existence check:
+  // matchedCount === 0 means the account is gone.
+  const userUpdate = await User.updateOne({ _id: input.userId }, { $set: { lastSeenAt: now } });
+  if (!userUpdate.matchedCount) return false;
+
+  await PresenceSession.updateOne(
     { userId: input.userId, sessionId: input.sessionId },
     {
       $set: {
@@ -37,9 +42,8 @@ export async function updatePresenceSnapshot(input: PresenceInput) {
       },
       $setOnInsert: { userId: input.userId, sessionId: input.sessionId },
     },
-    { upsert: true, new: true, setDefaultsOnInsert: true, strict: false },
+    { upsert: true, setDefaultsOnInsert: true, strict: false },
   );
-  await User.updateOne({ _id: input.userId }, { $set: { lastSeenAt: now } });
   return true;
 }
 

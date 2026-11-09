@@ -7,7 +7,7 @@ import Otp from "@/models/Otp";
 import { enforceAuthRateLimit } from "@/app/api/_lib/authRateLimit";
 import { getPhoneLookupVariants, normalizePhoneNumber, validatePhoneNumber } from "@/lib/phoneValidation";
 import { ensureUniqueFullNameIndex, findDuplicateFullName, normalizeFullName } from "@/app/api/_lib/userIdentity";
-import { validateNewPassword, newPasswordErrorMessage } from "@/app/api/_lib/passwordPolicy";
+import { validateNewPassword, newPasswordErrorMessage, BCRYPT_COST } from "@/app/api/_lib/passwordPolicy";
 import {
   attemptsQuery,
   constantTimeOtpMatch,
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
     const consumedOtp = await Otp.findOneAndDelete(consumeFilter).exec();
     if (!consumedOtp) return json({ message: "This OTP has already been used or expired. Please request a new code." }, 400);
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_COST);
     let newUser;
     try {
       newUser = await User.create({

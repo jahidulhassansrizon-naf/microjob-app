@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import QrUploadSession from "@/models/QrUploadSession";
 import { requireActiveSubscription, requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
-import { hashQrUploadToken, noStoreHeaders } from "../_lib";
+import { hashQrUploadToken, noStoreHeaders, QR_UPLOAD_PENDING_TTL_MS } from "../_lib";
 
 export const runtime = "nodejs";
 
@@ -41,18 +41,12 @@ export async function POST(request: Request) {
     const now = new Date();
     const userId = new mongoose.Types.ObjectId(access.userId);
 
-    // Expire only sessions whose transfer/temporary image cleanup window has elapsed.
-    await QrUploadSession.deleteMany({ expiresAt: { $lte: now } });
-
-    // Keep one waiting QR per user. A newly opened editor replaces an older unused QR.
-    // Pending sessions have no expiresAt field, so they remain active until replaced or used.
+    // One query: drop every session whose cleanup window has elapsed, and replace this user's older
+    // unused (pending) QR with the new one.
     await QrUploadSession.deleteMany({
-      userId,
-      status: "pending",
       $or: [
-        { expiresAt: { $exists: false } },
-        { expiresAt: null },
-        { expiresAt: { $gt: now } },
+        { expiresAt: { $lte: now } },
+        { userId, status: "pending" },
       ],
     });
 
@@ -76,8 +70,9 @@ export async function POST(request: Request) {
     await QrUploadSession.create({
       tokenHash: hashQrUploadToken(token),
       userId,
-      // No expiresAt on a pending session: its QR remains active until one upload succeeds.
+      // A pending QR is only useful while the desktop is polling (it stops after ~10 min), so it expires too.
       status: "pending",
+      expiresAt: new Date(now.getTime() + QR_UPLOAD_PENDING_TTL_MS),
     });
 
     return NextResponse.json(

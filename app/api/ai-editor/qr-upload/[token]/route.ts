@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import QrUploadSession from "@/models/QrUploadSession";
 import User from "@/models/User";
-import { detectRasterImageMime, hashQrUploadToken, isValidQrUploadToken, noStoreHeaders, QR_UPLOAD_DATA_CLEANUP_TTL_MS, QR_UPLOAD_IN_PROGRESS_TTL_MS, QR_UPLOAD_MAX_BYTES, safeUploadFileName } from "../_lib";
+import { detectRasterImageMime, hashQrUploadToken, isValidQrUploadToken, noStoreHeaders, QR_UPLOAD_DATA_CLEANUP_TTL_MS, QR_UPLOAD_IN_PROGRESS_TTL_MS, QR_UPLOAD_MAX_BYTES, QR_UPLOAD_PENDING_TTL_MS, safeUploadFileName } from "../_lib";
 
 export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ token: string }> };
@@ -34,11 +34,13 @@ export async function GET(request: Request, context: RouteContext) {
 
   try {
     await connectDB();
-    const ownerAccessError = await checkSessionOwnerAccess(tokenHash);
-    if (ownerAccessError) return ownerAccessError;
     const now = new Date();
     const url = new URL(request.url);
     if (url.searchParams.get("download") === "1") {
+      // The ban check only runs where image data is exposed. The frequent status poll below skips it
+      // (the token is a 256-bit random secret and the status reveals nothing else), saving 2 DB queries per poll.
+      const ownerAccessError = await checkSessionOwnerAccess(tokenHash);
+      if (ownerAccessError) return ownerAccessError;
       const session = await QrUploadSession.findOne({
         tokenHash,
         status: "uploaded",
@@ -204,7 +206,7 @@ export async function POST(request: Request, context: RouteContext) {
     } catch (error) {
       await QrUploadSession.updateOne(
         { _id: reserved._id, status: "uploading" },
-        { $set: { status: "pending" }, $unset: { expiresAt: 1 } },
+        { $set: { status: "pending", expiresAt: new Date(Date.now() + QR_UPLOAD_PENDING_TTL_MS) } },
       ).catch(() => undefined);
       throw error;
     }

@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { BCRYPT_COST } from "@/app/api/_lib/passwordPolicy";
 import { v2 as cloudinary } from "cloudinary";
 import { randomBytes } from "node:crypto";
 import mongoose from "mongoose";
@@ -240,7 +241,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     // The temporary password is returned once so the administrator can pass it to the user.
     if (action === "reset-password") {
       const temporaryPassword = randomBytes(15).toString("base64url");
-      const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+      const passwordHash = await bcrypt.hash(temporaryPassword, BCRYPT_COST);
       const updated = await User.updateOne(
         { _id: user._id, password: user.password },
         {

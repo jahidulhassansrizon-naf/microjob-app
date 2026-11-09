@@ -15,7 +15,17 @@ interface QrCodeSidebarProps {
   onPhotoReceived: (file: File) => void;
 }
 
-type UploadState = "creating" | "waiting" | "receiving" | "received" | "expired" | "error";
+type UploadState = "idle" | "creating" | "waiting" | "receiving" | "received" | "expired" | "error";
+
+// Polling budget: the phone upload is normally done within a minute, so poll fast at first
+// and back off. After QR_MAX_WAIT_MS we stop polling entirely (the user can create a new QR).
+const QR_MAX_WAIT_MS = 10 * 60 * 1000;
+function nextPollDelay(elapsedMs: number): number {
+  if (elapsedMs < 60_000) return 2500;
+  if (elapsedMs < 180_000) return 5000;
+  if (elapsedMs < 360_000) return 10_000;
+  return 15_000;
+}
 
 function LocalQrCode({ value, label, sizeClass = "h-40 w-40", fill = false }: { value: string; label: string; sizeClass?: string; fill?: boolean }) {
   const qr = useMemo(() => {
@@ -54,7 +64,7 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   const [mounted, setMounted] = useState(false);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [mobileUrl, setMobileUrl] = useState("");
-  const [uploadState, setUploadState] = useState<UploadState>("creating");
+  const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [errorKey, setErrorKey] = useState("");
   const [justReceivedPhoto, setJustReceivedPhoto] = useState(false);
   const onPhotoReceivedRef = useRef(onPhotoReceived);
@@ -106,16 +116,41 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   }, [uploadUrl, freeAccess]);
 
   useEffect(() => {
-    void createSession();
-  }, [createSession]);
-
-  useEffect(() => {
     if (!sessionToken) return;
     let stopped = false;
     let timer: number | undefined;
+    let inFlight = false;
     let downloadStarted = false;
+    const startedAt = Date.now();
+
+    const clearTimer = () => {
+      if (timer !== undefined) {
+        window.clearTimeout(timer);
+        timer = undefined;
+      }
+    };
+
+    // Schedule the next poll. A hidden tab schedules nothing; it resumes on visibilitychange.
+    const schedule = () => {
+      clearTimer();
+      if (stopped || downloadStarted) return;
+      const elapsed = Date.now() - startedAt;
+      if (elapsed >= QR_MAX_WAIT_MS) {
+        stopped = true;
+        setUploadState("expired");
+        return;
+      }
+      if (document.visibilityState === "hidden") return;
+      timer = window.setTimeout(() => { void poll(); }, nextPollDelay(elapsed));
+    };
 
     const poll = async () => {
+      if (stopped || inFlight || downloadStarted) return;
+      if (Date.now() - startedAt >= QR_MAX_WAIT_MS) {
+        schedule();
+        return;
+      }
+      inFlight = true;
       try {
         const response = await fetch(`/api/ai-editor/qr-upload/${encodeURIComponent(sessionToken)}`, {
           method: "GET",
@@ -123,8 +158,11 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
           cache: "no-store",
         });
         if (response.status === 404 || response.status === 410) {
-          // The old one-time link is no longer active. Replace it automatically.
-          if (!stopped) void createSession();
+          // The one-time link is gone. Stop polling and let the user create a new one.
+          if (!stopped) {
+            stopped = true;
+            setUploadState("expired");
+          }
           return;
         }
         if (!response.ok) throw new Error("status-check-failed");
@@ -176,15 +214,30 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
           return;
         }
       } catch {
-        // Brief network interruptions are retried automatically until the session expires.
+        // Brief network interruptions are retried automatically (with backoff) until the wait limit.
+      } finally {
+        inFlight = false;
       }
-      if (!stopped) timer = window.setTimeout(poll, 2500);
+      schedule();
     };
 
-    void poll();
+    const onVisibilityChange = () => {
+      if (stopped || downloadStarted) return;
+      if (document.visibilityState === "visible") {
+        // Back on the tab: check right away (if the wait limit passed, schedule() shows "expired").
+        clearTimer();
+        void poll();
+      } else {
+        clearTimer();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    if (document.visibilityState === "visible") void poll();
     return () => {
       stopped = true;
-      if (timer !== undefined) window.clearTimeout(timer);
+      clearTimer();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [sessionToken, createSession]);
 
@@ -211,8 +264,8 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   })();
 
   const qrSizeClass = compact ? "h-[clamp(96px,15vh,140px)] w-[clamp(96px,15vh,140px)]" : "h-40 w-40";
-  const showQr = Boolean(mobileUrl) && uploadState !== "creating" && uploadState !== "error" && uploadState !== "expired";
-  const placeholderMessage = uploadState === "creating" ? "Preparing secure upload..." : uploadState === "expired" ? "This QR code is no longer active. A new one is being prepared." : errorKey || "Could not create a secure upload. Check your connection and subscription, then try again.";
+  const showQr = Boolean(mobileUrl) && uploadState !== "idle" && uploadState !== "creating" && uploadState !== "error" && uploadState !== "expired";
+  const placeholderMessage = uploadState === "idle" ? "Show a QR code to upload a photo from your phone." : uploadState === "creating" ? "Preparing secure upload..." : uploadState === "expired" ? "This QR code has expired. Create a new one." : errorKey || "Could not create a secure upload. Check your connection and subscription, then try again.";
 
   const statusLine = (
     <p role="status" aria-live="polite" className={`ai-qr-status ${compact ? "mb-2 min-h-0" : "mb-3 min-h-8"} text-center text-[13px] leading-4 text-stone-600`}>
@@ -220,7 +273,8 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
       {uploadState === "waiting" && <AiT>{justReceivedPhoto ? "Photo received. A new QR code is ready for your next photo." : "Waiting for your phone..."}</AiT>}
       {uploadState === "receiving" && <AiT>Receiving photo...</AiT>}
       {uploadState === "received" && <AiT>Photo received. Continue cropping on your computer.</AiT>}
-      {uploadState === "expired" && <AiT>This QR code is no longer active. A new one is being prepared.</AiT>}
+      {uploadState === "idle" && <AiT>Show a QR code to upload a photo from your phone.</AiT>}
+      {uploadState === "expired" && <AiT>This QR code has expired. Create a new one.</AiT>}
       {uploadState === "error" && errorKey && <AiT>{errorKey}</AiT>}
     </p>
   );
@@ -228,7 +282,7 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   const localHint = isLocalOrigin && uploadState === "waiting" && (
     <p className="ai-qr-hint mb-3 rounded-lg border border-stone-200 bg-[#F6EEDB] px-3 py-2 text-[12px] leading-4 text-stone-600"><AiT>For local testing, use your computer's network address instead of localhost.</AiT></p>
   );
-  const onceHint = uploadState === "waiting" && <p className={`ai-qr-hint ${compact ? "mb-2" : "mb-3"} text-center text-[12px] leading-4 text-stone-400`}><AiT>This QR code stays active until a photo is sent and can be used once.</AiT></p>;
+  const onceHint = uploadState === "waiting" && <p className={`ai-qr-hint ${compact ? "mb-2" : "mb-3"} text-center text-[12px] leading-4 text-stone-400`}><AiT>This QR code can be used once and expires after about 10 minutes.</AiT></p>;
 
   const actionButtons = (
     <>
@@ -242,6 +296,12 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
             <ExternalLink size={15} />
           </button>
         </div>
+      )}
+
+      {uploadState === "idle" && (
+        <button type="button" onClick={() => void createSession()} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600">
+          <QrCode size={14} /> <AiT>Show QR code</AiT>
+        </button>
       )}
 
       {(uploadState === "expired" || uploadState === "error") && (

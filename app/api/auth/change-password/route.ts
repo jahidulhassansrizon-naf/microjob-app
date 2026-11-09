@@ -1,7 +1,7 @@
 import { getJwtSecret } from "@/lib/jwtSecurity";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { validateNewPassword, newPasswordErrorMessage } from "@/app/api/_lib/passwordPolicy";
+import { validateNewPassword, newPasswordErrorMessage, BCRYPT_COST } from "@/app/api/_lib/passwordPolicy";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db";
@@ -114,7 +114,7 @@ export async function PUT(req: NextRequest) {
 
     // Update against the version we just verified so concurrent password or
     // role/session changes cannot be overwritten by a stale document save.
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    const hashedPassword = await bcrypt.hash(newPassword, BCRYPT_COST);
     const updateResult = await User.updateOne(
       { _id: user._id, sessionVersion: Number(user.sessionVersion || 0) },
       {

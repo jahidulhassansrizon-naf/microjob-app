@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { validateNewPassword, newPasswordErrorMessage } from "@/app/api/_lib/passwordPolicy";
+import { validateNewPassword, newPasswordErrorMessage, BCRYPT_COST } from "@/app/api/_lib/passwordPolicy";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { isConfiguredAdminEmail } from "@/lib/adminCredentials";
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     // Only reveal/apply the stronger primary-admin password policy after OTP
     // ownership is proven, avoiding account-role enumeration through this API.
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
 
     // Atomically consume the matching OTP exactly once before changing credentials.
     const consumeFilter: Record<string, unknown> = {

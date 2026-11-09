@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 
-// A pending QR remains active until one photo is successfully uploaded.
-// Time limits only clean up abandoned in-progress transfers and uploaded image data.
+// A pending QR stays active for 12 minutes (the desktop stops polling after 10) or until one photo is uploaded.
+// The other limits clean up abandoned in-progress transfers and uploaded image data.
+export const QR_UPLOAD_PENDING_TTL_MS = 12 * 60 * 1000;
 export const QR_UPLOAD_IN_PROGRESS_TTL_MS = 15 * 60 * 1000;
 export const QR_UPLOAD_DATA_CLEANUP_TTL_MS = 10 * 60 * 1000;
 export const QR_UPLOAD_MAX_BYTES = 4 * 1024 * 1024;

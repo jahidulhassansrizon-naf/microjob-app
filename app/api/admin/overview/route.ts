@@ -18,9 +18,23 @@ function dayKey(date: Date) {
   }).format(date);
 }
 
+// Short in-memory cache (per warm function instance) used only for background polling
+// (?cached=1). Explicit loads and loads after admin actions always compute fresh data.
+const OVERVIEW_CACHE_TTL_MS = 30_000;
+let overviewCache: { at: number; body: Record<string, unknown> } | null = null;
+const OVERVIEW_HEADERS = { "Cache-Control": "no-store, max-age=0" };
+
 export async function GET(request: Request) {
   const authorization = await requireAdmin(request);
   if (authorization.response) return authorization.response;
+
+  const allowCached = new URL(request.url).searchParams.get("cached") === "1";
+  if (allowCached && overviewCache && Date.now() - overviewCache.at < OVERVIEW_CACHE_TTL_MS) {
+    return NextResponse.json(
+      { ...overviewCache.body, admin: authorization.admin },
+      { headers: OVERVIEW_HEADERS },
+    );
+  }
 
   try {
     await connectDB();
@@ -151,10 +165,8 @@ export async function GET(request: Request) {
       console.error("Admin overview insights error:", insightError);
     }
 
-    return NextResponse.json(
-      {
+    const body = {
         success: true,
-        admin: authorization.admin,
         stats: {
           totalUsers,
           activeNow,
@@ -179,8 +191,11 @@ export async function GET(request: Request) {
         weeklyRegistrations,
         insights,
         generatedAt: now.toISOString(),
-      },
-      { headers: { "Cache-Control": "no-store, max-age=0" } },
+    };
+    overviewCache = { at: Date.now(), body };
+    return NextResponse.json(
+      { ...body, admin: authorization.admin },
+      { headers: OVERVIEW_HEADERS },
     );
   } catch (error) {
     console.error("Admin overview error:", error);

@@ -25,6 +25,10 @@ const COMMON_PASSWORDS = new Set([
 
 export const BCRYPT_MAX_PASSWORD_BYTES = 72;
 
+// bcryptjs is pure JS, so every cost step doubles Active CPU. 10 is the OWASP-accepted minimum;
+// existing hashes (cost 12) keep verifying because the cost is stored inside each hash.
+export const BCRYPT_COST = 10;
+
 export type NewPasswordValidation =
   | { valid: true }
   | { valid: false; reason: "too_short" | "too_long" | "common" };
