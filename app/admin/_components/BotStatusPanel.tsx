@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Activity, RefreshCw } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
+import { visibleInterval } from "@/app/_lib/visiblePolling";
 
 const PANEL = "rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-[0_10px_28px_-20px_rgba(59,47,30,0.45)]";
 
@@ -133,8 +134,7 @@ export default function BotStatusPanel() {
 
   useEffect(() => {
     void load();
-    const timer = window.setInterval(() => void load(), 30_000);
-    return () => window.clearInterval(timer);
+    return visibleInterval(() => void load(), 60_000);
   }, [load]);
 
   const s = data?.stats;

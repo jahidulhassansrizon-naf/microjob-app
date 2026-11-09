@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { MessageCircle, ShieldOff } from "lucide-react";
+import { visibleInterval } from "@/app/_lib/visiblePolling";
 
 type GateState = {
   pathname: string;
@@ -100,13 +101,15 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
 
     void checkAccess();
     // Also disables already-open tool pages shortly after an administrator bans an account.
-    const interval = window.setInterval(() => {
+    // Checked once a minute (and when the tab becomes visible again) instead of every 8s:
+    // protected APIs enforce bans on the server anyway.
+    const stopPolling = visibleInterval(() => {
       if (!firstCheck) void checkAccess();
-    }, 8_000);
+    }, 60_000);
 
     return () => {
       active = false;
-      window.clearInterval(interval);
+      stopPolling();
     };
   }, [pathname, toolPath]);
 

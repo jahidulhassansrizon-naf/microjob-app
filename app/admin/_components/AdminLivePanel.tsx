@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 import LiveScreenViewer from "./LiveScreenViewer";
+import { visibleInterval } from "@/app/_lib/visiblePolling";
 
 type ScreenShareStatus = "idle" | "requested" | "sharing" | "declined" | "stopped";
 type LiveSession = {
@@ -93,8 +94,7 @@ export default function AdminLivePanel({ refreshKey = 0 }: { refreshKey?: number
 
   useEffect(() => {
     void loadSessions(false);
-    const interval = window.setInterval(() => void loadSessions(true), 3_000);
-    return () => window.clearInterval(interval);
+    return visibleInterval(() => void loadSessions(true), 5_000);
   }, [loadSessions, refreshKey]);
 
   const selectedSession = useMemo(

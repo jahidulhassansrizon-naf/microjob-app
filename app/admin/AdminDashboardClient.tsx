@@ -63,6 +63,7 @@ import SubscriptionActivityPanel from "./_components/SubscriptionActivityPanel";
 import BotStatusPanel from "./_components/BotStatusPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import "./admin-theme.css";
+import { visibleInterval } from "@/app/_lib/visiblePolling";
 
 type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp" | "subscription-plans" | "subscription-activity" | "bot-status";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
@@ -589,10 +590,10 @@ export default function AdminDashboardClient() {
       }
     };
     void refreshUnreadCount();
-    const interval = window.setInterval(() => void refreshUnreadCount(), 10_000);
+    const stopPolling = visibleInterval(() => void refreshUnreadCount(), 30_000);
     return () => {
       active = false;
-      window.clearInterval(interval);
+      stopPolling();
     };
   }, [authorized, authHeaders]);
 

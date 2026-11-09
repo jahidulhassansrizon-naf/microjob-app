@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Clock3, ImagePlus } from "lucide-react";
+import { visibleInterval } from "@/app/_lib/visiblePolling";
 
 type Quota = {
   unlimited?: boolean;
@@ -66,12 +67,12 @@ export default function GenerationQuotaNotice({
   useEffect(() => {
     void load();
     const refresh = () => void load();
-    const poll = window.setInterval(refresh, 60000);
+    const stopPoll = visibleInterval(refresh, 300000);
     const tick = window.setInterval(() => setNowMs(Date.now()), 15000);
     window.addEventListener(GENERATION_FINISHED_EVENT, refresh);
     window.addEventListener("focus", refresh);
     return () => {
-      window.clearInterval(poll);
+      stopPoll();
       window.clearInterval(tick);
       window.removeEventListener(GENERATION_FINISHED_EVENT, refresh);
       window.removeEventListener("focus", refresh);

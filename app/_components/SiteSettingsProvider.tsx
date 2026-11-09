@@ -37,7 +37,9 @@ export function SiteSettingsProvider({
     }
   }, []);
 
-  useEffect(() => { void refreshSettings(); }, [refreshSettings]);
+  // The server already passes fresh initialSettings, so no extra /api/site-settings call
+  // is needed on every page load. refreshSettings() stays available for the admin panel.
+  useEffect(() => { setLoading(false); }, []);
 
   useEffect(() => {
     if (typeof document === "undefined") return;

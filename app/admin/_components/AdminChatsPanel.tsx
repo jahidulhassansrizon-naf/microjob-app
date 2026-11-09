@@ -16,6 +16,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
+import { visibleInterval } from "@/app/_lib/visiblePolling";
 import {
   ChatDropOverlay,
   ChatImageBubble,
@@ -183,16 +184,15 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
   }, [appliedQuery, refreshKey, pagination.page]);
 
   useEffect(() => {
-    const interval = window.setInterval(() => void loadUsers(pagination.page, true), 7_000);
-    return () => window.clearInterval(interval);
+    return visibleInterval(() => void loadUsers(pagination.page, true), 10_000);
   }, [loadUsers, pagination.page]);
 
   useEffect(() => {
     if (!selectedUser) return;
     const userId = selectedUser.id;
     void loadMessages(userId);
-    const interval = window.setInterval(() => void loadMessages(userId, { silent: true }), 4_000);
-    return () => window.clearInterval(interval);
+    const stop = visibleInterval(() => void loadMessages(userId, { silent: true }), 5_000);
+    return stop;
   }, [loadMessages, selectedUser?.id]);
 
   useEffect(() => {

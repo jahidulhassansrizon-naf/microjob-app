@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { SITE_SETTINGS_TAG } from "@/lib/serverSiteSettings";
 import { connectDB } from "@/lib/db";
 import SiteSettings from "@/models/SiteSettings";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/siteSettings";
@@ -41,6 +43,8 @@ export async function PUT(request: Request) {
       { $set: { settings, updatedBy: admin?.email || "administrator", updatedAt: new Date() }, $setOnInsert: { key: "global" } },
       { upsert: true },
     );
+    // Refresh the cached public settings so the change appears right away.
+    revalidateTag(SITE_SETTINGS_TAG, "max");
     const record = await SiteSettings.collection.findOne({ key: "global" });
     return NextResponse.json(
       { success: true, message: "Site settings saved successfully.", settings: mergeSiteSettingsWithContactLists(record?.settings ?? settings) },
