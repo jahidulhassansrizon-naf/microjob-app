@@ -17,7 +17,7 @@ interface QrCodeSidebarProps {
 
 type UploadState = "creating" | "waiting" | "receiving" | "received" | "expired" | "error";
 
-function LocalQrCode({ value, label, sizeClass = "h-40 w-40" }: { value: string; label: string; sizeClass?: string }) {
+function LocalQrCode({ value, label, sizeClass = "h-40 w-40", fill = false }: { value: string; label: string; sizeClass?: string; fill?: boolean }) {
   const qr = useMemo(() => {
     if (!value) return null;
     try {
@@ -41,7 +41,7 @@ function LocalQrCode({ value, label, sizeClass = "h-40 w-40" }: { value: string;
   if (!qr) return <div className={`flex ${sizeClass} items-center justify-center text-sm text-stone-500`}><AiT>QR code unavailable</AiT></div>;
   const extent = qr.count + 8;
   return (
-    <svg viewBox={`0 0 ${extent} ${extent}`} role="img" aria-label={label} className={`${sizeClass} max-w-full rounded-lg bg-white p-1 xl:absolute xl:inset-0 xl:m-auto xl:!h-full xl:!w-auto xl:aspect-square`} shapeRendering="crispEdges">
+    <svg viewBox={`0 0 ${extent} ${extent}`} role="img" aria-label={label} className={`${sizeClass} max-w-full rounded-lg bg-white p-1${fill ? " xl:absolute xl:inset-0 xl:m-auto xl:!h-full xl:!w-auto xl:aspect-square" : ""}`} shapeRendering="crispEdges">
       <rect width={extent} height={extent} fill="#FFFFFF" />
       <path d={qr.path} fill="#111827" />
     </svg>
@@ -298,7 +298,7 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
 
         <div className="ai-qr-box mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-stone-200 bg-[#FBF6E8] p-3 xl:relative xl:mb-2 xl:min-h-[80px] xl:flex-1 xl:shrink xl:basis-0 xl:overflow-hidden">
           {showQr ? (
-            <LocalQrCode value={mobileUrl} label={t("QR code")} />
+            <LocalQrCode value={mobileUrl} label={t("QR code")} fill />
           ) : (
             <div className="flex min-h-[160px] flex-col items-center justify-center gap-2 text-stone-500">
               {uploadState === "creating" ? <Loader2 size={24} className="animate-spin text-red-600" /> : <QrCode size={34} />}
