@@ -9,6 +9,87 @@ const path = require("node:path");
 
 const notifier = require("./notifier");
 
+// --------------------------------------------------
+// Things the admin panel can show (served by /admin-report, protected by BOT_ALERT_KEY)
+// --------------------------------------------------
+
+const BOT_STARTED_AT = Date.now();
+
+// Last console lines (kept in memory), so the admin panel can show them without opening GitHub.
+const logBuffer = [];
+{
+  const toText = (args) =>
+    args
+      .map((a) =>
+        typeof a === "string" ? a : a instanceof Error ? a.message : (() => { try { return JSON.stringify(a); } catch { return String(a); } })(),
+      )
+      .join(" ")
+      .replace(/https?:\/\/[-a-z0-9.]+\.trycloudflare\.com\S*/gi, "[tunnel]")
+      .replace(/\s+/g, " ")
+      .slice(0, 300);
+  const push = (level, args) => {
+    logBuffer.push({ at: new Date().toISOString(), level, text: toText(args) });
+    while (logBuffer.length > 200) logBuffer.shift();
+  };
+  const origLog = console.log.bind(console);
+  const origError = console.error.bind(console);
+  console.log = (...args) => { push("info", args); origLog(...args); };
+  console.error = (...args) => { push("error", args); origError(...args); };
+}
+
+// Plain-words explanation of a failure message: what it most likely means and what to do.
+function explainFailure(message) {
+  const m = String(message || "");
+  if (/logged-out|signInVisible|accounts\.google\.com/i.test(m)) {
+    return {
+      cause: "The Google login of this session expired.",
+      advice: "Log in again, run save-session.js for this slot, update the GEMINI_SESSION_JSON_N secret and restart the bot.",
+    };
+  }
+  if (/Timed out waiting for the generated image/i.test(m)) {
+    return {
+      cause: "Gemini did not finish the image in time (slow, throttled or stuck).",
+      advice: "If only one session repeats this, check it with /session-test?slot=N. The bot already retries on another session.",
+    };
+  }
+  if (/empty image/i.test(m)) {
+    return { cause: "Gemini returned an empty image.", advice: "Usually temporary. The bot retries on another session." };
+  }
+  if (/Timeout \d+ms exceeded|waitFor|locator|selector/i.test(m)) {
+    return {
+      cause: "A part of the Gemini page never appeared (the page did not open properly for this account).",
+      advice: "Open /session-test?slot=N. The account may need a consent or verification screen, or the Gemini page changed.",
+    };
+  }
+  if (/limit/i.test(m)) {
+    return { cause: "The daily image limit of this account is reached.", advice: "Nothing to do. The session comes back by itself." };
+  }
+  if (/could not create this image|refus/i.test(m)) {
+    return { cause: "Gemini declined to create this photo.", advice: "Usually the photo or the request. The user can press Generate again." };
+  }
+  return { cause: "Unknown error.", advice: "See the bot log below for the full message." };
+}
+
+// Important things that happened (session stopped, failed attempt, job failed ...), newest last.
+const eventLog = [];
+
+function logEvent(type, slot, message) {
+  const text = String(message || "").replace(/\s+/g, " ").slice(0, 240);
+  const explained = type === "info" ? { cause: "", advice: "" } : explainFailure(text);
+  eventLog.push({
+    at: new Date().toISOString(),
+    type,
+    slot: Number(slot) || 0,
+    message: text,
+    cause: explained.cause,
+    advice: explained.advice,
+  });
+  while (eventLog.length > 150) eventLog.shift();
+}
+
+// One line per finished job: how long, and which sessions were tried.
+const jobLog = [];
+
 const app = express();
 
 const PORT = Number(process.env.BOT_PORT) || 3000;
@@ -501,9 +582,58 @@ function circularFrom(sessions, startSlot) {
 // Why a session is parked ("limit" or "logged-out"); only used for status messages.
 const sessionDownReason = {};
 
+// Health of each session, apart from the daily limit: a session that keeps timing out
+// or failing (for example its Gemini page does not open properly) is rested for a while,
+// so jobs stop wasting 30 to 100 seconds on it. slot -> { streak, lastError, lastErrorAt, coolUntil }
+const sessionHealth = {};
+
+function healthOf(slot) {
+  if (!sessionHealth[slot]) {
+    sessionHealth[slot] = { streak: 0, lastError: "", lastErrorAt: 0, coolUntil: 0 };
+  }
+  return sessionHealth[slot];
+}
+
+function isCooling(slot) {
+  return healthOf(slot).coolUntil > Date.now();
+}
+
+// Usable (no limit parked) and not resting after repeated failures.
+function isSessionHealthy(session) {
+  return isSessionUsable(session) && !isCooling(session.slot);
+}
+
+function noteSessionSuccess(slot) {
+  const h = healthOf(slot);
+  h.streak = 0;
+  h.coolUntil = 0;
+}
+
+function noteSessionFailure(slot, message) {
+  const h = healthOf(slot);
+  h.streak += 1;
+  h.lastError = String(message || "")
+    .replace(/\s+/g, " ")
+    .slice(0, 220);
+  h.lastErrorAt = Date.now();
+  logEvent("attempt-failed", slot, h.lastError);
+
+  // 2 failures in a row: rest 10 min; then 20, 30 ... up to 60 minutes.
+  if (h.streak >= 2) {
+    const minutes = Math.min(60, 10 * (h.streak - 1));
+    h.coolUntil = Date.now() + minutes * 60_000;
+    sessionDownReason[slot] = "failing";
+    logEvent("session-resting", slot, `Rested ${minutes} min after ${h.streak} failures in a row. ${h.lastError}`);
+    console.log(
+      `Session ${slot} failed ${h.streak} times in a row, resting it for ${minutes} minutes. Last error: ${h.lastError}`,
+    );
+  }
+}
+
 function markSessionLimited(slot, resetAt) {
   sessionDownReason[slot] = "limit";
   const u = usageOf(slot);
+  logEvent("session-limit", slot, `Daily limit reached after ${u.since} images this run.`);
   if (u.since > 0) u.limitAfter = u.since;
   u.since = 0;
   const until = resetAt && resetAt > Date.now() ? resetAt : Date.now() + DEFAULT_LIMIT_PARK_MS;
@@ -639,7 +769,11 @@ function perSessionLimit() {
 // out count, and never more than MAX_CONCURRENT_GENERATIONS. This stops the bot
 // from accepting 20 jobs when only 3 sessions work (and leaving 5 stuck).
 function currentCapacity() {
-  const usable = listSessions().filter(isSessionUsable).length;
+  const sessions = listSessions();
+  const usableList = sessions.filter(isSessionUsable);
+  const healthyList = usableList.filter((x) => !isCooling(x.slot));
+  // If every usable session is resting, still count them (jobs will try them as a last resort).
+  const usable = healthyList.length || usableList.length;
 
   if (usable === 0) {
     return MAX_CONCURRENT_GENERATIONS;
@@ -1536,6 +1670,7 @@ const sessionNextStartAt = {};
 // jobs can never pick the same last free place.
 // Returns null when no usable session is left (all parked / already tried).
 const sessionLastClaimAt = {};
+let claimCounter = 0; // a counter (not the clock) so two claims in the same millisecond still have an order
 
 async function claimSession(signal, triedSlots, forceSlot = 0) {
   while (true) {
@@ -1553,10 +1688,14 @@ async function claimSession(signal, triedSlots, forceSlot = 0) {
       return null;
     }
 
+    // Sessions that keep failing are skipped while they rest, unless nothing else is left.
+    const healthy = forceSlot ? candidates : candidates.filter((s) => !isCooling(s.slot));
+    const pool = healthy.length > 0 ? healthy : candidates;
+
     // Least busy session first, so jobs spread evenly over all accounts.
-    // On a tie, the session that was used longest ago goes first (round robin).
+    // On a tie, the one used longest ago goes first (round robin, so a session that was resting is tried again).
     const limit = perSessionLimit();
-    const free = candidates
+    const free = pool
       .filter((s) => (sessionActive[s.slot] || 0) < limit)
       .sort(
         (a, b) =>
@@ -1569,7 +1708,8 @@ async function claimSession(signal, triedSlots, forceSlot = 0) {
 
     if (best) {
       sessionActive[best.slot] = (sessionActive[best.slot] || 0) + 1;
-      sessionLastClaimAt[best.slot] = Date.now();
+      claimCounter += 1;
+      sessionLastClaimAt[best.slot] = claimCounter;
       return best;
     }
 
@@ -1623,15 +1763,30 @@ function retryKind(error) {
 async function runGeminiGeneration(options) {
   stats.jobs += 1;
   const startedAt = Date.now();
+  const trace = { attempts: [] };
+
+  const record = (ok, error) => {
+    jobLog.push({
+      at: new Date(startedAt).toISOString(),
+      ms: Date.now() - startedAt,
+      ok,
+      attempts: trace.attempts.map((a) => ({ slot: a.slot, result: a.result || "running", ms: a.ms })),
+      error: error ? String(error.message || error).replace(/\s+/g, " ").slice(0, 200) : "",
+    });
+    while (jobLog.length > 100) jobLog.shift();
+  };
 
   try {
-    const result = await runGeminiGenerationInner(options);
+    const result = await runGeminiGenerationInner({ ...options, trace });
     stats.jobsOk += 1;
     stats.totalOkMs += Date.now() - startedAt;
+    record(true, null);
     return result;
   } catch (error) {
     if (!(error && error.statusCode === 499)) {
       stats.jobsFailed += 1;
+      record(false, error);
+      logEvent("job-failed", 0, error && error.message ? error.message : String(error));
     }
     throw error;
   }
@@ -1663,6 +1818,10 @@ async function runGeminiGenerationInner(options) {
     triedSlots.add(session.slot);
     triedAny = true;
 
+    const attempt = { slot: session.slot, result: "", ms: 0 };
+    const attemptStartedAt = Date.now();
+    if (options.trace) options.trace.attempts.push(attempt);
+
     try {
       await waitForStartTurn(session.slot, options.signal);
 
@@ -1679,14 +1838,18 @@ async function runGeminiGenerationInner(options) {
       const usage = usageOf(session.slot);
       usage.ok += 1;
       usage.since += 1;
+      noteSessionSuccess(session.slot);
+      attempt.result = "ok";
 
       return generated;
     } catch (error) {
       if (options.signal && options.signal.aborted) {
+        attempt.result = "cancelled";
         throw abortReason(options.signal);
       }
 
       if (error instanceof GeminiLimitError) {
+        attempt.result = "limit";
         stats.limitHits += 1;
         markSessionLimited(session.slot, error.resetAt);
         console.log(`Session ${session.slot} is out of limit, moving to the next one...`);
@@ -1701,8 +1864,10 @@ async function runGeminiGenerationInner(options) {
       // so one dead account never blocks the others.
       if (/signInVisible: true|accounts\.google\.com/i.test(failMessage)) {
         stats.loggedOutSessions += 1;
+        attempt.result = "logged-out";
         limitState[session.slot] = Date.now() + 6 * 60 * 60 * 1000;
         sessionDownReason[session.slot] = "logged-out";
+        logEvent("session-logged-out", session.slot, "Google login expired (sign-in screen seen).");
         saveLimitState();
         console.log(
           `Session ${session.slot} looks logged out (re-save it with save-session.js). Skipping it, trying the next one...`,
@@ -1717,6 +1882,7 @@ async function runGeminiGenerationInner(options) {
         /local-images-files-uploader-button|input\[name="Filedata"\]/.test(failMessage)
       ) {
         transientRetried = true;
+        attempt.result = "upload-retry";
         triedSlots.delete(session.slot);
         console.log(
           `Session ${session.slot}: upload step timed out, trying this job once more...`,
@@ -1728,8 +1894,14 @@ async function runGeminiGenerationInner(options) {
       const kind = retryKind(error);
 
       if (kind) {
-        if (kind === "refused") stats.attemptsRefused += 1;
-        else stats.attemptsTimedOut += 1;
+        attempt.result = kind;
+        if (kind === "refused") {
+          stats.attemptsRefused += 1;
+          logEvent("refused", session.slot, "Gemini could not create this image.");
+        } else {
+          stats.attemptsTimedOut += 1;
+          noteSessionFailure(session.slot, failMessage);
+        }
 
         const deadlineAt = options.signal && options.signal.deadlineAt;
         const remainingMs = deadlineAt ? deadlineAt - Date.now() : Infinity;
@@ -1751,12 +1923,15 @@ async function runGeminiGenerationInner(options) {
       }
 
       stats.otherErrors += 1;
+      attempt.result = "error";
+      noteSessionFailure(session.slot, failMessage);
       console.log(
         `Session ${session.slot} failed (not a limit message): ${failMessage}`,
       );
       throw error;
     } finally {
       // Always give the place on this session back (success, error or retry).
+      attempt.ms = Date.now() - attemptStartedAt;
       releaseSession(session.slot);
     }
   }
@@ -1839,9 +2014,18 @@ function monitorSnapshot() {
   return {
     sessions: listSessions().map((x) => ({
       slot: x.slot,
-      usable: isSessionUsable(x),
-      until: x.usableAt > Date.now() ? x.usableAt : 0,
-      reason: isSessionUsable(x) ? "" : sessionDownReason[x.slot] || "",
+      usable: isSessionHealthy(x),
+      until: !isSessionUsable(x)
+        ? x.usableAt
+        : isCooling(x.slot)
+          ? healthOf(x.slot).coolUntil
+          : 0,
+      reason: isSessionHealthy(x)
+        ? ""
+        : !isSessionUsable(x)
+          ? sessionDownReason[x.slot] || ""
+          : "failing",
+      lastError: isSessionHealthy(x) ? "" : healthOf(x.slot).lastError,
       ok: usageOf(x.slot).ok,
       since: usageOf(x.slot).since,
       limitAfter: usageOf(x.slot).limitAfter,
@@ -1877,8 +2061,8 @@ app.post("/notify", (req, res) => {
   return res.json({ success: true });
 });
 
-app.get("/health", (req, res) => {
-  res.json({
+function healthPayload() {
+  return {
     success: true,
     status: "healthy",
     generation: {
@@ -1896,12 +2080,48 @@ app.get("/health", (req, res) => {
     ),
     notifier: notifier.status(),
     recentErrors,
-    sessions: listSessions().map((x) => ({
-      slot: x.slot,
-      active: sessionActive[x.slot] || 0,
-      usable: isSessionUsable(x),
-      usableAgainAt: x.usableAt > Date.now() ? new Date(x.usableAt).toISOString() : null,
-    })),
+    sessions: listSessions().map((x) => {
+      const h = healthOf(x.slot);
+      const why = h.streak > 0 ? explainFailure(h.lastError) : { cause: "", advice: "" };
+      return {
+        slot: x.slot,
+        active: sessionActive[x.slot] || 0,
+        usable: isSessionUsable(x),
+        healthy: isSessionHealthy(x),
+        downReason: isSessionHealthy(x) ? "" : !isSessionUsable(x) ? sessionDownReason[x.slot] || "" : "failing",
+        failStreak: h.streak,
+        lastError: h.streak > 0 ? h.lastError : "",
+        lastCause: why.cause,
+        lastAdvice: why.advice,
+        restingUntil: isCooling(x.slot) ? new Date(h.coolUntil).toISOString() : null,
+        usableAgainAt: x.usableAt > Date.now() ? new Date(x.usableAt).toISOString() : null,
+      };
+    }),
+  };
+}
+
+app.get("/health", (req, res) => {
+  res.json(healthPayload());
+});
+
+// Detailed report for the website's admin panel. Needs the same secret as the alert route
+// (BOT_ALERT_KEY); without it this answers 404, so nothing is visible to anyone else.
+app.get("/admin-report", (req, res) => {
+  const key = (process.env.BOT_ALERT_KEY || "").trim();
+  const sent = String(req.get("x-bot-alert-key") || "");
+
+  if (!key || sent.length !== key.length || !crypto.timingSafeEqual(Buffer.from(sent), Buffer.from(key))) {
+    return res.status(404).end();
+  }
+
+  return res.json({
+    ...healthPayload(),
+    detailed: true,
+    startedAt: new Date(BOT_STARTED_AT).toISOString(),
+    uptimeSeconds: Math.round((Date.now() - BOT_STARTED_AT) / 1000),
+    events: eventLog.slice(-80),
+    jobs: jobLog.slice(-40),
+    logTail: logBuffer.slice(-120),
   });
 });
 

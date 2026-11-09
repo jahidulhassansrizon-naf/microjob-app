@@ -18,6 +18,11 @@ const SESSION_FILE = path.resolve(
   process.env.FB_SESSION_FILE || path.join(__dirname, "facebook-session.json"),
 );
 const RECIPIENT = (process.env.FB_RECIPIENT || "").trim();
+
+// Email channel: the bot calls a small route of the website (app/api/bot-alert) and the
+// website sends the email. No Facebook login, so it keeps working when Facebook logs the bot out.
+const WEBHOOK_URL = (process.env.ALERT_WEBHOOK_URL || "").trim();
+const WEBHOOK_KEY = (process.env.BOT_ALERT_KEY || "").trim();
 // Chat PIN of the bot account (only digits are used). Needed because every GitHub run is a
 // "new device" for Messenger. Keep it in the GitHub secret FB_MESSENGER_PIN, never in the code.
 const MESSENGER_PIN = (process.env.FB_MESSENGER_PIN || "").replace(/\D/g, "");
@@ -48,6 +53,8 @@ function dhakaTime(ms) {
 
 const SESSION_WARN_AT = Math.max(0, Number(process.env.SESSION_WARN_AT) || 0);
 const DAILY_REPORT_HOUR_DHAKA = 21;
+// REPORT_EVERY_MINUTES: send the status report every N minutes (0 = off, only the 21:00 daily report).
+const REPORT_EVERY_MS = Math.max(0, Number(process.env.REPORT_EVERY_MINUTES) || 0) * 60_000;
 const RUN_END_REPORT_AFTER_MS = 345 * 60_000;
 
 function dhakaParts(ms) {
@@ -81,6 +88,7 @@ function createMonitor({ getSnapshot, send, now = () => Date.now(), runStartMs =
   let history = [];
   let lastFailAlertAt = 0;
   let lastDailyDate = "";
+  let lastPeriodicAt = startedAt;
   let runEndSent = false;
   const warned = {};
   const sentTimes = [];
@@ -104,6 +112,12 @@ function createMonitor({ getSnapshot, send, now = () => Date.now(), runStartMs =
   function reasonText(s) {
     if (s.reason === "logged-out") {
       return "লগ-আউট হয়ে গেছে (নতুন সেশন সেভ করতে হবে)";
+    }
+    if (s.reason === "failing") {
+      const err = s.lastError ? ` (${String(s.lastError).slice(0, 110)})` : "";
+      return s.until
+        ? `বারবার ফেল করছে${err}, ${dhakaTime(s.until)} নাগাদ আবার চেষ্টা হবে`
+        : `বারবার ফেল করছে${err}`;
     }
     if (s.reason === "limit") {
       const after = s.limitAfter > 0 ? ` (${s.limitAfter}টা ছবির পর)` : "";
@@ -215,18 +229,29 @@ function createMonitor({ getSnapshot, send, now = () => Date.now(), runStartMs =
 
     // 4) Daily report (21:00 Dhaka time, once a day) and a report when this run is about to end.
     const dh = dhakaParts(t);
-    const dailyDue = dh.hour >= DAILY_REPORT_HOUR_DHAKA && lastDailyDate !== dh.date;
+    const periodicDue = REPORT_EVERY_MS > 0 && t - lastPeriodicAt >= REPORT_EVERY_MS;
+    // With a regular report switched on, the separate 21:00 report is not needed.
+    const dailyDue =
+      REPORT_EVERY_MS === 0 && dh.hour >= DAILY_REPORT_HOUR_DHAKA && lastDailyDate !== dh.date;
     const endDue = !runEndSent && t - startedAt >= RUN_END_REPORT_AFTER_MS;
 
     if (dailyDue) lastDailyDate = dh.date;
     if (endDue) runEndSent = true;
+    if (periodicDue) lastPeriodicAt = t;
 
-    if (dailyDue && endDue) {
+    // A run that has just started after 21:00 has nothing to report yet, so it skips today's report.
+    const firstCheck = prev === null;
+
+    if (dailyDue && firstCheck && !endDue) {
+      // nothing to say
+    } else if (dailyDue && endDue) {
       say(summaryText("দৈনিক আপডেট, এই রান শেষ হচ্ছে"));
     } else if (dailyDue) {
       say(summaryText("দৈনিক আপডেট"));
     } else if (endDue) {
       say(summaryText("এই রান শেষ হচ্ছে"));
+    } else if (periodicDue) {
+      say(summaryText("নিয়মিত আপডেট"));
     }
 
     prev = snap;
@@ -240,6 +265,12 @@ function createMonitor({ getSnapshot, send, now = () => Date.now(), runStartMs =
 // --------------------------------------------------
 
 const stats = { enabled: false, sent: 0, failed: 0, lastError: "", lastSentAt: "" };
+const emailStats = { enabled: false, sent: 0, failed: 0, lastError: "", lastSentAt: "" };
+
+// When Facebook says "logged out / checkpoint / PIN", trying again every few minutes only
+// annoys Facebook, so the Messenger channel rests for a while.
+let messengerPausedUntil = 0;
+const MESSENGER_REST_MS = 6 * 60 * 60 * 1000;
 
 let queue = Promise.resolve();
 
@@ -414,6 +445,11 @@ async function sendViaMessenger(getBrowser, text) {
 function enqueue(getBrowser, text) {
   queue = queue
     .then(async () => {
+      if (Date.now() < messengerPausedUntil) {
+        console.log("[notifier] Messenger is resting after a login problem, message skipped.");
+        return;
+      }
+
       for (let attempt = 1; attempt <= 2; attempt += 1) {
         try {
           await sendViaMessenger(getBrowser, text);
@@ -427,7 +463,10 @@ function enqueue(getBrowser, text) {
           stats.lastError = msg;
           console.log(`[notifier] send failed (attempt ${attempt}/2): ${msg}`);
           // A dead session or a security check will not fix itself within seconds.
-          if (/logged-out|checkpoint|pin-required/.test(msg)) break;
+          if (/logged-out|checkpoint|pin-required/.test(msg)) {
+            messengerPausedUntil = Date.now() + MESSENGER_REST_MS;
+            break;
+          }
           if (attempt < 2) await new Promise((r) => setTimeout(r, 20_000));
         }
       }
@@ -437,24 +476,74 @@ function enqueue(getBrowser, text) {
   return queue;
 }
 
+async function sendViaWebhook(text) {
+  const response = await fetch(WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-bot-alert-key": WEBHOOK_KEY },
+    body: JSON.stringify({ text }),
+    signal: AbortSignal.timeout(20_000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`website answered HTTP ${response.status}`);
+  }
+}
+
+let emailQueue = Promise.resolve();
+
+function enqueueEmail(text) {
+  emailQueue = emailQueue
+    .then(async () => {
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          await sendViaWebhook(text);
+          emailStats.sent += 1;
+          emailStats.lastSentAt = new Date().toISOString();
+          emailStats.lastError = "";
+          console.log("[notifier] alert sent by email.");
+          return;
+        } catch (error) {
+          const msg = (error instanceof Error ? error.message : String(error)).slice(0, 200);
+          emailStats.lastError = msg;
+          console.log(`[notifier] email alert failed (attempt ${attempt}/3): ${msg}`);
+          if (attempt < 3) await new Promise((r) => setTimeout(r, 15_000));
+        }
+      }
+      emailStats.failed += 1;
+    })
+    .catch(() => {});
+  return emailQueue;
+}
+
+function isEmailEnabled() {
+  return Boolean(WEBHOOK_URL && WEBHOOK_KEY);
+}
+
 function isEnabled() {
   return Boolean(RECIPIENT) && fs.existsSync(SESSION_FILE);
 }
 
 function start({ getBrowser, getSnapshot, runStartMs }) {
-  if (!isEnabled()) {
+  const messengerOn = isEnabled();
+  const emailOn = isEmailEnabled();
+
+  if (!messengerOn && !emailOn) {
     console.log(
-      "[notifier] disabled (set FB_RECIPIENT and provide facebook-session.json to turn it on).",
+      "[notifier] disabled (set ALERT_WEBHOOK_URL + BOT_ALERT_KEY for email, or FB_RECIPIENT + a Facebook session for Messenger).",
     );
     return;
   }
 
-  stats.enabled = true;
-  console.log("[notifier] enabled.");
+  stats.enabled = messengerOn;
+  emailStats.enabled = emailOn;
+  console.log(`[notifier] enabled: email=${emailOn}, messenger=${messengerOn}.`);
 
   const monitor = createMonitor({
     getSnapshot,
-    send: (text) => enqueue(getBrowser, text),
+    send: (text) => {
+      if (emailOn) enqueueEmail(text);
+      if (messengerOn) enqueue(getBrowser, text);
+    },
     runStartMs,
   });
 
@@ -494,10 +583,20 @@ async function sendTest(text, headed) {
   }
 }
 
+async function sendEmailTest(text) {
+  if (!isEmailEnabled()) throw new Error("Set ALERT_WEBHOOK_URL and BOT_ALERT_KEY first.");
+  await sendViaWebhook(text);
+}
+
 module.exports = {
+  sendEmailTest,
   sendTest,
   start,
   notify: () => {},
-  status: () => ({ ...stats }),
+  status: () => ({
+    ...stats,
+    messengerResting: Date.now() < messengerPausedUntil,
+    email: { ...emailStats },
+  }),
   createMonitor,
 };

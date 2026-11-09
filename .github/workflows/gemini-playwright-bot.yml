@@ -56,6 +56,9 @@ jobs:
       # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).
       MAX_CONCURRENT_GENERATIONS: "20"
       MAX_JOB_RETRIES: "2"
+      # Messenger status report every N minutes (0 = only one report a day at 21:00 Dhaka time).
+      # A very short time can make Facebook treat the bot account as spam: 60 or more is safer.
+      REPORT_EVERY_MINUTES: "30"
       ASK_KEY: ${{ secrets.ASK_KEY }}
       GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
       GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
@@ -73,6 +76,9 @@ jobs:
       FB_SESSION_JSON: ${{ secrets.FB_SESSION_JSON }}
       FB_RECIPIENT: ${{ secrets.FB_RECIPIENT }}
       FB_MESSENGER_PIN: ${{ secrets.FB_MESSENGER_PIN }}
+      # Email alerts through the website (route app/api/bot-alert). Works without Facebook.
+      ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+      BOT_ALERT_KEY: ${{ secrets.BOT_ALERT_KEY }}
 
     defaults:
       run:

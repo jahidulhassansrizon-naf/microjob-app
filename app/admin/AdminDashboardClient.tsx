@@ -60,10 +60,11 @@ import SmtpSettingsPanel from "./_components/SmtpSettingsPanel";
 import MailCampaignPanel from "./_components/MailCampaignPanel";
 import SubscriptionPlansPanel from "./_components/SubscriptionPlansPanel";
 import SubscriptionActivityPanel from "./_components/SubscriptionActivityPanel";
+import BotStatusPanel from "./_components/BotStatusPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import "./admin-theme.css";
 
-type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp" | "subscription-plans" | "subscription-activity";
+type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp" | "subscription-plans" | "subscription-activity" | "bot-status";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -1153,6 +1154,12 @@ export default function AdminDashboardClient() {
         icon: Users,
         badgeCount: 0,
       },
+      {
+        key: "bot-status" as const,
+        label: "Bot Status",
+        icon: Activity,
+        badgeCount: 0,
+      },
     ],
     [chatUnreadCount],
   );
@@ -1175,7 +1182,9 @@ export default function AdminDashboardClient() {
                   ? "Subscription plan controls"
                   : tab === "subscription-activity"
                     ? "Subscription activity"
-                    : "Website settings";
+                    : tab === "bot-status"
+                      ? "Image bot status"
+                      : "Website settings";
 
   const selectTab = (next: TabKey) => {
     setTab(next);
@@ -2377,6 +2386,7 @@ export default function AdminDashboardClient() {
           {tab === "smtp" && <div className="space-y-6"><SmtpSettingsPanel /><MailCampaignPanel /></div>}
           {tab === "subscription-plans" && <SubscriptionPlansPanel key={subscriptionPlansRefreshKey} />}
           {tab === "subscription-activity" && <SubscriptionActivityPanel />}
+          {tab === "bot-status" && <BotStatusPanel />}
 
           {accessModalUser && (
             <div

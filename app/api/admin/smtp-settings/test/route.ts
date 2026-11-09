@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { renderTestEmail } from "@/app/api/_lib/emailTemplates";
 import { requireAdmin } from "@/app/api/admin/_lib/adminAuth";
 import { friendlySmtpError, getSmtpSettingsRuntime, sendViaSmtp } from "@/app/api/_lib/smtpMailer";
 
@@ -30,7 +29,7 @@ export async function POST(request: Request) {
       to,
       subject: "SMTP test - SebaLagbe.com",
       text: "This is a test email from your SebaLagbe.com admin panel. Your SMTP settings are working.",
-      html: renderTestEmail(),
+      html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #E3D6B8;border-radius:12px;background:#FBF6E8;color:#3B2F1E"><h2 style="margin:0 0 8px">SMTP is working ✅</h2><p style="margin:0;line-height:1.6">This is a test email from your SebaLagbe.com admin panel.</p></div>`,
     });
     return NextResponse.json({ success: true, message: `Test email sent to ${to}. Check the inbox (and spam folder).` }, { headers: NO_STORE });
   } catch (error) {
