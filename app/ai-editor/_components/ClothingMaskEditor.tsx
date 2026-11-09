@@ -188,8 +188,8 @@ export default function ClothingMaskEditor({
             initializeCanvas();
         }
     }, [imageSrc, initializeCanvas]);
-    return (<div ref={wrapperRef} className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4">
-      <div className="flex max-h-[95vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-[#FBF6E8] shadow-2xl">
+    return (<div ref={wrapperRef} className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-2 sm:p-4">
+      <div className="flex max-h-[95dvh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-[#FBF6E8] shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
           <div>
@@ -204,7 +204,7 @@ export default function ClothingMaskEditor({
         {/* Main */}
         <div className="flex min-h-0 flex-1 flex-col overflow-auto bg-[#F6EEDB] p-4 md:flex-row">
           {/* Image editor */}
-          <div className="flex min-h-[420px] flex-1 items-center justify-center">
+          <div className="flex min-h-[min(420px,45dvh)] flex-1 items-center justify-center">
             <div className="relative inline-block max-h-[75vh] max-w-full overflow-hidden rounded-xl bg-stone-900 shadow-lg">
               <img ref={imageRef} src={imageSrc} alt={t("Clothing mask source")} onLoad={handleImageLoad} className="block max-h-[75vh] max-w-full select-none object-contain" draggable={false}/>
 

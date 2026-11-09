@@ -1,7 +1,6 @@
 "use client";
 import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useRef, useState } from "react";
-import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import {
     Check,
     ChevronLeft,
@@ -257,7 +256,6 @@ export default function RecentGenerations({
             <h3 className="text-lg font-extrabold text-[#3B2F1E] xl:text-base">একাধিক ছবি একসাথে সিলেক্ট করুন</h3>
             <p className="mt-1 text-xs leading-relaxed text-[#3B2F1E]/70 sm:text-sm xl:hidden">ছবিগুলো বেছে নিয়ে একসাথে প্রিন্ট করুন, PNG/JPG ZIP হিসেবে ডাউনলোড করুন অথবা সবগুলো একটি PDF-এ নিন।</p>
           </div>
-          <GenerationQuotaNotice locale="bn" size="inline" />
           <div className="flex flex-wrap gap-2">
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("print")} className="inline-flex items-center gap-1.5 rounded-lg bg-[#10B981] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#059669] disabled:cursor-not-allowed disabled:opacity-40"><Printer size={14}/>একসাথে প্রিন্ট</button>
             <button type="button" disabled={!generations.length || isProcessing} onClick={() => startBulkAction("png")} className="inline-flex items-center gap-1.5 rounded-lg bg-[#DC2626] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-40"><FileImage size={14}/>PNG ডাউনলোড</button>
@@ -314,7 +312,7 @@ export default function RecentGenerations({
           </div>
         </div>
 
-        <RetentionNotice variant="compact" className="mb-2" />
+        <RetentionNotice variant="compact" className="ai-retention mb-2" />
 
         <div ref={scrollRef} className="flex min-h-[150px] gap-4 overflow-x-auto pb-2 scrollbar-thin xl:min-h-[clamp(72px,10.5vh,112px)] xl:gap-3 xl:pb-1">
           {isLoading ? <RecentLoadingAnimation />

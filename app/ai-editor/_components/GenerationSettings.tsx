@@ -91,6 +91,24 @@ const QUICK_EDITING_GUIDES = [
   "Glow & Makeup",
   "Reduce Glasses Glare",
 ];
+// When the screen is short, only the most important quick guides stay on the panel (in this order);
+// the rest move into the "Browse all editing guides" popup. Change the order here freely.
+const GUIDE_PRIORITY = [
+  "Fair & Bright Skin",
+  "Neat Short Haircut",
+  "Clean Shave",
+  "Black Hair Color",
+  "Cover Gray Hair",
+  "Tidy Facial Hair",
+  "Glow & Makeup",
+  "Enhance Eyebrows",
+  "Keep Marks",
+  "Reduce Glasses Glare",
+];
+const guideRank = (item: string) => {
+  const i = GUIDE_PRIORITY.indexOf(item);
+  return i === -1 ? 99 : i + 1;
+};
 export const CLOTHING_COLORS = [
   { name: "White", hex: "#FFFFFF" },
   { name: "Black", hex: "#1E1E1E" },
@@ -506,6 +524,8 @@ export default function GenerationSettings({
   const [internalClothingColor, setInternalClothingColor] = useState("#EF4444");
   const [activeGuides, setActiveGuides] = useState<string[]>([]);
   const [showEditingGuideLibrary, setShowEditingGuideLibrary] = useState(false);
+  // "Browse all clothing" popup (used when the panel is too short to show every clothing tile).
+  const [clothModal, setClothModal] = useState<null | "single" | "left" | "right">(null);
   const [guideSearch, setGuideSearch] = useState("");
   const [guideCategory, setGuideCategory] = useState<string>("all");
   const filteredEditingGuides = useMemo(() => {
@@ -770,8 +790,18 @@ export default function GenerationSettings({
   const fitWrapRef = useRef<HTMLDivElement | null>(null);
   const zoomRef = useRef(1);
   const FIT_LEVELS = [0, 1, 2, 3];
-  const COMFORT_ZOOM = 0.92; // a level is "comfortable" if it needs less than 8% shrinking
-  const MIN_FIT_ZOOM = 0.5; // below this we stop shrinking and let the panel scroll instead
+  const COMFORT_ZOOM = 0.8; // a level is "comfortable" if it needs less than 20% shrinking
+  const MIN_FIT_ZOOM = 0.35; // below this we stop shrinking and let the panel scroll instead
+  // Text keeps its on-screen size while boxes shrink, but only down to this zoom. Below it the text
+  // shrinks too, so wide-but-short screens (small laptops, DevTools, odd aspect ratios) still fit.
+  const TEXT_KEEP_ZOOM = 0.6;
+  const textScale = (z: number) => Math.max(z, TEXT_KEEP_ZOOM);
+  // How many clothing tiles are shown (0 = all). Smaller values are tried when the panel is short;
+  // the rest are reachable through the "Browse all clothing" popup.
+  const CLOTH_CAPS = [0, 40, 30, 20, 10, 5];
+  // Same idea for the quick editing guide tiles: [clothing tiles shown, guide tiles shown] (0 = all).
+  // Fewer tiles are preferred over tiny text, so names stay readable on short screens.
+  const FIT_STEPS: [number, number][] = [[0, 0], [40, 0], [30, 8], [20, 8], [20, 6], [10, 6], [10, 4], [5, 4], [5, 3]];
   const fitPanelToViewport = () => {
     const root = panelRootRef.current;
     const wrap = fitWrapRef.current;
@@ -784,8 +814,11 @@ export default function GenerationSettings({
     resetWrap();
     zoomRef.current = 1;
     if (!window.matchMedia("(min-width: 1280px)").matches) {
+      // Phones / tablets: the page itself scrolls, so show a short clothing list (no inner scrollbar).
       wrap.style.height = "";
       wrap.removeAttribute("data-density");
+      wrap.setAttribute("data-cap", "12");
+      wrap.removeAttribute("data-gcap");
       return;
     }
     wrap.setAttribute("data-density", "0");
@@ -798,7 +831,7 @@ export default function GenerationSettings({
     // while measuring, and text is counter-scaled by 1 / zoom (CSS var --tz) so labels
     // keep their on-screen size.
     const heightAt = (z: number) => {
-      wrap.style.setProperty("--tz", String(z));
+      wrap.style.setProperty("--tz", String(textScale(z)));
       wrap.style.zoom = z < 1 ? String(z) : "";
       wrap.style.height = "auto";
       return wrap.getBoundingClientRect().height;
@@ -817,15 +850,45 @@ export default function GenerationSettings({
       }
       return lo;
     };
+    // Roomiest layout first. If nothing fits comfortably, show fewer clothing tiles, then shrink a bit.
     let chosen = FIT_LEVELS[FIT_LEVELS.length - 1];
+    let chosenStep = FIT_STEPS[FIT_STEPS.length - 1];
     let z = 0;
-    for (let i = 0; i < FIT_LEVELS.length; i++) {
-      chosen = FIT_LEVELS[i];
-      z = bestZoom(chosen);
-      if (z >= COMFORT_ZOOM) break;
+    let bestZ = 0;
+    let bestLevel = chosen;
+    let bestStep = chosenStep;
+    let found = false;
+    const applyCap = ([cap, gcap]: [number, number]) => {
+      if (cap) wrap.setAttribute("data-cap", String(cap));
+      else wrap.removeAttribute("data-cap");
+      if (gcap) wrap.setAttribute("data-gcap", String(gcap));
+      else wrap.removeAttribute("data-gcap");
+    };
+    outer: for (const step of FIT_STEPS) {
+      applyCap(step);
+      for (const level of FIT_LEVELS) {
+        const zz = bestZoom(level);
+        if (zz > bestZ) {
+          bestZ = zz;
+          bestLevel = level;
+          bestStep = step;
+        }
+        if (zz >= COMFORT_ZOOM) {
+          chosen = level;
+          chosenStep = step;
+          z = zz;
+          found = true;
+          break outer;
+        }
+      }
     }
-    // Viewport far too short even for the tightest level (e.g. browser zoom 150%+):
-    // never squash it. Show it at natural size and let the panel scroll instead.
+    if (!found) {
+      chosen = bestLevel;
+      chosenStep = bestStep;
+      z = bestZ;
+    }
+    applyCap(chosenStep);
+    // Viewport far too short even for the most compact layout: never squash it, show natural size.
     if (z <= 0) {
       wrap.setAttribute("data-density", String(FIT_LEVELS[FIT_LEVELS.length - 1]));
       resetWrap();
@@ -835,12 +898,64 @@ export default function GenerationSettings({
     }
     wrap.setAttribute("data-density", String(chosen));
     heightAt(z);
-    zoomRef.current = z;
     wrap.style.height = `${H / z}px`;
+    // Safety net: if anything still overflows (fonts, rounding), shrink a little more until no scrollbar is needed.
+    let zf = z;
+    let guard = 0;
+    while (root.scrollHeight > root.clientHeight + 1 && zf > MIN_FIT_ZOOM && guard < 14) {
+      zf = Math.max(MIN_FIT_ZOOM, zf * 0.97);
+      heightAt(zf);
+      wrap.style.height = `${H / zf}px`;
+      guard++;
+    }
+    zoomRef.current = zf;
+  };
+  const clothMoreButton = (side: "single" | "left" | "right") => (
+    <button
+      type="button"
+      data-no-drag
+      onClick={() => {
+        setShowClothingColorPicker(false);
+        setClothModal(side);
+      }}
+      className="gs-cloth-more mt-2 w-full min-h-[36px] items-center justify-center gap-1.5 px-2 py-2 rounded-lg border border-[#FBB6B6] bg-[#FEE9E9] text-[#B91C1C] text-[13px] xl:text-[length:calc(14px/var(--tz,1))] font-semibold transition-colors hover:bg-[#FDDADA] cursor-pointer"
+    >
+      <Search size={16} aria-hidden="true" />
+      <AiT>{"Browse all clothing"}</AiT>
+      <span className="rounded-full bg-white/80 px-1.5 py-0.5 tabular-nums">{CLOTHING_NAMES.length}</span>
+    </button>
+  );
+  const modalSelected = clothModal === "left" ? leftClothing : clothModal === "right" ? rightClothing : selectedClothing;
+  const modalColor = clothModal === "left" ? dualLeftColor : clothModal === "right" ? dualRightColor : currentColor;
+  const pickClothingInModal = (idx: number) => {
+    if (clothModal === "left") {
+      setDualColorTarget("left");
+      setLeftClothing(idx);
+    } else if (clothModal === "right") {
+      setDualColorTarget("right");
+      setRightClothing(idx);
+    } else {
+      setSelectedClothing(idx);
+    }
+    setShowClothingColorPicker(false);
+  };
+  const pickColorInModal = (hex: string) => {
+    const normalized = hex.toUpperCase();
+    if (clothModal === "left") {
+      setDualColorTarget("left");
+      if (setLeftClothingColor) setLeftClothingColor(normalized);
+      else setInternalLeftColor(normalized);
+    } else if (clothModal === "right") {
+      setDualColorTarget("right");
+      if (setRightClothingColor) setRightClothingColor(normalized);
+      else setInternalRightColor(normalized);
+    } else {
+      handleColorChange(normalized);
+    }
   };
   useLayoutEffect(() => {
     fitPanelToViewport();
-  }, [isDualMode, t]);
+  }, [isDualMode, t, selectedClothing, leftClothing, rightClothing]);
   useEffect(() => {
     // One re-fit per animation frame is plenty while the window is being dragged.
     let frame = 0;
@@ -867,7 +982,7 @@ export default function GenerationSettings({
     };
   }, []);
   return (
-    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="gs-root ai-scroll w-full max-w-full lg:w-[340px] xl:w-[620px] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-[calc(100dvh-100px)] xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
+    <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="gs-root ai-scroll w-full max-w-full lg:w-full xl:w-[clamp(520px,40vw,620px)] bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-y-auto max-h-none lg:max-h-none xl:max-h-full flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
       <style>{`
         .ai-scroll [data-grab], .ai-scroll [data-grab] * { cursor: grab; }
         .ai-scroll input, .ai-scroll textarea { cursor: text; }
@@ -879,6 +994,15 @@ export default function GenerationSettings({
         .ai-scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
         .ai-scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
         .ai-scroll::-webkit-scrollbar-thumb:active { background: #991B1B; }
+        /* clothing list is never an inner scroller: it shows a limited number of tiles + a "browse all" popup */
+        .gs-wrap .gs-noscroll { overflow: visible; max-height: none; }
+        .gs-wrap .gs-cloth-more { display: none; }
+        .gs-wrap[data-cap] .gs-cloth-more { display: flex; }
+        ${[40, 30, 20, 12, 10, 5].map((n) => `.gs-wrap[data-cap="${n}"] .gs-cloth-grid > button:nth-child(n+${n + 2}) { display: none; }`).join("\n        ")}
+        .gs-wrap[data-cap] .gs-cloth-grid > button:has(.gs-sel-badge) { display: flex !important; }
+        /* short screens: only the top-priority quick guides stay (selected ones always stay); the rest live in "Browse all" */
+        ${[8, 6, 4, 3].map((n) => `.gs-wrap[data-gcap="${n}"] .gs-guide-grid > button:is(${Array.from({ length: 12 - n }, (_, i) => `[data-prio="${n + 1 + i}"]`).join(",")}):not(.gs-guide-on) { display: none; }`).join("\n        ")}
+        .gs-wrap[data-gcap] .gs-guide-grid > button[data-prio="99"]:not(.gs-guide-on) { display: none; }
         /* ---- Desktop: no inner scrolling. Density levels are chosen by fitPanelToViewport(). ---- */
         @media (min-width: 1280px) {
           .gs-wrap {
@@ -910,7 +1034,7 @@ export default function GenerationSettings({
             --gs-size-icon: 30px; --gs-size-svg: 26px; --gs-size-gap: 1px; --gs-bg: 28px;
             --gs-cloth-cols: 14; --gs-cloth-gap: 3px; --gs-cloth-pad: 3px 2px 2px;
             --gs-guide-cols: 6; --gs-guide-gap: 4px; --gs-guide-pad: 3px; --gs-guide-icon: 28px;
-            --gs-guide-font: 11.5px; --gs-guide-lines: 2;
+            --gs-guide-font: 12px; --gs-guide-lines: 3;
             --gs-btn-h: 30px; --gs-hint-font: 12px; --gs-hint-gap: 3px; --gs-gen-py: 6px;
           }
           .gs-wrap .gs-sec, .gs-wrap .gs-head { margin-bottom: var(--gs-sec-gap); }
@@ -938,6 +1062,15 @@ export default function GenerationSettings({
           .gs-wrap[data-density="3"] .gs-bg-sec { display: flex; align-items: center; gap: 10px; }
           .gs-wrap[data-density="3"] .gs-bg-sec > .gs-label { margin-bottom: 0; flex: 0 0 auto; }
           .gs-wrap[data-density="3"] .gs-bg-sec > .gs-bgs { flex: 1 1 0; min-width: 0; padding: 3px 0; }
+        }
+        /* Wide-but-short screens (aspect ratio 2:1 or wider, e.g. 1619x679): use the spare width so the lists
+           need fewer rows and everything fits on one screen without a scrollbar. */
+        @media (min-width: 1280px) and (min-aspect-ratio: 2/1) {
+          .ai-scroll.gs-root { width: min(46vw, 760px); }
+          .gs-wrap { --gs-cloth-cols: 12; --gs-guide-cols: 6; }
+          .gs-wrap[data-density="1"] { --gs-cloth-cols: 14; --gs-guide-cols: 8; }
+          .gs-wrap[data-density="2"] { --gs-cloth-cols: 17; --gs-guide-cols: 8; }
+          .gs-wrap[data-density="3"] { --gs-cloth-cols: 17; --gs-guide-cols: 8; }
         }
         /* Big screens (1800px+ wide): give the settings panel more width so everything fits in fewer rows. */
         @media (min-width: 1800px) {
@@ -1229,6 +1362,7 @@ export default function GenerationSettings({
             className="gs-noscroll ai-scroll cursor-grab relative rounded-2xl overflow-y-auto overflow-x-hidden p-0.5 pr-1.5 max-h-[340px]"
           >
             {!isDualMode ? (
+              <>
               <div className="gs-cloth-grid grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-10 gap-2 xl:gap-1.5 justify-items-stretch">
                 <button
                   type="button"
@@ -1270,7 +1404,7 @@ export default function GenerationSettings({
                       /></span>
 
                       {isSelected && (
-                        <span className="absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
+                        <span className="gs-sel-badge absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
                           <Check size={10} strokeWidth={3} />
                         </span>
                       )}
@@ -1278,6 +1412,8 @@ export default function GenerationSettings({
                   );
                 })}
               </div>
+              {clothMoreButton("single")}
+              </>
             ) : (
               <div className="space-y-4 xl:space-y-0 xl:flex xl:flex-col xl:gap-[var(--gs-dual-gap,16px)]">
                 <div>
@@ -1323,13 +1459,14 @@ export default function GenerationSettings({
                         /></span>
 
                         {leftClothing === idx && (
-                          <span className="absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
+                          <span className="gs-sel-badge absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
                             <Check size={10} strokeWidth={3} />
                           </span>
                         )}
                       </button>
                     ))}
                   </div>
+                  {clothMoreButton("left")}
                 </div>
 
                 <div>
@@ -1375,13 +1512,14 @@ export default function GenerationSettings({
                         /></span>
 
                         {rightClothing === idx && (
-                          <span className="absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
+                          <span className="gs-sel-badge absolute top-1 right-1 bg-[#DC2626] text-white rounded-full p-0.5 shadow-sm z-10">
                             <Check size={10} strokeWidth={3} />
                           </span>
                         )}
                       </button>
                     ))}
                   </div>
+                  {clothMoreButton("right")}
                 </div>
               </div>
             )}
@@ -1495,9 +1633,10 @@ export default function GenerationSettings({
                     aria-pressed={active}
                     onClick={() => toggleGuide(item)}
                     title={t(item)}
+                    data-prio={guideRank(item)}
                     className={`gs-guide-tile xl:min-h-0 min-h-[50px] flex flex-col items-center justify-center p-2 xl:p-2 rounded-xl border text-[13px] xl:text-[length:calc(13px/var(--tz,1))] font-semibold text-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
                       active
-                        ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626]"
+                        ? "gs-guide-on border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626]"
                         : "border-[#E3D6B8] text-[#3B2F1E] hover:bg-[#EFE3C8]"
                     }`}
                   >
@@ -1615,6 +1754,129 @@ export default function GenerationSettings({
         </button>
       </div>
       </div>
+      {clothModal &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="ai-editor-font fixed inset-0 z-[1000] flex items-center justify-center bg-stone-950/60 p-3 sm:p-5 backdrop-blur-sm animate-in fade-in duration-200"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setClothModal(null);
+            }}
+            role="presentation"
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="clothing-library-title"
+              className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-stone-200 bg-[#FBF6E8] shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+            >
+              <div className="flex items-start gap-4 border-b border-stone-100 px-5 py-4 sm:px-7 sm:py-5">
+                <div className="min-w-0 flex-1">
+                  <h2 id="clothing-library-title" className="text-lg sm:text-xl font-semibold tracking-tight text-stone-900">
+                    <AiT>{"Clothing Library"}</AiT>
+                    {isDualMode && (
+                      <span className="ml-2 text-base font-semibold text-[#DC2626]">
+                        — <AiT>{clothModal === "left" ? "Left Person" : "Right Person"}</AiT>
+                      </span>
+                    )}
+                  </h2>
+                  <p className="mt-1 text-sm sm:text-base leading-5 text-stone-500">
+                    <AiT>{"Choose a clothing style and its color."}</AiT>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setClothModal(null)}
+                  aria-label={t("Close")}
+                  className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+                >
+                  <X size={19} />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">
+                <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
+                  <button
+                    type="button"
+                    onClick={() => pickClothingInModal(-1)}
+                    aria-label={t("No clothing")}
+                    title={t("No clothing")}
+                    className={`flex w-full flex-col items-center justify-start gap-1 rounded-xl border px-1 pt-1.5 pb-1 transition-all cursor-pointer hover:bg-[#EFE3C8] ${
+                      modalSelected === -1 ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]" : "border-[#E3D6B8] bg-[#FBF6E8]"
+                    }`}
+                  >
+                    <span className="flex w-full aspect-square items-center justify-center"><Ban size={26} className="text-stone-400" /></span>
+                    <span className="w-full truncate text-center text-[12px] leading-tight font-semibold text-stone-700">{t("No clothing")}</span>
+                  </button>
+                  {CLOTHING_NAMES.map((name, idx) => {
+                    const picked = modalSelected === idx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => pickClothingInModal(idx)}
+                        aria-label={t(name)}
+                        title={t(name)}
+                        className={`relative flex w-full flex-col items-center justify-start gap-1 overflow-hidden rounded-xl border px-1 pt-1.5 pb-1 transition-all cursor-pointer hover:bg-[#EFE3C8] ${
+                          picked ? "border-[#DC2626] ring-2 ring-[#DC2626]/40 bg-[#F6D9A8]" : "border-[#E3D6B8] bg-[#FBF6E8]"
+                        }`}
+                      >
+                        <span className="block w-full aspect-square">
+                          <RawSvgClothingPreview index={idx} selected={picked} color={picked ? modalColor : undefined} alt={t(name)} />
+                        </span>
+                        {picked && (
+                          <span className="absolute top-1 right-1 z-10 rounded-full bg-[#DC2626] p-0.5 text-white shadow-sm">
+                            <Check size={10} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-stone-100 bg-stone-50/70 px-4 py-3 sm:px-6">
+                {modalSelected >= 0 && (
+                  <div className="mb-3">
+                    <p className="mb-2 text-sm font-semibold text-[#3B2F1E]">
+                      <AiT>{CLOTHING_NAMES[modalSelected] || "Clothing"}</AiT> <AiT>{"— Pick a Color"}</AiT>
+                    </p>
+                    <div className="flex flex-wrap gap-2.5">
+                      {CLOTHING_COLORS.map((color) => {
+                        const active = modalColor.toUpperCase() === color.hex.toUpperCase();
+                        return (
+                          <button
+                            key={color.hex}
+                            type="button"
+                            onClick={() => pickColorInModal(color.hex)}
+                            title={t(color.name)}
+                            aria-label={t(color.name)}
+                            style={{ backgroundColor: color.hex }}
+                            className={`relative flex h-8 w-8 items-center justify-center rounded-full border border-stone-400/40 shadow-sm transition-transform hover:scale-110 cursor-pointer ${
+                              active ? "ring-2 ring-[#DC2626] ring-offset-2 ring-offset-[#FBF6E8]" : ""
+                            }`}
+                          >
+                            {active && (
+                              <Check size={12} strokeWidth={3} className={color.hex === "#FFFFFF" || color.hex === "#E5E7EB" ? "text-stone-900" : "text-white"} />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setClothModal(null)}
+                  className="w-full cursor-pointer rounded-xl bg-[#DC2626] px-4 py-2.5 text-base font-bold text-white transition hover:bg-[#B91C1C]"
+                >
+                  <AiT>{"Done"}</AiT>
+                </button>
+              </div>
+            </section>
+          </div>,
+          document.body,
+        )}
       {showEditingGuideLibrary &&
         typeof document !== "undefined" &&
         createPortal(
@@ -1631,7 +1893,7 @@ export default function GenerationSettings({
               aria-modal="true"
               aria-labelledby="editing-guide-library-title"
               aria-describedby="editing-guide-library-description"
-              className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-stone-200 bg-[#FBF6E8] shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+              className="flex max-h-[92dvh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-stone-200 bg-[#FBF6E8] shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
             >
               <div className="flex items-start gap-4 border-b border-stone-100 px-5 py-4 sm:px-7 sm:py-5">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600">
@@ -1791,7 +2053,7 @@ export default function GenerationSettings({
               aria-modal="true"
               aria-labelledby="custom-instruction-title"
               aria-describedby="custom-instruction-description"
-              className="w-full max-w-lg overflow-hidden rounded-3xl border border-stone-200 bg-[#FBF6E8] shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
+              className="w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-stone-200 bg-[#FBF6E8] shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
             >
               <div className="flex items-start gap-4 border-b border-stone-100 px-6 pb-5 pt-6 sm:px-7">
                 <div className="min-w-0 flex-1 pt-0.5">

@@ -22,6 +22,7 @@ import { X, Check, Crop as CropIcon, Minus, Plus, Ruler, RotateCw, Loader2 } fro
 import { getClientSession } from "@/lib/clientAuth";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
+import GenerationLimitAlert from "./_components/GenerationLimitAlert";
 import usePageLoaderHold from "@/app/_components/usePageLoaderHold";
 import { AiEditorFetchError, getCachedAiEditorGenerations, isAiEditorStaticWarm, refreshAiEditorGenerations, setCachedAiEditorGenerations, waitForAiEditorFirstFold } from "./_components/aiEditorData";
 // Heavy parts (print studio + PDF, photo preview editor, crop tool) load in the background, so the
@@ -46,6 +47,8 @@ export default function PhotoEditorPage() {
     const [selectedClothingColor, setSelectedClothingColor] = useState("#EF4444");
     const [editingGuides, setEditingGuides] = useState<string[]>([]);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    // Red alert popup, shown only when the image-generation limit is used up.
+    const [limitAlert, setLimitAlert] = useState<{ unlockAt: string | null } | null>(null);
     const [isDualMode, setIsDualMode] = useState(false);
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [leftImage, setLeftImage] = useState<string | null>(null);
@@ -1463,6 +1466,10 @@ export default function PhotoEditorPage() {
                     window.dispatchEvent(new Event("sohozkaj:subscription-required"));
                     throw new Error("SUBSCRIPTION_REQUIRED");
                 }
+                if (response.status === 429 && result?.code === "GENERATION_RATE_LIMIT") {
+                    setLimitAlert({ unlockAt: typeof result?.unlockAt === "string" ? result.unlockAt : null });
+                    throw new Error("GENERATION_RATE_LIMIT");
+                }
                 // Never show raw technical text (bot page URL, button lists, stack info).
                 const rawMessage = typeof result?.error === "string" ? result.error : "";
                 const looksTechnical = rawMessage.length > 300 ||
@@ -1727,8 +1734,9 @@ export default function PhotoEditorPage() {
         }
         catch (error) {
             const subscriptionRequired = error instanceof Error && error.message === "SUBSCRIPTION_REQUIRED";
-            if (subscriptionRequired) {
-                // The subscription dialog already explains the required next step.
+            const limitReached = error instanceof Error && error.message === "GENERATION_RATE_LIMIT";
+            if (subscriptionRequired || limitReached) {
+                // The subscription dialog / limit alert popup already explains the next step.
                 // Do not render the guard response as a red application error.
                 setErrorMessage(null);
             } else {
@@ -2035,7 +2043,7 @@ export default function PhotoEditorPage() {
         setShowCropModal(false);
     };
     generatePhotoRef.current = handleGeneratePhoto;
-    return (<div className="min-h-screen xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
+    return (<div className="ai-root min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         .ai-editor-font.ai-editor-font, .ai-editor-font.ai-editor-font *:not(.font-mono):not(svg):not(svg *) {
@@ -2046,6 +2054,17 @@ export default function PhotoEditorPage() {
           text-rendering: optimizeLegibility;
         }
         .ai-editor-font h1, .ai-editor-font h2, .ai-editor-font h3, .ai-editor-font h4 { letter-spacing: -0.01em; }
+        /* Wide but SHORT screens (small laptops, browser zoom, DevTools): everything stays on ONE screen with no
+           scrollbars, so the secondary texts are dropped and the QR / upload boxes shrink with the screen height. */
+        @media (min-width: 1280px) and (max-height: 900px) {
+          .ai-qr-desc, .ai-qr-hint, .ai-retention { display: none !important; }
+          .ai-qr-box { min-height: 0 !important; padding: 6px !important; margin-bottom: 6px !important; }
+          .ai-qr-box svg { width: clamp(88px, 21vh, 160px) !important; height: clamp(88px, 21vh, 160px) !important; }
+        }
+        @media (min-width: 1280px) and (max-height: 700px) {
+          .ai-drop-sub { display: none !important; }
+          .ai-drop-icon { display: none !important; }
+        }
       `}</style>
       <DashboardNavbar />
       <SubscriptionLock />
@@ -2055,6 +2074,8 @@ export default function PhotoEditorPage() {
       {errorMessage && (<div className="fixed left-1/2 top-20 z-[1100] -translate-x-1/2 max-w-[min(92vw,720px)] rounded-xl border border-red-200 bg-[#FBF6E8] px-4 py-3 text-base font-medium text-red-700 shadow-xl">
           <AiT>{errorMessage}</AiT>
         </div>)}
+
+      {limitAlert && (<GenerationLimitAlert unlockAt={limitAlert.unlockAt} onClose={() => setLimitAlert(null)}/>)}
 
       {showSlowNotice && isGenerating && !errorMessage && (<div role="status" className="fixed left-1/2 top-20 z-[1100] -translate-x-1/2 max-w-[min(92vw,720px)] rounded-xl border border-amber-300 bg-[#FBF6E8] px-4 py-3 text-base font-medium text-amber-800 shadow-xl">
           <AiT>Heavy demand right now, so your photo is taking a little longer. Please wait and do not close this page.</AiT>
@@ -2185,14 +2206,14 @@ export default function PhotoEditorPage() {
 
       <ImagePreviewModal image={previewModalImage} onClose={() => { setPreviewModalImage(null); setPreviewStartWithEdit(false); }} onDelete={handleDeleteImage} onRegenerate={handleRegenerateFromModal} onSaveImage={handleSaveEditedImage} startWithEdit={previewStartWithEdit}/>
 
-      <div className="flex-1 flex flex-col items-center p-2 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3">
-        <div className="flex flex-col xl:flex-row w-full max-w-[1400px] xl:max-w-none gap-4 items-center xl:items-stretch xl:flex-1 xl:min-h-0">
-          <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
+      <div className="ai-main flex-1 flex flex-col items-center p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3 min-w-0">
+        <div className="ai-row flex flex-col lg:flex-row lg:flex-wrap xl:flex-nowrap w-full max-w-[1400px] xl:max-w-none gap-3 sm:gap-4 items-center lg:items-start xl:items-stretch xl:flex-1 xl:min-h-0 min-w-0">
+          <div className="w-full lg:w-[360px] lg:shrink-0 xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
             <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} onOpenSetupWizard={isDualMode ? undefined : openSetupWizardFromButton} isGenerating={isGenerating}/>
           </div>
 
-          <div className="w-full xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
-            <div className="flex flex-col xl:flex-row gap-3 xl:min-h-0">
+          <div className="w-full min-w-0 lg:flex-1 lg:basis-0 xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
+            <div className="flex flex-col xl:flex-row gap-3 xl:min-h-0 min-w-0">
               {/* Photo preview (kept mounted, hidden while the print section is open) */}
               <div className="flex flex-col flex-1 min-w-0 xl:min-h-0 [&>*]:flex-1 xl:[&>*]:min-h-0">
                 <PhotoPreviewArea onDropFile={handleDropFile} isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage} resultFilter={liveResultFilter} resultInfo={resultInfo}/>
@@ -2204,7 +2225,7 @@ export default function PhotoEditorPage() {
             </div>
           </div>
 
-          <div className="w-full xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
+          <div className="w-full flex flex-col items-center xl:items-stretch xl:w-[clamp(220px,17vw,280px)] xl:shrink-0 [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
             <QrCodeSidebar
               uploadUrl={typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : ""}
               onPhotoReceived={handleQrPhotoReceived}

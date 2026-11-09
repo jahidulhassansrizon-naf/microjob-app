@@ -98,7 +98,7 @@ export default function SubscriptionLock() {
           onClick={() => setShowDialog(false)}
         >
           <div
-            className="relative w-full max-w-[620px] overflow-hidden rounded-[28px] border border-white/70 bg-[#F6EEDB] shadow-[0_28px_100px_rgba(2,6,23,0.38)] ring-1 ring-stone-900/5 cursor-default"
+            className="relative w-full max-w-[620px] max-h-[calc(100dvh-2rem)] overflow-y-auto overflow-x-hidden rounded-[28px] border border-white/70 bg-[#F6EEDB] shadow-[0_28px_100px_rgba(2,6,23,0.38)] ring-1 ring-stone-900/5 cursor-default"
             onClick={(event) => event.stopPropagation()}
             role="dialog"
             aria-modal="true"

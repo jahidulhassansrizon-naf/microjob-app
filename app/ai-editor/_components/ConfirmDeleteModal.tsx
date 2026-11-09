@@ -45,7 +45,7 @@ export default function ConfirmDeleteModal({
       aria-modal="true"
       aria-labelledby="delete-photo-title"
     >
-      <div className="relative w-full max-w-[400px] overflow-hidden rounded-3xl border border-white/70 bg-[#FBF6E8] shadow-[0_24px_70px_-12px_rgba(15,23,42,0.45)] animate-in zoom-in-95 slide-in-from-bottom-2 duration-200">
+      <div className="relative w-full max-w-[400px] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-white/70 bg-[#FBF6E8] shadow-[0_24px_70px_-12px_rgba(15,23,42,0.45)] animate-in zoom-in-95 slide-in-from-bottom-2 duration-200">
         <div className="h-1.5 w-full bg-gradient-to-r from-rose-400 via-red-500 to-rose-600" />
 
         <button

@@ -115,7 +115,7 @@ export default function GeneratedResultPanel({ item, onDelete, onPrint, onClose,
         }
     };
 
-    return (<aside className="w-full xl:w-[280px] max-w-[320px] xl:max-w-[280px] xl:h-full xl:flex xl:flex-col" aria-label={t("Photo actions")}>
+    return (<aside className="w-full xl:w-[clamp(220px,17vw,280px)] max-w-[320px] xl:max-w-[280px] xl:h-full xl:flex xl:flex-col" aria-label={t("Photo actions")}>
       <div className="rounded-2xl border border-stone-200 bg-[#FBF6E8] p-3.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)] xl:flex-1 xl:min-h-0 xl:flex xl:flex-col xl:overflow-y-auto">
         <div className="flex items-start justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-2 min-w-0">

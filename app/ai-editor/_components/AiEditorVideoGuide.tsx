@@ -41,7 +41,7 @@ function VideoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-4xl overflow-hidden rounded-2xl border border-white/15 bg-stone-950 shadow-2xl">
+      <div className="w-full max-w-4xl max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border border-white/15 bg-stone-950 shadow-2xl">
         <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3 text-white">
           <div className="min-w-0">
             <p className="truncate text-sm font-bold">

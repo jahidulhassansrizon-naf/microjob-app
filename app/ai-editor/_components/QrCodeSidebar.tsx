@@ -226,9 +226,9 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   );
 
   const localHint = isLocalOrigin && uploadState === "waiting" && (
-    <p className="mb-3 rounded-lg border border-stone-200 bg-[#F6EEDB] px-3 py-2 text-[12px] leading-4 text-stone-600"><AiT>For local testing, use your computer's network address instead of localhost.</AiT></p>
+    <p className="ai-qr-hint mb-3 rounded-lg border border-stone-200 bg-[#F6EEDB] px-3 py-2 text-[12px] leading-4 text-stone-600"><AiT>For local testing, use your computer's network address instead of localhost.</AiT></p>
   );
-  const onceHint = uploadState === "waiting" && <p className={`${compact ? "mb-2" : "mb-3"} text-center text-[12px] leading-4 text-stone-400`}><AiT>This QR code stays active until a photo is sent and can be used once.</AiT></p>;
+  const onceHint = uploadState === "waiting" && <p className={`ai-qr-hint ${compact ? "mb-2" : "mb-3"} text-center text-[12px] leading-4 text-stone-400`}><AiT>This QR code stays active until a photo is sent and can be used once.</AiT></p>;
 
   const actionButtons = (
     <>
@@ -259,7 +259,7 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
       </div>
       <div className="min-w-0 flex-1">
         <h4 className="text-sm font-semibold"><AiT>Upload from phone</AiT></h4>
-        <p className="mt-0.5 text-[12px] leading-4 text-stone-500"><AiT>Scan this QR code with your phone to choose a photo from your gallery. The photo will appear here on your computer.</AiT></p>
+        <p className="ai-qr-desc mt-0.5 text-[12px] leading-4 text-stone-500"><AiT>Scan this QR code with your phone to choose a photo from your gallery. The photo will appear here on your computer.</AiT></p>
       </div>
     </div>
   );
@@ -296,7 +296,7 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
       <div className="rounded-2xl border border-stone-200 bg-[#FBF6E8] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
         {header}
 
-        <div className="mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-stone-200 bg-[#FBF6E8] p-3">
+        <div className="ai-qr-box mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-stone-200 bg-[#FBF6E8] p-3">
           {showQr ? (
             <LocalQrCode value={mobileUrl} label={t("QR code")} />
           ) : (

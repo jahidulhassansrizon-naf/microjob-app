@@ -519,13 +519,13 @@ function EmptyUploadBox({ title, subtitle, onUpload, onFile, }: {
         }
         : {};
     return (<div {...dragProps} className={`relative flex h-full min-h-[250px] flex-col items-center justify-center p-4 text-center transition-colors xl:min-h-0 xl:p-2 ${dragging ? "bg-[#F6D9A8] ring-4 ring-inset ring-[#DC2626]/60" : "bg-[#E3D6B8]"}`}>
-      <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F2E8D2] text-[#DC2626] transition-transform ${dragging ? "scale-125" : ""}`}>
+      <div className={`ai-drop-icon mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#F2E8D2] text-[#DC2626] transition-transform ${dragging ? "scale-125" : ""}`}>
         <Upload size={18}/>
       </div>
 
       <h3 className="mb-1 text-sm font-medium text-[#3B2F1E]">{dragging ? t("Drop the photo here") : <AiT>{title}</AiT>}</h3>
 
-      {subtitle && !dragging && (<p className="mb-1 text-[12px] leading-tight text-[#3B2F1E]/70">
+      {subtitle && !dragging && (<p className="ai-drop-sub mb-1 text-[12px] leading-tight text-[#3B2F1E]/70">
           <AiT>{subtitle}</AiT>
         </p>)}
 
