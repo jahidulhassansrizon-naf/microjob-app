@@ -41,7 +41,7 @@ function LocalQrCode({ value, label, sizeClass = "h-40 w-40" }: { value: string;
   if (!qr) return <div className={`flex ${sizeClass} items-center justify-center text-sm text-stone-500`}><AiT>QR code unavailable</AiT></div>;
   const extent = qr.count + 8;
   return (
-    <svg viewBox={`0 0 ${extent} ${extent}`} role="img" aria-label={label} className={`${sizeClass} max-w-full rounded-lg bg-white p-1`} shapeRendering="crispEdges">
+    <svg viewBox={`0 0 ${extent} ${extent}`} role="img" aria-label={label} className={`${sizeClass} max-w-full rounded-lg bg-white p-1 xl:absolute xl:inset-0 xl:m-auto xl:!h-full xl:!w-auto xl:aspect-square`} shapeRendering="crispEdges">
       <rect width={extent} height={extent} fill="#FFFFFF" />
       <path d={qr.path} fill="#111827" />
     </svg>
@@ -215,7 +215,7 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   const placeholderMessage = uploadState === "creating" ? "Preparing secure upload..." : uploadState === "expired" ? "This QR code is no longer active. A new one is being prepared." : errorKey || "Could not create a secure upload. Check your connection and subscription, then try again.";
 
   const statusLine = (
-    <p role="status" aria-live="polite" className={`${compact ? "mb-2 min-h-0" : "mb-3 min-h-8"} text-center text-[13px] leading-4 text-stone-600`}>
+    <p role="status" aria-live="polite" className={`ai-qr-status ${compact ? "mb-2 min-h-0" : "mb-3 min-h-8"} text-center text-[13px] leading-4 text-stone-600`}>
       {uploadState === "creating" && <AiT>{justReceivedPhoto ? "Photo received. Preparing a new QR code..." : "Preparing secure upload..."}</AiT>}
       {uploadState === "waiting" && <AiT>{justReceivedPhoto ? "Photo received. A new QR code is ready for your next photo." : "Waiting for your phone..."}</AiT>}
       {uploadState === "receiving" && <AiT>Receiving photo...</AiT>}
@@ -292,11 +292,11 @@ export default function QrCodeSidebar({ uploadUrl = "", freeAccess = false, comp
   }
 
   return (
-    <aside className="w-full max-w-[280px]">
-      <div className="rounded-2xl border border-stone-200 bg-[#FBF6E8] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+    <aside className="w-full max-w-[280px] xl:max-w-none xl:h-full xl:min-h-0">
+      <div className="rounded-2xl border border-stone-200 bg-[#FBF6E8] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)] xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:overflow-hidden xl:p-[clamp(8px,1.4vh,16px)] [&>*]:shrink-0">
         {header}
 
-        <div className="ai-qr-box mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-stone-200 bg-[#FBF6E8] p-3">
+        <div className="ai-qr-box mb-3 flex min-h-[184px] items-center justify-center rounded-xl border border-stone-200 bg-[#FBF6E8] p-3 xl:relative xl:mb-2 xl:min-h-[80px] xl:flex-1 xl:shrink xl:basis-0 xl:overflow-hidden">
           {showQr ? (
             <LocalQrCode value={mobileUrl} label={t("QR code")} />
           ) : (

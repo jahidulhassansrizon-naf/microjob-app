@@ -2043,9 +2043,15 @@ export default function PhotoEditorPage() {
         setShowCropModal(false);
     };
     generatePhotoRef.current = handleGeneratePhoto;
-    return (<div className="ai-root min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden xl:h-[100dvh] xl:min-h-0 xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
+    return (<div className="ai-root min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden xl:h-[100dvh] xl:min-h-[640px] xl:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col relative select-none ai-editor-font">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        /* ONE place for the page-level sizes. Change a number here and every panel follows. */
+        .ai-root {
+          --ai-left-w-lg: clamp(320px, 34vw, 400px);   /* settings panel, 1024-1279px */
+          --ai-left-w: clamp(420px, 35vw, 600px);       /* settings panel, 1280px+ */
+          --ai-right-w: clamp(210px, 15.5vw, 280px);    /* QR column + result-options column, 1280px+ */
+        }
         .ai-editor-font.ai-editor-font, .ai-editor-font.ai-editor-font *:not(.font-mono):not(svg):not(svg *) {
           font-family: "Plus Jakarta Sans","Hind Siliguri","Noto Sans Bengali",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
           font-optical-sizing: auto;
@@ -2056,10 +2062,12 @@ export default function PhotoEditorPage() {
         .ai-editor-font h1, .ai-editor-font h2, .ai-editor-font h3, .ai-editor-font h4 { letter-spacing: -0.01em; }
         /* Wide but SHORT screens (small laptops, browser zoom, DevTools): everything stays on ONE screen with no
            scrollbars, so the secondary texts are dropped and the QR / upload boxes shrink with the screen height. */
-        @media (min-width: 1280px) and (max-height: 900px) {
+        @media (min-width: 1280px) and (max-height: 1040px) {
           .ai-qr-desc, .ai-qr-hint, .ai-retention { display: none !important; }
           .ai-qr-box { min-height: 0 !important; padding: 6px !important; margin-bottom: 6px !important; }
-          .ai-qr-box svg { width: clamp(88px, 21vh, 160px) !important; height: clamp(88px, 21vh, 160px) !important; }
+        }
+        @media (min-width: 1280px) and (max-height: 760px) {
+          .ai-qr-status { display: none !important; }
         }
         @media (min-width: 1280px) and (max-height: 700px) {
           .ai-drop-sub { display: none !important; }
@@ -2207,8 +2215,10 @@ export default function PhotoEditorPage() {
       <ImagePreviewModal image={previewModalImage} onClose={() => { setPreviewModalImage(null); setPreviewStartWithEdit(false); }} onDelete={handleDeleteImage} onRegenerate={handleRegenerateFromModal} onSaveImage={handleSaveEditedImage} startWithEdit={previewStartWithEdit}/>
 
       <div className="ai-main flex-1 flex flex-col items-center p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3 min-w-0">
-        <div className="ai-row flex flex-col lg:flex-row lg:flex-wrap xl:flex-nowrap w-full max-w-[1400px] xl:max-w-none gap-3 sm:gap-4 items-center lg:items-start xl:items-stretch xl:flex-1 xl:min-h-0 min-w-0">
-          <div className="w-full lg:w-[360px] lg:shrink-0 xl:w-auto flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
+        {/* xl: 3-column grid. Left = full-height settings panel (no inner scrollbar, the page itself scrolls).
+            Middle + QR = row 1 (fixed viewport-based height). "Recent photos" = row 2, aligned under the upload box + QR. */}
+        <div className="ai-row flex flex-col lg:flex-row lg:flex-wrap xl:grid xl:grid-cols-[var(--ai-left-w)_minmax(0,1fr)_var(--ai-right-w)] xl:grid-rows-[minmax(0,1fr)_auto] xl:flex-1 xl:min-h-0 w-full max-w-[1400px] xl:max-w-none gap-3 sm:gap-4 items-center lg:items-start xl:items-stretch min-w-0">
+          <div className="w-full lg:w-[var(--ai-left-w-lg)] lg:shrink-0 xl:w-full xl:row-span-2 xl:min-h-0 xl:overflow-hidden flex flex-col [&>*]:flex-1 xl:[&>*]:min-h-0">
             <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} onOpenSetupWizard={isDualMode ? undefined : openSetupWizardFromButton} isGenerating={isGenerating}/>
           </div>
 
@@ -2225,15 +2235,18 @@ export default function PhotoEditorPage() {
             </div>
           </div>
 
-          <div className="w-full flex flex-col items-center xl:items-stretch xl:w-[clamp(220px,17vw,280px)] xl:shrink-0 [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
+          <div className="w-full flex flex-col items-center xl:items-stretch xl:w-full xl:min-w-0 [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
             <QrCodeSidebar
               uploadUrl={typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : ""}
               onPhotoReceived={handleQrPhotoReceived}
             />
           </div>
-        </div>
 
-                <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching} savedSessions={savedSessions} onOpenSaved={handleOpenSavedSession} onDeleteSaved={handleDeleteSavedSession} onDeleteMany={performDeleteMany}/>
+          {/* Recent photos: aligned with the upload box (starts at its left edge, spans upload box + QR column) */}
+          <div className="w-full min-w-0 lg:basis-full xl:col-start-2 xl:col-span-2 xl:self-start">
+            <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching} savedSessions={savedSessions} onOpenSaved={handleOpenSavedSession} onDeleteSaved={handleDeleteSavedSession} onDeleteMany={performDeleteMany}/>
+          </div>
+        </div>
       </div>
       <PhotoSetupWizard open={showSetupWizard} image={uploadedImage} initial={{
         size: isDualMode ? "" : selectedSize,
