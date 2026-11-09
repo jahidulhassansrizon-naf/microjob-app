@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 import { Play, X } from "lucide-react";
 import { AiT, useAiEditorText } from "./aiEditorI18n";
 
-// Video tutorial for the AI Editor: https://youtu.be/y2u-K0jEdLM
-const VIDEO_ID = "y2u-K0jEdLM";
+// Video tutorial for the AI Editor: https://www.youtube.com/watch?v=agi8E9vrgHU
+const VIDEO_ID = "agi8E9vrgHU";
 const EMBED_SRC = `https://www.youtube-nocookie.com/embed/${VIDEO_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
 const THUMB_MAX = `https://img.youtube.com/vi/${VIDEO_ID}/maxresdefault.jpg`;
 // hqdefault is 4:3 with black bars; object-cover inside a 16:9 box crops those bars away.

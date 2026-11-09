@@ -11,6 +11,12 @@ import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
  */
 const AI_EDITOR_BN: Record<string, string> = {
   "Watch video": "ভিডিও দেখুন",
+  "Video tutorial": "ভিডিও টিউটোরিয়াল",
+  "How to use the AI Editor": "এআই এডিটর কীভাবে ব্যবহার করবেন",
+  "Close video": "ভিডিও বন্ধ করুন",
+  "Watch the AI Editor video tutorial": "এআই এডিটরের ভিডিও টিউটোরিয়াল দেখুন",
+  "Learn how to use the AI Editor": "এআই এডিটর কীভাবে ব্যবহার করবেন শিখুন",
+  "Tap to watch the tutorial": "টিউটোরিয়াল দেখতে ক্লিক করুন",
   "Replay video": "আবার দেখুন",
   "Generation settings": "ছবি তৈরির সেটিংস",
   Passport: "পাসপোর্ট",
