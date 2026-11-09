@@ -5,7 +5,7 @@ import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X, User as UserIcon, LayoutDashboard, FileText, Languages, Wallet, Settings, MessageCircle, PlayCircle, LogOut, Sparkles, PenLine, Images, LayoutTemplate, Printer, Wrench, Users, type LucideIcon, } from "lucide-react";
+import { X, User as UserIcon, LayoutDashboard, FileText, Languages, Wallet, Settings, MessageCircle, PlayCircle, LogOut, Sparkles, PenLine, Images, LayoutTemplate, Printer, Wrench, Users, FolderOpen, type LucideIcon, } from "lucide-react";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { DT } from "./DashboardText";
 import { DEFAULT_SUPPORT_GROUP_URL, normalizeGroupLink } from "@/app/_components/FloatingSupportGroup";
@@ -62,6 +62,7 @@ const NAV_SECTIONS: NavSection[] = [
                 icon: LayoutDashboard,
                 tone: "blue",
             },
+            { label: "My Files", href: "/my-files", icon: FolderOpen, tone: "blue" },
             { label: "My Profile", href: "/profile", icon: UserIcon, tone: "slate" },
         ],
     },
