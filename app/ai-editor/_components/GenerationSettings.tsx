@@ -802,10 +802,15 @@ export default function GenerationSettings({
   // Same idea for the quick editing guide tiles: [clothing tiles shown, guide tiles shown] (0 = all).
   // Fewer tiles are preferred over tiny text, so names stay readable on short screens.
   const FIT_STEPS: [number, number][] = [[0, 0], [40, 0], [30, 8], [20, 8], [20, 6], [10, 6], [10, 4], [5, 4], [5, 3]];
-  const fitPanelToViewport = () => {
+  // Last measured panel size. Window-resize events with the same size are skipped (measuring is the expensive part).
+  const fitSizeKeyRef = useRef("");
+  const fitPanelToViewport = (force = true) => {
     const root = panelRootRef.current;
     const wrap = fitWrapRef.current;
     if (!root || !wrap) return;
+    const sizeKey = `${root.parentElement?.clientHeight ?? 0}:${root.clientWidth}`;
+    if (!force && sizeKey === fitSizeKeyRef.current) return;
+    fitSizeKeyRef.current = sizeKey;
     const resetWrap = () => {
       wrap.style.zoom = "";
       wrap.style.height = "auto";
@@ -836,7 +841,8 @@ export default function GenerationSettings({
       wrap.style.height = "auto";
       return wrap.getBoundingClientRect().height;
     };
-    // Biggest zoom (0..1) at which a density level fits in H. 0 = does not fit even at MIN_FIT_ZOOM.
+    // Largest zoom (0..1) at which a density level fits in H. 0 = does not fit even at MIN_FIT_ZOOM.
+    // Only used as a fallback, when nothing fits comfortably (it measures the layout up to 9 times).
     const bestZoom = (level: number) => {
       wrap.setAttribute("data-density", String(level));
       if (heightAt(1) <= H) return 1;
@@ -850,41 +856,57 @@ export default function GenerationSettings({
       }
       return lo;
     };
-    // Roomiest layout first. If nothing fits comfortably, show fewer clothing tiles, then shrink a bit.
-    let chosen = FIT_LEVELS[FIT_LEVELS.length - 1];
-    let chosenStep = FIT_STEPS[FIT_STEPS.length - 1];
-    let z = 0;
-    let bestZ = 0;
-    let bestLevel = chosen;
-    let bestStep = chosenStep;
-    let found = false;
+    // Cheap check used in the main search: ONE measurement tells whether a layout fits comfortably.
+    const fitsComfortably = (level: number) => {
+      wrap.setAttribute("data-density", String(level));
+      return heightAt(COMFORT_ZOOM) <= H;
+    };
     const applyCap = ([cap, gcap]: [number, number]) => {
       if (cap) wrap.setAttribute("data-cap", String(cap));
       else wrap.removeAttribute("data-cap");
       if (gcap) wrap.setAttribute("data-gcap", String(gcap));
       else wrap.removeAttribute("data-gcap");
     };
+    // Roomiest layout first. If nothing fits comfortably, show fewer tiles, then shrink a bit.
+    let chosen = FIT_LEVELS[FIT_LEVELS.length - 1];
+    let chosenStep = FIT_STEPS[FIT_STEPS.length - 1];
+    let z = 0;
+    let found = false;
     outer: for (const step of FIT_STEPS) {
       applyCap(step);
+      for (const level of FIT_LEVELS) {
+        if (!fitsComfortably(level)) continue;
+        // It fits: find how much bigger than the comfort zoom it can be (a few cheap measurements).
+        chosen = level;
+        chosenStep = step;
+        z = COMFORT_ZOOM;
+        if (heightAt(1) <= H) {
+          z = 1;
+        } else {
+          let lo = COMFORT_ZOOM;
+          let hi = 1;
+          for (let i = 0; i < 5; i++) {
+            const mid = (lo + hi) / 2;
+            if (heightAt(mid) <= H) lo = mid;
+            else hi = mid;
+          }
+          z = lo;
+        }
+        found = true;
+        break outer;
+      }
+    }
+    if (!found) {
+      // Nothing fits comfortably: take the most compact set of tiles and shrink as far as needed.
+      let bestZ = 0;
+      applyCap(chosenStep);
       for (const level of FIT_LEVELS) {
         const zz = bestZoom(level);
         if (zz > bestZ) {
           bestZ = zz;
-          bestLevel = level;
-          bestStep = step;
-        }
-        if (zz >= COMFORT_ZOOM) {
           chosen = level;
-          chosenStep = step;
-          z = zz;
-          found = true;
-          break outer;
         }
       }
-    }
-    if (!found) {
-      chosen = bestLevel;
-      chosenStep = bestStep;
       z = bestZ;
     }
     applyCap(chosenStep);
@@ -953,15 +975,17 @@ export default function GenerationSettings({
       handleColorChange(normalized);
     }
   };
+  // A selected guide tile is always shown, so the selection can change the panel height too.
+  const activeGuidesKey = activeGuides.join("|");
   useLayoutEffect(() => {
-    fitPanelToViewport();
-  }, [isDualMode, t, selectedClothing, leftClothing, rightClothing]);
+    fitPanelToViewport(true);
+  }, [isDualMode, t, selectedClothing, leftClothing, rightClothing, activeGuidesKey]);
   useEffect(() => {
-    // One re-fit per animation frame is plenty while the window is being dragged.
-    let frame = 0;
+    // While the window is being dragged, wait until it settles (and skip if the size did not really change).
+    let timer = 0;
     const onResize = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => fitPanelToViewport());
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => fitPanelToViewport(false), 90);
     };
     window.addEventListener("resize", onResize);
     const root = panelRootRef.current;
@@ -971,12 +995,12 @@ export default function GenerationSettings({
     let cancelled = false;
     if (typeof document !== "undefined" && document.fonts?.ready) {
       document.fonts.ready.then(() => {
-        if (!cancelled) fitPanelToViewport();
+        if (!cancelled) fitPanelToViewport(true);
       });
     }
     return () => {
       cancelled = true;
-      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
       window.removeEventListener("resize", onResize);
       observer?.disconnect();
     };
