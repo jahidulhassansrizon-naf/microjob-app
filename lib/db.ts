@@ -27,6 +27,11 @@ export async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      // Atlas M0 (Free) allows only 500 connections in total. Mongoose's default pool is 100
+      // per process, so a few Vercel instances or a local dev server could fill the limit.
+      maxPoolSize: 10,
+      minPoolSize: 0,
+      maxIdleTimeMS: 30_000,
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
