@@ -134,7 +134,7 @@ export default function BotStatusPanel() {
 
   useEffect(() => {
     void load();
-    return visibleInterval(() => void load(), 60_000);
+    return visibleInterval(() => void load(), 180_000);
   }, [load]);
 
   const s = data?.stats;
@@ -160,7 +160,7 @@ export default function BotStatusPanel() {
             <div>
               <h2 className="text-lg font-bold text-[#2B2116]">Image bot status</h2>
               <p className="text-sm text-[#6B5A40]">
-                Everything about the Gemini image bot in one place. Refreshes every 30 seconds
+                Everything about the Gemini image bot in one place. Refreshes every 3 minutes
                 {data?.checkedAt ? ` · checked ${dhaka(data.checkedAt)}` : ""} (Dhaka time).
               </p>
             </div>
