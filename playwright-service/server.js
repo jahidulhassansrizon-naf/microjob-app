@@ -2009,7 +2009,7 @@ function generateTemplateWithGemini(
 // API
 // --------------------------------------------------
 
-// What the Messenger monitor looks at (see notifier.js).
+// What the alert monitor looks at (see notifier.js).
 function monitorSnapshot() {
   return {
     sessions: listSessions().map((x) => ({
@@ -2043,7 +2043,7 @@ function monitorSnapshot() {
 }
 
 // Only the GitHub watchdog script calls this (it knows a random token made for
-// this run). It sends a short status line to Messenger.
+// this run). It sends a short status line by email.
 app.post("/notify", (req, res) => {
   const token = process.env.NOTIFY_TOKEN || "";
 
@@ -2549,7 +2549,6 @@ const server = app.listen(PORT, "127.0.0.1", async () => {
   );
 
   notifier.start({
-    getBrowser: getGenerationBrowser,
     getSnapshot: monitorSnapshot,
     runStartMs: Number(process.env.JOB_START_EPOCH) > 0
       ? Number(process.env.JOB_START_EPOCH) * 1000

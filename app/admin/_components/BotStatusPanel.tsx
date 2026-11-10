@@ -29,7 +29,7 @@ type BotStatus = {
     slot: number; active: number; usable: boolean; healthy: boolean; downReason: string; failStreak: number;
     lastError: string; lastCause: string; lastAdvice: string; restingUntil: string; usableAgainAt: string; images: number;
   }>;
-  notifier?: { messenger: Channel; email: Channel };
+  notifier?: { email: Channel };
   recentErrors?: Array<{ at: string; label: string; message: string }>;
   events?: Array<{ at: string; type: string; slot: number; message: string; cause: string; advice: string }>;
   jobs?: Array<{ at: string; ms: number; ok: boolean; error: string; attempts: Array<{ slot: number; result: string; ms: number }> }>;
@@ -319,9 +319,8 @@ export default function BotStatusPanel() {
 
           <section className={`${PANEL} p-5 sm:p-6`}>
             <h3 className="text-base font-bold text-[#2B2116]">Alerts to you</h3>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <ChannelBox title="Email" ch={data.notifier?.email} note="Needs ALERT_WEBHOOK_URL and BOT_ALERT_KEY on the bot." />
-              <ChannelBox title="Messenger" ch={data.notifier?.messenger} note="Optional. Rests for 6 hours if Facebook logs the bot account out." />
+            <div className="mt-4 grid gap-3">
+              <ChannelBox title="Email" ch={data.notifier?.email} note={data.notifier?.email?.enabled ? undefined : "Needs ALERT_WEBHOOK_URL and BOT_ALERT_KEY on the bot."} />
             </div>
           </section>
         </>

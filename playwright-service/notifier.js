@@ -1,32 +1,17 @@
 // notifier.js
 //
-// Sends status messages to the owner on Facebook Messenger, using a SEPARATE
-// "bot" Facebook account whose logged-in session is stored in
-// facebook-session.json (see save-facebook-session.js).
+// Sends status alerts to the owner by EMAIL. The bot calls a small route of the website
+// (app/api/bot-alert) and the website sends the email.
 //
 // Environment:
-//   FB_SESSION_FILE   path of the saved Facebook session (default: facebook-session.json)
-//   FB_RECIPIENT      the owner's Facebook profile id or username (the account that RECEIVES messages)
+//   ALERT_WEBHOOK_URL   full URL of the website route, e.g. https://YOUR-SITE/api/bot-alert
+//   BOT_ALERT_KEY       the same secret as on the website (Vercel)
 //
 // Everything here is best effort: if sending fails, the bot keeps working and the
 // problem is only logged and shown on /health under "notifier".
 
-const fs = require("fs");
-const path = require("path");
-
-const SESSION_FILE = path.resolve(
-  process.env.FB_SESSION_FILE || path.join(__dirname, "facebook-session.json"),
-);
-const RECIPIENT = (process.env.FB_RECIPIENT || "").trim();
-
-// Email channel: the bot calls a small route of the website (app/api/bot-alert) and the
-// website sends the email. No Facebook login, so it keeps working when Facebook logs the bot out.
 const WEBHOOK_URL = (process.env.ALERT_WEBHOOK_URL || "").trim();
 const WEBHOOK_KEY = (process.env.BOT_ALERT_KEY || "").trim();
-// Chat PIN of the bot account (only digits are used). Needed because every GitHub run is a
-// "new device" for Messenger. Keep it in the GitHub secret FB_MESSENGER_PIN, never in the code.
-const MESSENGER_PIN = (process.env.FB_MESSENGER_PIN || "").replace(/\D/g, "");
-const PIN_SCREEN_RE = /enter your pin|restore (your )?chats|restore messages|\bPIN\b/i;
 
 const MAX_MESSAGES_PER_HOUR = 12;
 const CHECK_EVERY_MS = 60_000;
@@ -48,7 +33,7 @@ function dhakaTime(ms) {
 }
 
 // --------------------------------------------------
-// Monitor logic (pure: easy to test without Facebook)
+// Monitor logic (pure: easy to test without a network)
 // --------------------------------------------------
 
 const SESSION_WARN_AT = Math.max(0, Number(process.env.SESSION_WARN_AT) || 0);
@@ -261,220 +246,10 @@ function createMonitor({ getSnapshot, send, now = () => Date.now(), runStartMs =
 }
 
 // --------------------------------------------------
-// Messenger sender
+// Email sender
 // --------------------------------------------------
 
-const stats = { enabled: false, sent: 0, failed: 0, lastError: "", lastSentAt: "" };
 const emailStats = { enabled: false, sent: 0, failed: 0, lastError: "", lastSentAt: "" };
-
-// When Facebook says "logged out / checkpoint / PIN", trying again every few minutes only
-// annoys Facebook, so the Messenger channel rests for a while.
-let messengerPausedUntil = 0;
-const MESSENGER_REST_MS = 6 * 60 * 60 * 1000;
-
-let queue = Promise.resolve();
-
-async function sendViaMessenger(getBrowser, text) {
-  const browser = await getBrowser();
-  const context = await browser.newContext({
-    storageState: SESSION_FILE,
-    viewport: { width: 1280, height: 900 },
-    locale: "en-US",
-  });
-
-  try {
-    const page = await context.newPage();
-    page.setDefaultTimeout(30_000);
-
-    await page.goto(`https://www.facebook.com/messages/t/${encodeURIComponent(RECIPIENT)}`, {
-      waitUntil: "domcontentloaded",
-    });
-
-    // Give the page a moment to decide where it goes (login, checkpoint, chat).
-    await page.waitForTimeout(6000);
-
-    const url = page.url();
-    if (/\/login|\/checkpoint|\/two_step_verification/i.test(url)) {
-      throw new Error(
-        /checkpoint|two_step/i.test(url)
-          ? "facebook-checkpoint: Facebook asks for a security check"
-          : "facebook-logged-out: session expired, save a new one",
-      );
-    }
-    if ((await page.locator('input[name="pass"]').count()) > 0) {
-      throw new Error("facebook-logged-out: session expired, save a new one");
-    }
-
-    // On a new device (like the GitHub runner) Messenger may show a "restore chats /
-    // enter your PIN" screen. Our chat with the owner is a normal chat, so we first
-    // try to close that screen and only give up if the message box stays unusable.
-    const bodyText = (await page.locator("body").innerText().catch(() => "")) || "";
-    const pinScreen = PIN_SCREEN_RE.test(bodyText);
-    let pinInfo = "";
-
-    if (pinScreen) {
-      // Generic dialog wording only (never the chat list), so it is safe to log.
-      const dialogText = (
-        (await page.locator('[role="dialog"]').first().innerText().catch(() => "")) || ""
-      )
-        .replace(/\s+/g, " ")
-        .slice(0, 160);
-      pinInfo = ` [dialog: ${dialogText || "none"}]`;
-      console.log("[notifier] PIN-like screen seen." + pinInfo);
-
-      // 1) If we know the PIN, type it in (once).
-      if (MESSENGER_PIN) {
-        console.log("[notifier] entering the Messenger PIN.");
-        try {
-          const field = page
-            .locator(
-              [
-                '[role="dialog"] input',
-                'input[type="password"]',
-                'input[inputmode="numeric"]',
-                'input[autocomplete="one-time-code"]',
-              ].join(", "),
-            )
-            .first();
-          await field.waitFor({ state: "visible", timeout: 10_000 });
-          await field.click();
-          await page.keyboard.type(MESSENGER_PIN, { delay: 150 });
-          await page.waitForTimeout(600);
-
-          const go = page
-            .locator('[role="dialog"] [role="button"], [role="dialog"] button')
-            .filter({ hasText: /^(continue|confirm|next|done|submit|restore|ok)$/i })
-            .first();
-          if ((await go.count().catch(() => 0)) > 0) {
-            await go.click({ timeout: 4000 }).catch(() => {});
-          } else {
-            await page.keyboard.press("Enter");
-          }
-        } catch {
-          console.log("[notifier] could not find a PIN field on that screen.");
-        }
-
-        // Wait (up to 30s) until the PIN screen has gone away.
-        for (let i = 0; i < 30; i += 1) {
-          await page.waitForTimeout(1000);
-          const t = (await page.locator("body").innerText().catch(() => "")) || "";
-          if (!PIN_SCREEN_RE.test(t)) break;
-        }
-        await page.waitForTimeout(3000);
-      }
-
-      // 2) Otherwise (or if it is still there) try to close the screen.
-      await page.keyboard.press("Escape").catch(() => {});
-      await page.waitForTimeout(800);
-
-      const closers = page
-        .locator('[role="dialog"] [role="button"], [role="dialog"] button, [role="dialog"] [aria-label="Close"]')
-        .filter({ hasText: /^(not now|close|skip|cancel|maybe later|dismiss|don.t restore|no thanks)$/i });
-
-      if ((await closers.count().catch(() => 0)) > 0) {
-        await closers.first().click({ timeout: 5000 }).catch(() => {});
-        await page.waitForTimeout(1200);
-      }
-    }
-
-    // An old chat (made before end-to-end encryption) shows a blue "Continue" button
-    // instead of the message box ("You can't reply..."). Press it so the box appears.
-    for (let i = 0; i < 3; i += 1) {
-      const cont = page
-        .locator('[role="button"], button')
-        .filter({ hasText: /^continue$/i })
-        .first();
-
-      if (!(await cont.isVisible().catch(() => false))) break;
-
-      console.log("[notifier] pressing the Continue button (chat upgrade).");
-      await cont.click({ timeout: 5000 }).catch(() => {});
-      await page.waitForTimeout(4000);
-    }
-
-    const box = page
-      .locator(
-        [
-          'div[role="textbox"][contenteditable="true"][aria-label^="Message"]',
-          'div[role="textbox"][contenteditable="true"]',
-          'div[contenteditable="true"][aria-label]',
-        ].join(", "),
-      )
-      .first();
-
-    try {
-      await box.waitFor({ state: "visible", timeout: 30_000 });
-      await box.click({ timeout: 10_000 });
-    } catch (error) {
-      throw new Error(
-        pinScreen
-          ? `messenger-pin-required: Messenger asks for the chat PIN on this device${pinInfo}`
-          : "message-box-not-found: could not open the message box",
-      );
-    }
-
-    const lines = text.split("\n");
-    for (let i = 0; i < lines.length; i += 1) {
-      if (lines[i]) await page.keyboard.insertText(lines[i]);
-      if (i < lines.length - 1) await page.keyboard.press("Shift+Enter");
-    }
-
-    await page.keyboard.press("Enter");
-    await page.waitForTimeout(4000);
-
-    // Best check: the first words of our message must now be visible in the chat.
-    const probe = lines[0].slice(0, 25);
-    const visible = await page
-      .getByText(probe, { exact: false })
-      .first()
-      .isVisible()
-      .catch(() => false);
-
-    if (!visible) {
-      throw new Error(
-        pinScreen
-          ? `messenger-pin-required: message not delivered, Messenger asks for the chat PIN${pinInfo}`
-          : "message-not-confirmed: could not see the sent message in the chat",
-      );
-    }
-  } finally {
-    await context.close().catch(() => {});
-  }
-}
-
-function enqueue(getBrowser, text) {
-  queue = queue
-    .then(async () => {
-      if (Date.now() < messengerPausedUntil) {
-        console.log("[notifier] Messenger is resting after a login problem, message skipped.");
-        return;
-      }
-
-      for (let attempt = 1; attempt <= 2; attempt += 1) {
-        try {
-          await sendViaMessenger(getBrowser, text);
-          stats.sent += 1;
-          stats.lastSentAt = new Date().toISOString();
-          stats.lastError = "";
-          console.log("[notifier] message sent to Messenger.");
-          return;
-        } catch (error) {
-          const msg = (error instanceof Error ? error.message : String(error)).slice(0, 400);
-          stats.lastError = msg;
-          console.log(`[notifier] send failed (attempt ${attempt}/2): ${msg}`);
-          // A dead session or a security check will not fix itself within seconds.
-          if (/logged-out|checkpoint|pin-required/.test(msg)) {
-            messengerPausedUntil = Date.now() + MESSENGER_REST_MS;
-            break;
-          }
-          if (attempt < 2) await new Promise((r) => setTimeout(r, 20_000));
-        }
-      }
-      stats.failed += 1;
-    })
-    .catch(() => {});
-  return queue;
-}
 
 async function sendViaWebhook(text) {
   const response = await fetch(WEBHOOK_URL, {
@@ -519,30 +294,21 @@ function isEmailEnabled() {
   return Boolean(WEBHOOK_URL && WEBHOOK_KEY);
 }
 
-function isEnabled() {
-  return Boolean(RECIPIENT) && fs.existsSync(SESSION_FILE);
-}
-
-function start({ getBrowser, getSnapshot, runStartMs }) {
-  const messengerOn = isEnabled();
+function start({ getSnapshot, runStartMs }) {
   const emailOn = isEmailEnabled();
 
-  if (!messengerOn && !emailOn) {
-    console.log(
-      "[notifier] disabled (set ALERT_WEBHOOK_URL + BOT_ALERT_KEY for email, or FB_RECIPIENT + a Facebook session for Messenger).",
-    );
+  if (!emailOn) {
+    console.log("[notifier] disabled (set ALERT_WEBHOOK_URL + BOT_ALERT_KEY to get email alerts).");
     return;
   }
 
-  stats.enabled = messengerOn;
-  emailStats.enabled = emailOn;
-  console.log(`[notifier] enabled: email=${emailOn}, messenger=${messengerOn}.`);
+  emailStats.enabled = true;
+  console.log("[notifier] enabled: email alerts.");
 
   const monitor = createMonitor({
     getSnapshot,
     send: (text) => {
-      if (emailOn) enqueueEmail(text);
-      if (messengerOn) enqueue(getBrowser, text);
+      enqueueEmail(text);
     },
     runStartMs,
   });
@@ -570,19 +336,6 @@ function start({ getBrowser, getSnapshot, runStartMs }) {
   module.exports.notify = (text) => monitor.say(String(text || "").slice(0, 500));
 }
 
-// Used by test-notify.js on your own computer to try one message before deploying.
-async function sendTest(text, headed) {
-  if (!RECIPIENT) throw new Error("Set FB_RECIPIENT first.");
-  if (!fs.existsSync(SESSION_FILE)) throw new Error(`Session file not found: ${SESSION_FILE}`);
-  const { chromium } = require("playwright");
-  const browser = await chromium.launch({ headless: !headed });
-  try {
-    await sendViaMessenger(async () => browser, text);
-  } finally {
-    await browser.close().catch(() => {});
-  }
-}
-
 async function sendEmailTest(text) {
   if (!isEmailEnabled()) throw new Error("Set ALERT_WEBHOOK_URL and BOT_ALERT_KEY first.");
   await sendViaWebhook(text);
@@ -590,12 +343,9 @@ async function sendEmailTest(text) {
 
 module.exports = {
   sendEmailTest,
-  sendTest,
   start,
   notify: () => {},
   status: () => ({
-    ...stats,
-    messengerResting: Date.now() < messengerPausedUntil,
     email: { ...emailStats },
   }),
   createMonitor,

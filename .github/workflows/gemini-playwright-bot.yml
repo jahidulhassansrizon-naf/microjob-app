@@ -56,8 +56,7 @@ jobs:
       # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).
       MAX_CONCURRENT_GENERATIONS: "20"
       MAX_JOB_RETRIES: "2"
-      # Messenger status report every N minutes (0 = only one report a day at 21:00 Dhaka time).
-      # A very short time can make Facebook treat the bot account as spam: 60 or more is safer.
+      # Email status report every N minutes (0 = only one report a day at 21:00 Dhaka time).
       REPORT_EVERY_MINUTES: "30"
       ASK_KEY: ${{ secrets.ASK_KEY }}
       GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
@@ -72,11 +71,7 @@ jobs:
       GEMINI_SESSION_JSON_10: ${{ secrets.GEMINI_SESSION_JSON_10 }}
       VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
       EDGE_CONFIG_ID: ${{ secrets.EDGE_CONFIG_ID }}
-      # Messenger status messages (optional). Leave both secrets empty to turn them off.
-      FB_SESSION_JSON: ${{ secrets.FB_SESSION_JSON }}
-      FB_RECIPIENT: ${{ secrets.FB_RECIPIENT }}
-      FB_MESSENGER_PIN: ${{ secrets.FB_MESSENGER_PIN }}
-      # Email alerts through the website (route app/api/bot-alert). Works without Facebook.
+      # Email alerts through the website (route app/api/bot-alert).
       ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
       BOT_ALERT_KEY: ${{ secrets.BOT_ALERT_KEY }}
 
@@ -139,12 +134,6 @@ jobs:
               chmod 600 "gemini-session-${N}.json"
             fi
           done
-          # Facebook session of the separate "bot" account (only for Messenger messages).
-          if [ -n "$FB_SESSION_JSON" ]; then
-            printf '%s' "$FB_SESSION_JSON" > facebook-session.json
-            chmod 600 facebook-session.json
-            echo "Facebook session restored for Messenger messages."
-          fi
           test -f gemini-session-1.json || {
             echo "GEMINI_SESSION_JSON_1 secret is missing."
             exit 1
@@ -353,7 +342,7 @@ jobs:
             curl -fsS -m 10 "http://127.0.0.1:${BOT_PORT}/health" > /dev/null 2>&1
           }
 
-          # Short status line to Messenger (through the bot; silently ignored if off).
+          # Short status line by email (through the bot; silently ignored if off).
           notify() {
             [ -n "$NOTIFY_TOKEN" ] || return 0
             curl -fsS -m 10 -X POST "http://127.0.0.1:${BOT_PORT}/notify" \

@@ -140,24 +140,16 @@ function buildProblems(report: any, runs: Run[] | null, detailed: boolean): Prob
   }
 
   const n = report.notifier;
-  if (!n.email.enabled && !n.messenger.enabled) {
+  if (!n.email.enabled) {
     out.push({
       level: "info",
       title: "No alerts are set up",
-      cause: "Neither email nor Messenger alerts are active on the bot.",
+      cause: "Email alerts are not active on the bot.",
       advice: "Set ALERT_WEBHOOK_URL and BOT_ALERT_KEY (GitHub secrets) to get email alerts.",
     });
   }
   if (n.email.enabled && n.email.lastError) {
     out.push({ level: "warn", title: "Email alerts are failing", cause: n.email.lastError, advice: "Check BOT_ALERT_KEY / BOT_ALERT_EMAIL on Vercel and the SMTP settings." });
-  }
-  if (n.messenger.enabled && n.messenger.lastError) {
-    out.push({
-      level: "info",
-      title: "Messenger alerts are not working",
-      cause: n.messenger.lastError,
-      advice: "Facebook usually logs the bot account out. Email alerts do not depend on this.",
-    });
   }
 
   if (runs && runs.length > 0) {
@@ -289,7 +281,6 @@ export async function GET(request: Request) {
       avgSeconds: jobsOk ? Math.round(num(stats.totalOkMs) / jobsOk / 1000) : 0,
     },
     notifier: {
-      messenger: { ...channel(data.notifier), resting: data.notifier?.messengerResting === true },
       email: channel(data.notifier?.email),
     },
   };
