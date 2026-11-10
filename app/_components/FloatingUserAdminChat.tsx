@@ -20,7 +20,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { getClientAuthHeaders } from "@/lib/clientAuth";
+import { fetchAuthMe, getClientAuthHeaders } from "@/lib/clientAuth";
 import { CHAT_IDLE_CLOSE_MS, CHAT_OPEN_POLL_MS, CHAT_PRESENCE_REFRESH_MS } from "@/lib/presenceConstants";
 import { announceChatOpen } from "@/app/_lib/chatPresence";
 import AdminAvatarImage from "./AdminAvatarImage";
@@ -696,11 +696,7 @@ export default function FloatingUserAdminChat() {
     }
 
     let active = true;
-    void fetch("/api/auth/me", {
-      credentials: "include",
-      cache: "no-store",
-      headers: getClientAuthHeaders(),
-    })
+    void fetchAuthMe()
       .then(async (response) => {
         const data = (await response.json().catch(() => ({}))) as ApiResponse;
         if (!active) return;

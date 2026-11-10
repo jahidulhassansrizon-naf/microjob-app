@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { buildImageUploadRequest } from "@/lib/clientUpload";
 import "react-image-crop/dist/ReactCrop.css";
 
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
@@ -46,11 +47,12 @@ async function persistGeneratedFile(
     let publicId = "";
 
     if (image.startsWith("data:")) {
+      const uploadRequest = buildImageUploadRequest(image);
       const uploadResponse = await fetch("/api/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: uploadRequest.headers,
         credentials: "include",
-        body: JSON.stringify({ image }),
+        body: uploadRequest.body,
       });
       const upload = await uploadResponse.json().catch(() => null);
       if (!uploadResponse.ok || !upload?.success || !upload?.url) return false;

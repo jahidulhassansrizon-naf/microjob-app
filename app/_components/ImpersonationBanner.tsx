@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { fetchAuthMe, invalidateAuthMe } from "@/lib/clientAuth";
 
 /**
  * Makes an active "login as this user" session visible, instead of it being
@@ -19,7 +20,7 @@ export default function ImpersonationBanner() {
   // "Return to admin" (until a manual reload).
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+    fetchAuthMe()
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled) return;
@@ -65,6 +66,7 @@ export default function ImpersonationBanner() {
       });
       if (response.ok) {
         // The session has ended: hide the banner right away, don't wait for a reload.
+        invalidateAuthMe();
         setAdminEmail(null);
         router.push("/admin");
         router.refresh();

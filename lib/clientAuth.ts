@@ -36,6 +36,93 @@ export function getClientAuthHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// ---------------------------------------------------------------------------
+// Shared /api/auth/me fetch.
+//
+// Many components (navbar, guards, chat, banner, pages) each asked /api/auth/me on
+// their own, so one page view could send several identical requests. This helper
+// (1) merges requests that are in flight at the same time and (2) reuses the answer
+// for a few seconds. Only definite auth answers (200/401/403) are reused, never 5xx.
+// The cache is cleared on login, logout and impersonation changes (invalidateAuthMe).
+// ---------------------------------------------------------------------------
+const AUTH_ME_URL = "/api/auth/me";
+const AUTH_ME_TTL_MS = 5_000;
+const AUTH_ME_TIMEOUT_MS = 8_000;
+
+type AuthMeSnapshot = { status: number; body: string };
+let authMeKey = "";
+let authMeInflight: Promise<AuthMeSnapshot> | null = null;
+let authMeCached: { at: number; snapshot: AuthMeSnapshot } | null = null;
+let authMeGeneration = 0;
+
+function snapshotToResponse(snapshot: AuthMeSnapshot): Response {
+  return new Response(snapshot.body, {
+    status: snapshot.status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+/** Forget the stored /api/auth/me answer. Call after login, logout or impersonation changes. */
+export function invalidateAuthMe() {
+  authMeGeneration += 1;
+  authMeCached = null;
+  authMeInflight = null;
+}
+
+/**
+ * Drop-in replacement for fetch("/api/auth/me"). Returns a fresh Response each call, so
+ * callers can keep using response.ok / response.status / response.json() unchanged.
+ * Pass { force: true } when a guaranteed-fresh answer is needed.
+ */
+export async function fetchAuthMe(options: { force?: boolean } = {}): Promise<Response> {
+  if (typeof window === "undefined") return fetch(AUTH_ME_URL, { credentials: "include", cache: "no-store" });
+
+  let bearer = "";
+  try {
+    bearer = getClientAuthHeaders().Authorization || "";
+  } catch {
+    bearer = "";
+  }
+  if (bearer !== authMeKey) {
+    // A different token (new login in this browser) must never reuse the old answer.
+    authMeKey = bearer;
+    authMeCached = null;
+    authMeInflight = null;
+  }
+
+  if (!options.force) {
+    if (authMeCached && Date.now() - authMeCached.at < AUTH_ME_TTL_MS) {
+      return snapshotToResponse(authMeCached.snapshot);
+    }
+    if (authMeInflight) return snapshotToResponse(await authMeInflight);
+  }
+
+  const generation = authMeGeneration;
+  const request = (async (): Promise<AuthMeSnapshot> => {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), AUTH_ME_TIMEOUT_MS);
+    try {
+      const response = await fetch(AUTH_ME_URL, {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+        headers: bearer ? { Authorization: bearer } : {},
+        signal: controller.signal,
+      });
+      const body = await response.text().catch(() => "");
+      const snapshot = { status: response.status, body };
+      const definite = response.status === 200 || response.status === 401 || response.status === 403;
+      if (definite && generation === authMeGeneration) authMeCached = { at: Date.now(), snapshot };
+      return snapshot;
+    } finally {
+      window.clearTimeout(timer);
+      if (authMeInflight === request) authMeInflight = null;
+    }
+  })();
+  authMeInflight = request;
+  return snapshotToResponse(await request);
+}
+
 /**
  * Client-side session bootstrap.
  *
@@ -51,16 +138,8 @@ export async function getClientSession(): Promise<ClientSession> {
   const token = localStorage.getItem("token");
   const cachedUser = readCachedUser();
 
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), 8000);
-
   try {
-    const response = await fetch("/api/auth/me", {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-      signal: controller.signal,
-    });
+    const response = await fetchAuthMe();
 
     const data = await response.json().catch(() => ({}));
 
@@ -107,12 +186,11 @@ export async function getClientSession(): Promise<ClientSession> {
     }
 
     return { authenticated: false, user: null, token: null, verified: false };
-  } finally {
-    window.clearTimeout(timeout);
   }
 }
 
 export function clearClientSession() {
+  invalidateAuthMe();
   try {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -124,6 +202,7 @@ export function clearClientSession() {
 }
 
 export async function logoutClientSession() {
+  invalidateAuthMe();
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("sohojhub:presence-stop"));
   }

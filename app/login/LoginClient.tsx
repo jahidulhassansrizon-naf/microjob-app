@@ -19,6 +19,7 @@ import BrandName from "@/app/_components/BrandName";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import { replaceSiteNameInText } from "@/lib/siteSettings";
 import { resolvePostLoginPath } from "./_lib/resolvePostLoginPath";
+import { fetchAuthMe, invalidateAuthMe } from "@/lib/clientAuth";
 
 type SearchParamsLike = { get(name: string): string | null } | null;
 
@@ -78,14 +79,8 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     const requestedTarget = callbackUrl.trim();
 
     // Cached user roles can become stale when the primary administrator promotes
-    // an existing account. Use the cached token only as a credential; always ask
-    // the server for the current database role before redirecting.
-    let token = "";
-    try {
-      token = localStorage.getItem("token") || "";
-    } catch {
-      // The HttpOnly cookie can still authenticate the request.
-    }
+    // an existing account. Always ask the server (shared fetchAuthMe, which sends the
+    // cached token as a credential) for the current database role before redirecting.
 
     const clearInvalidSession = () => {
       try {
@@ -96,6 +91,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
         // Storage cleanup is best-effort.
       }
       window.dispatchEvent(new Event("sohojhub:presence-stop"));
+      invalidateAuthMe();
       void fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
@@ -104,12 +100,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
       document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
     };
 
-    void fetch("/api/auth/me", {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    void fetchAuthMe()
       .then(async (response) => {
         if (!active) return;
 
@@ -165,6 +156,7 @@ function LoginContent({ searchParams }: { searchParams: SearchParamsLike }) {
     setLoading(true);
 
     try {
+      invalidateAuthMe();
       const response = await fetch("/api/auth/login", {
         method: "POST",
         cache: "no-store",

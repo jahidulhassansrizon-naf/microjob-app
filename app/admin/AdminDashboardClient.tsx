@@ -49,7 +49,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
+import { fetchAuthMe, getClientAuthHeaders, logoutClientSession } from "@/lib/clientAuth";
 import AdminChatsPanel from "./_components/AdminChatsPanel";
 import AdminGenerationPanel from "./_components/AdminGenerationPanel";
 import OverviewInsights, { type OverviewInsightsData } from "./_components/OverviewInsights";
@@ -1026,11 +1026,7 @@ export default function AdminDashboardClient() {
     let active = true;
     const verifyAdmin = async () => {
       try {
-        const response = await fetch("/api/auth/me", {
-          credentials: "include",
-          cache: "no-store",
-          headers: authHeaders(),
-        });
+        const response = await fetchAuthMe();
         const data = await response.json().catch(() => ({}));
         if (!active) return;
         if (!response.ok || !data?.user) {

@@ -1,5 +1,6 @@
 "use client";
 import { AiT, useAiEditorText } from "./_components/aiEditorI18n";
+import { buildImageUploadRequest } from "@/lib/clientUpload";
 import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -755,8 +756,9 @@ export default function PhotoEditorPage() {
                 uploadBody = formData;
             }
             else {
-                headers = { "Content-Type": "application/json" };
-                uploadBody = JSON.stringify({ image: imageData });
+                const request = buildImageUploadRequest(imageData);
+                headers = request.headers;
+                uploadBody = request.body;
             }
             const res = await fetch("/api/upload", {
                 method: "POST",

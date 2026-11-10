@@ -20,7 +20,9 @@ function dayKey(date: Date) {
 
 // Short in-memory cache (per warm function instance) used only for background polling
 // (?cached=1). Explicit loads and loads after admin actions always compute fresh data.
-const OVERVIEW_CACHE_TTL_MS = 30_000;
+// The client polls every 60s, so the TTL must be longer than that for a single admin to ever
+// get a cache hit; 90s lets roughly every second poll be served from memory.
+const OVERVIEW_CACHE_TTL_MS = 90_000;
 let overviewCache: { at: number; body: Record<string, unknown> } | null = null;
 const OVERVIEW_HEADERS = { "Cache-Control": "no-store, max-age=0" };
 

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import LoginSuccessCard from "@/app/_components/LoginSuccessCard";
+import { fetchAuthMe } from "@/lib/clientAuth";
 import { getSafeLocalPostLoginTarget, resolvePostLoginPath } from "@/app/login/_lib/resolvePostLoginPath";
 function LoginSuccessContent() {
     const router = useRouter();
@@ -16,11 +17,7 @@ function LoginSuccessContent() {
     useEffect(() => {
         let active = true;
         const timer = window.setTimeout(() => {
-            void fetch("/api/auth/me", {
-                method: "GET",
-                credentials: "include",
-                cache: "no-store",
-            })
+            void fetchAuthMe()
                 .then(async (response) => {
                     const data = await response.json().catch(() => ({}));
                     if (!active) return;

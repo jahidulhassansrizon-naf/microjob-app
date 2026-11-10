@@ -917,22 +917,16 @@ export default function PrintMediaEditor({ templateId }: { templateId: number })
     }
   };
 
-  const readBlobAsDataUrl = (blob: Blob) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(new Error("preview read failed"));
-      reader.readAsDataURL(blob);
-    });
-
   // Saves the design to "My Files" (preview image on Cloudinary + the editable SVG in the database).
   const saveToMyFiles = async (markup: string, currentTemplate: PrintMediaTemplate) => {
     const previewBlob = await renderPngBlob(300 / 25.4, 1000);
+    // Send the PNG as a binary file (multipart) instead of a base64 string inside JSON.
+    const uploadForm = new FormData();
+    uploadForm.append("file", previewBlob, `print-preview-${Date.now()}.png`);
     const uploadResponse = await fetch("/api/upload", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ image: await readBlobAsDataUrl(previewBlob) }),
+      body: uploadForm,
     });
     const upload = await uploadResponse.json().catch(() => null);
     if (!uploadResponse.ok || !upload?.success || !upload?.url) {

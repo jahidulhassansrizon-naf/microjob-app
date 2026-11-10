@@ -4,6 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, LockKeyhole, MonitorSmartphone, RefreshCw, UserRound } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
+import { fetchAuthMe } from "@/lib/clientAuth";
 import PersonalInfoTab, { type ProfileFormData } from "./components/PersonalInfoTab";
 import ChangePasswordTab, { type PasswordFormData } from "./components/ChangePasswordTab";
 import DevicesLoginTab from "./components/DevicesLoginTab";
@@ -145,15 +146,7 @@ export default function SettingsPage() {
         else
             setRefreshing(true);
         try {
-            const response = await fetch(API.me, {
-                method: "GET",
-                credentials: "include",
-                headers: {
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                    "Content-Type": "application/json",
-                },
-                cache: "no-store",
-            });
+            const response = await fetchAuthMe({ force: true });
             const data = await safeJson(response);
             if (response.status === 401) {
                 localStorage.removeItem("token");

@@ -28,7 +28,7 @@ import {
 import DashboardSidebar from "./DashboardSidebar";
 import { NAV_ITEM_COUNT } from "@/app/_components/PrePaintScript";
 import { saveNavLayout } from "@/app/_components/uiCache";
-import { logoutClientSession } from "@/lib/clientAuth";
+import { fetchAuthMe, invalidateAuthMe, logoutClientSession } from "@/lib/clientAuth";
 import { getSlug, toolsData } from "@/app/_components/toolsData";
 import {
   clearMyFilesDataCache,
@@ -987,14 +987,7 @@ export default function DashboardNavbar({
       // The HttpOnly cookie can still authenticate the request.
     }
 
-    fetch("/api/auth/me", {
-      method: "GET",
-      credentials: "include",
-      cache: "no-store",
-      headers: tokenAtRequest
-        ? { Authorization: `Bearer ${tokenAtRequest}` }
-        : undefined,
-    })
+    fetchAuthMe()
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
         if (!mounted) return;
@@ -1023,6 +1016,7 @@ export default function DashboardNavbar({
             // Storage cleanup is best-effort.
           }
           // Clear the HttpOnly cookie on the server without delaying redirect.
+          invalidateAuthMe();
           void fetch("/api/auth/logout", {
             method: "POST",
             credentials: "include",

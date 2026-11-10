@@ -4,7 +4,7 @@ import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getClientSession } from "@/lib/clientAuth";
+import { fetchAuthMe, getClientSession } from "@/lib/clientAuth";
 import { ArrowRight, CalendarCheck, CalendarClock, Check, Layers, LayoutGrid, PenTool, Printer, SlidersHorizontal, Wallet, type LucideIcon } from "lucide-react";
 import { getSlug, REQUIRE_SUBSCRIPTION, toolsData } from "@/app/_components/toolsData";
 import { motion, type Variants } from "framer-motion";
@@ -450,12 +450,7 @@ export default function PricingPage() {
         // Cookie-based authentication can still be checked if localStorage is unavailable.
       }
 
-      const sessionResponse = await fetch("/api/auth/me", {
-        method: "GET",
-        credentials: "include",
-        cache: "no-store",
-        headers: storedToken ? { Authorization: `Bearer ${storedToken}` } : {},
-      });
+      const sessionResponse = await fetchAuthMe({ force: true });
 
       if (!sessionResponse.ok) {
         if ([401, 403, 404].includes(sessionResponse.status)) {

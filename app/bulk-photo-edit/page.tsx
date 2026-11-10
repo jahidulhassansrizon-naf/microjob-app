@@ -1,5 +1,6 @@
 "use client";
 import { BulkT, useBulkPhotoText } from "./components/bulkPhotoI18n";
+import { buildImageUploadRequest } from "@/lib/clientUpload";
 import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
 import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -97,11 +98,12 @@ async function persistBulkResult(image: string, name: string): Promise<void> {
         let url = image;
         let publicId = "";
         if (image.startsWith("data:")) {
+            const uploadRequest = buildImageUploadRequest(image);
             const uploadResponse = await fetch("/api/upload", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: uploadRequest.headers,
                 credentials: "include",
-                body: JSON.stringify({ image }),
+                body: uploadRequest.body,
             });
             const upload = await uploadResponse.json().catch(() => null);
             if (!uploadResponse.ok || !upload?.success || !upload?.url)

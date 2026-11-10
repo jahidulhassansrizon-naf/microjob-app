@@ -35,6 +35,19 @@ export type LoginOutcome<U extends LoginUserRecord> =
   | { kind: "invalid_credentials"; category: LoginFailureCategory };
 
 export const MAX_IDENTIFIER_LENGTH = 254;
+
+/** Extracts the bcrypt cost from a hash like "$2b$12$..."; null if it is not a bcrypt hash. */
+export function getBcryptCost(hash: unknown): number | null {
+  if (typeof hash !== "string") return null;
+  const match = /^\$2[abxy]\$(\d{2})\$/.exec(hash);
+  return match ? Number(match[1]) : null;
+}
+
+/** True when a stored hash is stronger (slower) than the target cost and can be lowered on login. */
+export function shouldRehashToCost(hash: unknown, targetCost: number): boolean {
+  const cost = getBcryptCost(hash);
+  return cost !== null && cost > targetCost;
+}
 export const MAX_PASSWORD_LENGTH = 128;
 
 /**

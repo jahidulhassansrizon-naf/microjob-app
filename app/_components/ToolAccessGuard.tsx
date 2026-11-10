@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { MessageCircle, ShieldOff } from "lucide-react";
 import { visibleInterval } from "@/app/_lib/visiblePolling";
+import { fetchAuthMe } from "@/lib/clientAuth";
 
 type GateState = {
   pathname: string;
@@ -50,7 +51,7 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
       // Warm up quietly (e.g. while on the dashboard) so the first click on a tool page
       // also opens instantly. Nothing is shown or held while this runs.
       if (!isRecentlyVerified()) {
-        void fetch("/api/auth/me", { credentials: "include", cache: "no-store" })
+        void fetchAuthMe()
           .then((response) => response.json().catch(() => ({})).then((data) => ({ response, data })))
           .then(({ response, data }) => {
             const user = data?.user;
@@ -71,10 +72,7 @@ export default function ToolAccessGuard({ children }: { children: React.ReactNod
 
     const checkAccess = async () => {
       try {
-        const response = await fetch("/api/auth/me", {
-          credentials: "include",
-          cache: "no-store",
-        });
+        const response = await fetchAuthMe();
         const data = await response.json().catch(() => ({}));
         if (!active) return;
 

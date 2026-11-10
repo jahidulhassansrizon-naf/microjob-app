@@ -6,7 +6,8 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { connectDB } from "@/lib/db";
-import { authenticateLogin, normalizeLoginIdentifier, pickSubmittedIdentifier } from "@/lib/loginCore";
+import { authenticateLogin, normalizeLoginIdentifier, pickSubmittedIdentifier, shouldRehashToCost } from "@/lib/loginCore";
+import { BCRYPT_COST } from "../../_lib/passwordPolicy";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
 import { setSubscriptionAccessCookie } from "../../_lib/requireActiveSubscription";
@@ -188,12 +189,35 @@ export async function POST(req: Request) {
     const loginAt = new Date();
     // One device at a time: bumping sessionVersion signs this account out everywhere else,
     // because every protected route compares the token's sessionVersion with the database.
+    // One-time migration: users hashed at the old cost 12 are re-hashed at BCRYPT_COST right after a
+    // successful login (we hold the plaintext only now), so every later login is ~4x cheaper.
+    // The filter pins the old hash so a concurrent password change is never overwritten.
+    // A failure here must never block the login itself.
+    const oldHash = String(user.password);
+    let rehashedPassword: string | null = null;
+    if (shouldRehashToCost(oldHash, BCRYPT_COST)) {
+      try {
+        rehashedPassword = await bcrypt.hash(password, BCRYPT_COST);
+      } catch {
+        rehashedPassword = null;
+      }
+    }
     const bumped = await User.findOneAndUpdate(
       { _id: user._id },
       { $set: { lastLoginAt: loginAt, lastSeenAt: loginAt }, $inc: { loginCount: 1, sessionVersion: 1 } },
       { new: true },
     ).select("sessionVersion").lean<{ sessionVersion?: number }>();
     const newSessionVersion = Number(bumped?.sessionVersion ?? Number(user.sessionVersion || 0) + 1);
+
+    if (rehashedPassword) {
+      // Separate, best-effort update pinned to the old hash: runs once per legacy user, and a
+      // concurrent password change (hash no longer equal) simply makes this a no-op.
+      try {
+        await User.updateOne({ _id: user._id, password: oldHash }, { $set: { password: rehashedPassword } });
+      } catch (error: unknown) {
+        console.warn(`[auth-login] requestId=${id} category=rehash_failed`, error instanceof Error ? error.message : "Unknown error");
+      }
+    }
 
     const token = jwt.sign(
       {
