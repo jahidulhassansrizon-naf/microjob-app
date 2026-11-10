@@ -8,7 +8,7 @@
  * fetches those itself). The server still accepts both formats.
  */
 export function dataUrlToBlob(dataUrl: string): Blob | null {
-  const match = /^data:([^;,]+)?(;[^,]*)?,(.*)$/s.exec(dataUrl);
+  const match = /^data:([^;,]+)?(;[^,]*)?,([\s\S]*)$/.exec(dataUrl);
   if (!match) return null;
   const mime = match[1] || "application/octet-stream";
   const isBase64 = (match[2] || "").includes(";base64");

@@ -98,7 +98,7 @@ export async function fetchAuthMe(options: { force?: boolean } = {}): Promise<Re
   }
 
   const generation = authMeGeneration;
-  const request = (async (): Promise<AuthMeSnapshot> => {
+  const run = async (): Promise<AuthMeSnapshot> => {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), AUTH_ME_TIMEOUT_MS);
     try {
@@ -116,9 +116,11 @@ export async function fetchAuthMe(options: { force?: boolean } = {}): Promise<Re
       return snapshot;
     } finally {
       window.clearTimeout(timer);
-      if (authMeInflight === request) authMeInflight = null;
     }
-  })();
+  };
+  const request: Promise<AuthMeSnapshot> = run().finally(() => {
+    if (authMeInflight === request) authMeInflight = null;
+  });
   authMeInflight = request;
   return snapshotToResponse(await request);
 }
