@@ -827,31 +827,62 @@ export default function GenerationSettings({
   };
   // Fit-to-screen: on wide screens everything must be visible without scrolling. If the content is taller than
   // the panel, it is scaled down just enough (never below 55%) instead of showing a scrollbar.
+  //
+  // IMPORTANT (anti-jitter): the scale is a PURE function of (panel size, content). It is found by trying candidate
+  // scales synchronously on the DOM node (no React state, no paint in between) and it never looks at the previous
+  // scale. The old version fed the wrapper's own scaled width/height back into the next measurement, so around one
+  // particular window size the scale kept flipping up and down every frame (the "shaking" users reported).
   const fitRef = useRef<HTMLDivElement>(null);
-  const [fitScale, setFitScale] = useState(1);
   useEffect(() => {
     const root = panelRootRef.current;
     const wrap = fitRef.current;
     if (!root || !wrap) return;
     let raf = 0;
-    const measure = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        if (!window.matchMedia("(min-width: 1280px)").matches) { setFitScale(1); return; }
-        const cs = getComputedStyle(root);
-        const avail = root.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-        const natural = wrap.offsetHeight;
-        if (!avail || !natural) return;
-        const next = Math.max(0.55, Math.min(1, Math.floor((avail / natural) * 100) / 100));
-        setFitScale((prev) => (next < prev || next > prev + 0.03 ? next : prev));
-      });
+    const MIN_SCALE = 0.55;
+    const apply = (scale: number) => {
+      if (scale >= 1) {
+        wrap.style.removeProperty("transform");
+        wrap.style.removeProperty("transform-origin");
+        wrap.style.removeProperty("width");
+      } else {
+        wrap.style.transform = `scale(${scale})`;
+        wrap.style.transformOrigin = "top left";
+        wrap.style.width = `${100 / scale}%`;
+      }
     };
-    measure();
-    const ro = new ResizeObserver(measure);
+    const measureNow = () => {
+      if (!window.matchMedia("(min-width: 1280px)").matches) { apply(1); return; }
+      const cs = getComputedStyle(root);
+      const avail = root.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      if (!avail) return;
+      // wrap.offsetHeight is the UNSCALED layout height at the tried scale (the transform does not change it).
+      const fits = (scale: number) => {
+        apply(scale);
+        return wrap.offsetHeight * scale <= avail + 0.5;
+      };
+      let best = 1;
+      if (!fits(1)) {
+        // binary search in whole percents: largest scale that still fits (deterministic, ~6 tries)
+        let lo = Math.round(MIN_SCALE * 100); // assumed to fit (it is the floor)
+        let hi = 99;
+        while (lo < hi) {
+          const mid = Math.ceil((lo + hi) / 2);
+          if (fits(mid / 100)) lo = mid; else hi = mid - 1;
+        }
+        best = lo / 100;
+      }
+      apply(best);
+    };
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(measureNow);
+    };
+    measureNow();
+    const ro = new ResizeObserver(schedule);
     ro.observe(root);
     ro.observe(wrap);
-    window.addEventListener("resize", measure);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); window.removeEventListener("resize", measure); };
+    window.addEventListener("resize", schedule);
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); window.removeEventListener("resize", schedule); };
   }, []);
   return (
     <div ref={panelRootRef} onMouseDown={onPanelMouseDown} onDragStart={(e) => e.preventDefault()} className="gs-root ai-scroll w-full max-w-full lg:w-full xl:w-full bg-[#F2E8D2] rounded-2xl p-4 xl:p-[clamp(10px,1.5vh,16px)] shadow-sm overflow-visible xl:overflow-hidden xl:h-full xl:min-h-0 max-h-none flex flex-col justify-between relative shrink-0 text-[#3B2F1E]">
@@ -915,7 +946,7 @@ export default function GenerationSettings({
           .ai-scroll .gs-noscroll button, .ai-scroll .gs-noscroll button * { cursor: pointer; }
         }
       `}</style>
-      <div ref={fitRef} style={fitScale < 1 ? { transform: `scale(${fitScale})`, transformOrigin: "top left", width: `${100 / fitScale}%` } : undefined} className="gs-wrap flex flex-col shrink-0" data-cap="15" data-gcap="5">
+      <div ref={fitRef} className="gs-wrap flex flex-col shrink-0" data-cap="15" data-gcap="5">
       <div className="xl:flex-1 xl:min-h-0 xl:justify-between flex flex-col">
         <div className="gs-head flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
           <span className="font-semibold text-base xl:text-[length:1.25rem] text-[#3B2F1E] flex items-center gap-2">

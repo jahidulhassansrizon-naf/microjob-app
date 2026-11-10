@@ -314,7 +314,7 @@ export default function RecentGenerations({
 
         <RetentionNotice variant="compact" className="ai-retention mb-2" />
 
-        <div ref={scrollRef} className="flex min-h-[150px] gap-4 overflow-x-auto pb-2 scrollbar-thin xl:min-h-[clamp(72px,10.5vh,112px)] xl:gap-3 xl:pb-1">
+        <div ref={scrollRef} className="flex min-h-[150px] gap-4 overflow-x-auto pb-2 scrollbar-thin xl:min-h-[clamp(72px,10.5vh,112px)] xl:gap-3 xl:pb-1 xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
           {isLoading ? <RecentLoadingAnimation />
           : generations.length === 0 ? <div className="flex min-h-[150px] w-full items-center justify-center xl:min-h-[clamp(72px,10.5vh,112px)]"><p className="text-sm italic text-[#3B2F1E]/60"><AiT>No recent generations yet. Click “Generate Photo” to add images here.</AiT></p></div>
           : generations.map((item, index) => renderImageCard(item, index))}
