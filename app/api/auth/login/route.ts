@@ -24,7 +24,7 @@ const LOGIN_ACCOUNT_LIMIT = 10;
 const LOGIN_ACCOUNT_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_IP_LIMIT = 150;
 const LOGIN_IP_WINDOW_MS = 10 * 60 * 1000;
-const DUMMY_PASSWORD_HASH = "$2b$12$UwCKAIUdT4rrPktvtkcpK.LYsY50khtCvCdqBkpFnHs1ms/Yqw2cq";
+const DUMMY_PASSWORD_HASH = "$2b$10$6AhPuYEzK0eLfq0/quJyDuz1jckPXdR5CxC7lV0ugS8n..inx49L.";
 const NO_STORE_HEADERS = { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache" };
 
 function loginCookie(response: NextResponse, token: string) {
