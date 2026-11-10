@@ -14,7 +14,7 @@ const SEEN_STORAGE_KEYS: Record<Kind, string> = {
   expired: "sebalagbe:paid-expired-seen",
 };
 /** Re-check at most this often while the user navigates (a payment may have just completed). */
-const CHECK_THROTTLE_MS = 15000;
+const CHECK_THROTTLE_MS = 60000;
 
 const digitsBn = (v: string | number) =>
   String(v).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
