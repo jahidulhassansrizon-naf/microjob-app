@@ -1160,9 +1160,6 @@ export default function PhotoEditorPage() {
                 ...plan.constraints.map((rule) => `- ${rule}`),
             ].join("\n"));
         }
-        if (plan.customInstruction) {
-            sections.push(`Custom instruction from the user (apply it together with the rules above; never change anyone's face or identity): ${plan.customInstruction}`);
-        }
         sections.push("The application handles the exact pixel dimensions after generation, so do not add any text or size labels.");
         return sections.join("\n\n");
     };
@@ -1309,9 +1306,6 @@ export default function PhotoEditorPage() {
                 "Also follow these preservation rules:",
                 ...plan.constraints.map((rule) => `- ${rule}`),
             ].join("\n"));
-        }
-        if (plan.customInstruction) {
-            sections.push(`Custom instruction from the user (apply it together with the edits above; if it conflicts with a preset above, follow the custom instruction, but never change the person's identity): ${plan.customInstruction}`);
         }
         if (hasSelectedPhotoSize) {
             const size = typeof payload.size === "string" ? payload.size : getCurrentSizeLabel();
@@ -2221,7 +2215,7 @@ export default function PhotoEditorPage() {
             Middle + QR = row 1 (fixed viewport-based height). "Recent photos" = row 2, aligned under the upload box + QR. */}
         <div className="ai-row flex flex-col lg:flex-row lg:flex-wrap xl:grid xl:grid-cols-[var(--ai-left-w)_minmax(0,1fr)_var(--ai-right-w)] xl:grid-rows-[minmax(0,1fr)_auto] xl:flex-1 xl:min-h-0 w-full max-w-[1400px] xl:max-w-none gap-3 sm:gap-4 items-center lg:items-start xl:items-stretch min-w-0">
           <div className="w-full lg:w-[var(--ai-left-w-lg)] lg:shrink-0 xl:w-full xl:row-span-2 xl:min-h-0 xl:overflow-hidden flex flex-col [&>*]:flex-1 xl:[&>*]:min-h-0">
-            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} clearCustomInstructionSignal={customInstructionClearToken} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} onOpenSetupWizard={isDualMode ? undefined : openSetupWizardFromButton} isGenerating={isGenerating}/>
+            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} onOpenSetupWizard={isDualMode ? undefined : openSetupWizardFromButton} isGenerating={isGenerating}/>
           </div>
 
           <div className="w-full min-w-0 lg:flex-1 lg:basis-0 xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">

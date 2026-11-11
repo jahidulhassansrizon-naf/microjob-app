@@ -70,7 +70,6 @@ export interface GenerationSettingsProps {
   onOpenSetupWizard?: () => void;
   isGenerating?: boolean;
   onEditingGuidesChange?: (guides: string[]) => void;
-  clearCustomInstructionSignal?: number;
   /** Lets another part of the page (the setup wizard) replace the selected editing guides. */
   applyGuidesSignal?: { id: number; guides: string[] } | null;
   onResetSettings?: () => void;
@@ -497,7 +496,6 @@ export default function GenerationSettings({
   onOpenSetupWizard,
   isGenerating = false,
   onEditingGuidesChange,
-  clearCustomInstructionSignal = 0,
   applyGuidesSignal = null,
   onResetSettings,
 }: GenerationSettingsProps) {
@@ -568,13 +566,6 @@ export default function GenerationSettings({
     }
     return groups;
   }, [filteredEditingGuides]);
-  const [showCustomInstructionModal, setShowCustomInstructionModal] =
-    useState(false);
-  const [customInstructionDraft, setCustomInstructionDraft] = useState("");
-  const previousCustomInstructionClearSignalRef = useRef(
-    clearCustomInstructionSignal,
-  );
-  const customInstructionTextareaRef = useRef<HTMLTextAreaElement>(null);
   const editingGuideSearchRef = useRef<HTMLInputElement>(null);
   const clothingColorPopupRef = useRef<HTMLDivElement>(null);
   // Dual mode: the colour popup edits the person whose clothing tile was clicked.
@@ -621,59 +612,22 @@ export default function GenerationSettings({
         : [...prev, guide],
     );
   };
-  const handleCustomInstructionSubmit = () => {
-    const instruction = customInstructionDraft.trim();
-    if (!instruction) return;
-    const guide = `Custom Instruction: ${instruction}`;
-    setActiveGuides((prev) => [
-      ...prev.filter((entry) => !entry.startsWith("Custom Instruction:")),
-      guide,
-    ]);
-    setShowCustomInstructionModal(false);
-    setCustomInstructionDraft("");
-  };
   useEffect(() => {
-    if (!showCustomInstructionModal && !showEditingGuideLibrary) return;
+    if (!showEditingGuideLibrary) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const handleModalKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setShowCustomInstructionModal(false);
         setShowEditingGuideLibrary(false);
-      }
-      if (
-        event.key === "Enter" &&
-        (event.ctrlKey || event.metaKey) &&
-        showCustomInstructionModal
-      ) {
-        event.preventDefault();
-        handleCustomInstructionSubmit();
       }
     };
     document.addEventListener("keydown", handleModalKeyDown);
-    if (showCustomInstructionModal) {
-      customInstructionTextareaRef.current?.focus();
-    } else if (showEditingGuideLibrary) {
-      editingGuideSearchRef.current?.focus();
-    }
+    editingGuideSearchRef.current?.focus();
     return () => {
       document.removeEventListener("keydown", handleModalKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [showCustomInstructionModal, showEditingGuideLibrary, customInstructionDraft]);
-  useEffect(() => {
-    if (
-      previousCustomInstructionClearSignalRef.current !==
-      clearCustomInstructionSignal
-    ) {
-      previousCustomInstructionClearSignalRef.current =
-        clearCustomInstructionSignal;
-      setActiveGuides((prev) =>
-        prev.filter((entry) => !entry.startsWith("Custom Instruction:")),
-      );
-      setCustomInstructionDraft("");
-    }
-  }, [clearCustomInstructionSignal]);
+  }, [showEditingGuideLibrary]);
   useEffect(() => {
     onEditingGuidesChange?.(activeGuides);
   }, [activeGuides, onEditingGuidesChange]);
@@ -1489,7 +1443,7 @@ export default function GenerationSettings({
               className="text-[12px] xl:text-[length:0.875rem] bg-[#E3D6B8] text-[#3B2F1E] px-1.5 py-0.5 rounded font-semibold tabular-nums"
               title={t("Editing presets plus custom instruction")}
             >
-              {activeGuides.filter((g) => !isOptionEntry(g)).length}/{EDITING_GUIDES.length + 1}
+              {activeGuides.filter((g) => !isOptionEntry(g)).length}/{EDITING_GUIDES.length}
             </span>
           </div>
 
@@ -1527,44 +1481,7 @@ export default function GenerationSettings({
             </div>
             </div>
 
-            <div className="gs-actions grid grid-cols-2 gap-2 mt-2">
-              <button
-                type="button"
-                aria-pressed={activeGuides.some((entry) =>
-                  entry.startsWith("Custom Instruction:"),
-                )}
-                onClick={() => {
-                  const customActive = activeGuides.some((entry) =>
-                    entry.startsWith("Custom Instruction:"),
-                  );
-                  if (customActive) {
-                    setActiveGuides((prev) =>
-                      prev.filter(
-                        (entry) => !entry.startsWith("Custom Instruction:"),
-                      ),
-                    );
-                    return;
-                  }
-                  setCustomInstructionDraft("");
-                  setShowCustomInstructionModal(true);
-                }}
-                className={`min-h-[36px] flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-[13px] xl:text-[length:0.9375rem] font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626] ${
-                  activeGuides.some((entry) =>
-                    entry.startsWith("Custom Instruction:"),
-                  )
-                    ? "border-[#DC2626] bg-[#DC2626]/10 text-[#DC2626]"
-                    : "border-dashed border-[#B0A080] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#EFE3C8]"
-                }`}
-              >
-                <Sparkles size={18} aria-hidden="true" />
-                {activeGuides.some((entry) =>
-                  entry.startsWith("Custom Instruction:"),
-                ) ? (
-                  <AiT>{"Custom added"}</AiT>
-                ) : (
-                  <AiT>{"Custom Instruction"}</AiT>
-                )}
-              </button>
+            <div className="gs-actions grid grid-cols-1 gap-2 mt-2">
               <button
                 type="button"
                 onClick={() => setShowEditingGuideLibrary(true)}
@@ -1905,103 +1822,6 @@ export default function GenerationSettings({
                   <AiT>{"Done"}</AiT>
                 </button>
               </div>
-            </section>
-          </div>,
-          document.body,
-        )}
-      {showCustomInstructionModal &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <div
-            className="ai-editor-font fixed inset-0 z-[1000] flex items-center justify-center bg-stone-950/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
-            onMouseDown={(event) => {
-              if (event.target === event.currentTarget)
-                setShowCustomInstructionModal(false);
-            }}
-            role="presentation"
-          >
-            <section
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="custom-instruction-title"
-              aria-describedby="custom-instruction-description"
-              className="w-full max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-3xl border border-stone-200 bg-[#FBF6E8] shadow-2xl animate-in zoom-in-95 slide-in-from-bottom-2 duration-200"
-            >
-              <div className="flex items-start gap-4 border-b border-stone-100 px-6 pb-5 pt-6 sm:px-7">
-                <div className="min-w-0 flex-1 pt-0.5">
-                  <h2
-                    id="custom-instruction-title"
-                    className="text-xl font-semibold tracking-tight text-stone-900"
-                  >
-                    {t("Custom Editing Instruction")}
-                  </h2>
-                  <p
-                    id="custom-instruction-description"
-                    className="mt-1.5 text-base leading-6 text-stone-500"
-                  >
-                    {t("Describe the edit you want the AI to make.")}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowCustomInstructionModal(false)}
-                  aria-label={t("Close")}
-                  className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
-                >
-                  <X size={19} />
-                </button>
-              </div>
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  handleCustomInstructionSubmit();
-                }}
-                className="px-6 py-6 sm:px-7"
-              >
-                <label
-                  htmlFor="custom-instruction-input"
-                  className="mb-2 block text-base font-medium text-stone-700"
-                >
-                  {t("Your instruction")}
-                </label>
-                <textarea
-                  ref={customInstructionTextareaRef}
-                  id="custom-instruction-input"
-                  value={customInstructionDraft}
-                  onChange={(event) =>
-                    setCustomInstructionDraft(event.target.value)
-                  }
-                  placeholder={t("Write your custom instruction here...")}
-                  rows={5}
-                  className="block w-full resize-y rounded-2xl border border-stone-200 bg-[#F6EEDB] px-4 py-3 text-base leading-6 text-stone-800 outline-none transition placeholder:text-stone-400 hover:border-stone-300 focus:border-red-600 focus:bg-[#FBF6E8] focus:ring-4 focus:ring-red-600/10"
-                />
-                <p className="mt-2 text-sm leading-5 text-stone-400">
-                  {t(
-                    "Your instruction will be used when generating the photo.",
-                  )}
-                </p>
-                <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-sm text-stone-400">
-                    {t("Press Esc to close")}
-                  </span>
-                  <div className="flex justify-end gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setShowCustomInstructionModal(false)}
-                      className="rounded-xl border border-stone-200 px-4 py-2.5 text-base font-medium text-stone-600 transition-colors hover:bg-[#F6EEDB] cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-300"
-                    >
-                      {t("Cancel")}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!customInstructionDraft.trim()}
-                      className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-base font-semibold text-white shadow-md shadow-red-600/20 transition-all hover:bg-red-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-red-600/20 disabled:cursor-not-allowed disabled:bg-stone-300 disabled:shadow-none"
-                    >
-                      {t("Add Instruction")}
-                    </button>
-                  </div>
-                </div>
-              </form>
             </section>
           </div>,
           document.body,
