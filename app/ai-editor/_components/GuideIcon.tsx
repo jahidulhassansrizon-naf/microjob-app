@@ -352,6 +352,32 @@ const ART: Record<string, () => React.ReactElement> = {
       <path d="M31 38 l3.2 3.2 5.5 -6.5" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
     </svg>
   ),
+  "Keep Earrings": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      {SHARED}
+      <g transform="translate(-1 0) scale(.88)">{Face()}</g>
+      <g stroke="#fff" strokeWidth=".8" style={{ filter: "drop-shadow(0 1px 1.5px rgba(0,0,0,.35))" }}>
+        <circle cx="9.6" cy="21.5" r="1.3" fill="#e2b455" />
+        <path d="M9.6 22.8 v3" stroke="#b9852a" strokeWidth="1" fill="none" />
+        <circle cx="9.6" cy="27.6" r="2.3" fill="#e2b455" />
+        <circle cx="30.4" cy="21.5" r="1.3" fill="#e2b455" />
+        <path d="M30.4 22.8 v3" stroke="#b9852a" strokeWidth="1" fill="none" />
+        <circle cx="30.4" cy="27.6" r="2.3" fill="#e2b455" />
+      </g>
+      <path d="M35 28 L44 31 V38 Q44 44 35 47.5 Q26 44 26 38 V31 Z" fill="url(#p-green)" stroke="#fff" strokeWidth="1.6" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,.35))" }} />
+      <path d="M31 38 l3.2 3.2 5.5 -6.5" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
+  ),
+  "Keep Nose Pin": () => (
+    <svg viewBox="0 0 48 48" width="100%" height="100%">
+      {SHARED}
+      <g transform="translate(-1 0) scale(.88)">{Face()}</g>
+      <circle cx="22.6" cy="21" r="5.5" fill="none" stroke="#16a34a" strokeWidth="2" />
+      <circle cx="22.6" cy="21" r="1.7" fill="#e2b455" stroke="#fff" strokeWidth=".7" />
+      <path d="M35 28 L44 31 V38 Q44 44 35 47.5 Q26 44 26 38 V31 Z" fill="url(#p-green)" stroke="#fff" strokeWidth="1.6" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,.35))" }} />
+      <path d="M31 38 l3.2 3.2 5.5 -6.5" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
+  ),
   "Restore Old Photo": () => (
     <svg viewBox="0 0 48 48" width="100%" height="100%">
       {SHARED}

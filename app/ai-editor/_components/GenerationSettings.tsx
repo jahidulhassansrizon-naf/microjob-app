@@ -91,6 +91,8 @@ const QUICK_EDITING_GUIDES = [
   "Keep Marks",
   "Glow & Makeup",
   "Reduce Glasses Glare",
+  "Keep Earrings",
+  "Keep Nose Pin",
 ];
 // When the screen is short, only the most important quick guides stay on the panel (in this order);
 // the rest move into the "Browse all editing guides" popup. Change the order here freely.
@@ -105,6 +107,8 @@ const GUIDE_PRIORITY = [
   "Enhance Eyebrows",
   "Keep Marks",
   "Reduce Glasses Glare",
+  "Keep Earrings",
+  "Keep Nose Pin",
 ];
 const guideRank = (item: string) => {
   const i = GUIDE_PRIORITY.indexOf(item);

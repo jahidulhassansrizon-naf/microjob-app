@@ -21,6 +21,7 @@ import {
   Fingerprint,
   Focus,
   Frame,
+  Gem,
   Glasses,
   Grid2X2,
   History,
@@ -105,6 +106,7 @@ export const EDITING_GUIDE_CATEGORIES = [
   { id: "eyes-details", label: "Eyes" },
   { id: "ears", label: "Ears" },
   { id: "nose", label: "Nose" },
+  { id: "jewelry", label: "Earrings & Nose Pin" },
   { id: "cheeks", label: "Cheeks" },
   { id: "lips-teeth", label: "Lips & Teeth" },
   { id: "beard-style", label: "Beard & Mustache" },
@@ -239,6 +241,8 @@ export const EDITING_GUIDE_ICONS: Record<string, LucideIcon> = {
   "Even Face Lighting": Lightbulb,
   "Align Eye Line": Eye,
   "Keep Original Glasses": Glasses,
+  "Keep Earrings": Gem,
+  "Keep Nose Pin": Gem,
   "Reduce Glasses Glare": Glasses,
   "Natural Professional Retouch": UserRound,
   "Clean Clothing Edges": Scissors,
@@ -554,6 +558,10 @@ const RAW_GUIDES: EditingGuidePreset[] = [
   { label: "Reduce Nose Shine", category: "portrait-skin", prompt: "Reduce oily shine on the nose and nose tip while keeping natural skin highlights, texture and the exact nose shape and size." },
   { label: "Reduce Nose Redness", category: "portrait-skin", prompt: "Gently reduce temporary redness or irritation around the nose and nostrils so it blends with the rest of the face, keeping the exact nose shape and size and natural skin texture." },
 
+  // ===== Jewelry (opt-in: only applied when the user ticks it) =====
+  { label: "Keep Earrings", category: "jewelry", prompt: "Keep the person's existing earrings exactly as in the original photo: same design, size, color, metal and position on each ear. Do not remove, blur, shrink, simplify, recolor or redraw them, and never treat them as a blemish, mark or spot. If the person wears no earrings, do not add any." },
+  { label: "Keep Nose Pin", category: "jewelry", prompt: "Keep the person's existing nose stud, nose pin or nose ring exactly as in the original photo: same side, position, size, color and design. Do not remove, blur, shrink or redraw it, and never treat it as a mole, blemish, dirt or spot. If the person has no nose jewelry, do not add any." },
+
   // ===== Cheeks (new) =====
   { label: "Natural Cheek Blush", category: "portrait-skin", prompt: "Add a very subtle, healthy natural warmth to the cheeks that suits the person's skin tone, soft and evenly blended, without visible makeup, while keeping the cheek shape, face structure and realistic skin texture unchanged." },
   { label: "Reduce Cheek Redness", category: "portrait-skin", prompt: "Gently reduce blotchy or excessive redness on the cheeks so the cheek color is even and healthy, while keeping the cheek shape, natural skin texture and any freckles, moles or marks unchanged." },
@@ -612,6 +620,7 @@ const FACE_ORDER: Array<[string, string[]]> = [
   ]],
   ["ears", ["Match Ear Skin Tone", "Reduce Ear Redness", "Tidy Ear Hair"]],
   ["nose", ["Reduce Nose Shine", "Reduce Nose Redness"]],
+  ["jewelry", ["Keep Earrings", "Keep Nose Pin"]],
   ["cheeks", ["Natural Cheek Blush", "Reduce Cheek Redness"]],
   ["lips-teeth", ["Lipstick", "Natural Lip Color", "Whiten Teeth Naturally", "Preserve Natural Expression"]],
   ["beard-style", [
@@ -669,6 +678,8 @@ export const EDITING_GUIDE_META: Record<string, EditingGuideMeta> = {
   "Preserve Skin Texture": { constraint: true },
   "Preserve Natural Expression": { constraint: true },
   "Keep Original Glasses": { constraint: true },
+  "Keep Earrings": { constraint: true },
+  "Keep Nose Pin": { constraint: true },
 
   // Makeup: removing it cannot be combined with adding/refining it
   "Remove Makeup": { conflictsWith: ["Glow & Makeup", "Refine Makeup", "Lipstick"] },
@@ -784,6 +795,7 @@ const CATEGORY_ORDER: Record<string, number> = {
   cheeks: 3.2,
   nose: 3.3,
   ears: 3.4,
+  jewelry: 3.45,
   "lips-teeth": 3.5,
   "eyes-details": 4,
   eyebrows: 4.1,
@@ -832,6 +844,10 @@ export function buildStandardFinishRule(plan: EditingGuidePlan, opts: { sized: b
   }
   if (opts.sized && !plan.flags.posePreset) {
     parts.push("Pose: if the head or photo is tilted, straighten it so the head is upright and the eyes are level, keeping the face identical.");
+  }
+  const keptJewelry = [labels.has("Keep Earrings") && "earrings", labels.has("Keep Nose Pin") && "nose pin/stud"].filter(Boolean);
+  if (keptJewelry.length) {
+    parts.push(`JEWELRY EXCEPTION: the person's ${keptJewelry.join(" and ")} must stay fully intact and clearly visible exactly as in the original photo. They are NOT blemishes, marks or spots, so none of the cleaning, retouch or mark-removal rules in this prompt may remove, blur or soften them; clean only the skin around them.`);
   }
   return parts.join(" ");
 }

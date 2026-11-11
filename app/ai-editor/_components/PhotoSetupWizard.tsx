@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X, Lightbulb, PlayCircle, ScanFace, Smile, Sun } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X, Lightbulb, PlayCircle, ScanFace, Smile, Sun, Gem } from "lucide-react";
 import { useAiEditorText } from "./aiEditorI18n";
 import PhotoSizeIcon from "./PhotoSizeIcon";
 import GuideIcon from "./GuideIcon";
@@ -77,6 +77,11 @@ const STAGES_QUICK = [
 ];
 /** The extra guide that re-poses a crooked / tilted / turned person into a straight studio portrait. */
 const POSE_LABEL = "Studio Straight Pose";
+/** Opt-in jewelry choices (also shown on the last question of the quick path). */
+const JEWELRY_OPTIONS = [
+  { label: "Keep Earrings", bn: "কানের দুল রাখুন", hint: "কানের দুল যেমন আছে তেমনই থাকবে" },
+  { label: "Keep Nose Pin", bn: "নাকফুল রাখুন", hint: "নাকের ফুল বা পিন যেমন আছে তেমনই থাকবে" },
+];
 /** Quick path: the pose question sits right after clothing, then skin color, then expression (the last step). */
 const QUICK_POSE_STEP = 3;
 const QUICK_SKIN_STEP = 4;
@@ -131,6 +136,7 @@ const STEP_QUESTIONS: Record<string, string> = {
   "eyes-details": "চোখ বা চশমায় কোনো সমস্যা আছে?",
   ears: "কানের রং মুখের সাথে মেলাতে চান?",
   nose: "নাক তেলতেলে বা লালচে দেখাচ্ছে?",
+  jewelry: "কানে দুল বা নাকে ফুল/পিন আছে? সেটা রাখতে চান?",
   cheeks: "গালে লালচে ভাব আছে?",
   "lips-teeth": "ঠোঁট বা দাঁতে কিছু ঠিক করতে চান?",
   "beard-style": "দাড়ি-গোঁফ কামাতে বা ঠিক করতে চান?",
@@ -187,6 +193,10 @@ const STEP_TEXT: Record<string, { hint: string; when: string }> = {
   nose: {
     hint: "নাকের তেলতেলে বা লালচে ভাব থাকলে বাছুন (ঐচ্ছিক)",
     when: "নাকে আলো চকচক করলে বা লালচে দেখালে বাছুন।",
+  },
+  jewelry: {
+    hint: "কানের দুল বা নাকফুল ছবিতে রাখতে চাইলে বাছুন (ঐচ্ছিক)",
+    when: "ছবিতে কানে দুল বা নাকে ফুল/পিন থাকলে এবং সেটা আগের মতোই রাখতে চাইলে বাছুন। কিছু না বাছলে ছবি আগের নিয়মেই তৈরি হবে।",
   },
   cheeks: {
     hint: "গালের রং ঠিক করতে চাইলে বাছুন (ঐচ্ছিক)",
@@ -434,7 +444,7 @@ export default function PhotoSetupWizard({
       : quick && step === QUICK_SKIN_STEP
         ? { title: "গায়ের রং কেমন চান?", hint: "খুব ফর্সা থেকে ধীরে ধীরে কালো, যেকোনো একটা রঙে চাপ দিন। না চাইলে “মূল রং” থাকবে।" }
         : quick && step === QUICK_EXPRESSION_STEP
-          ? { title: "ছবিতে মুখের ভাব কেমন চান?", hint: "যেমন আছে তেমন রাখতে পারেন, অথবা হাসিমুখ, হালকা হাসি বা নরমাল বেছে নিন।" }
+          ? { title: "ছবিতে মুখের ভাব কেমন চান?", hint: "যেমন আছে তেমন রাখতে পারেন, অথবা হাসিমুখ, হালকা হাসি বা নরমাল বেছে নিন। কানের দুল বা নাকফুল রাখতে চাইলে নিচে বেছে নিন।" }
       : step === lastStep && !quick
         ? { title: "সব ঠিক আছে তো?", hint: "নিচে আপনার পছন্দ দেখে নিন, তারপর “ছবি তৈরি করুন” চাপুন।" }
         : BASE_STEPS[step];
@@ -477,6 +487,7 @@ export default function PhotoSetupWizard({
   const selectedExpression = EXPRESSIONS.find((e) => e.name === expressionName) ?? EXPRESSIONS[0];
   const selectedSkinTone = SKIN_TONES.find((tone) => tone.name === skinToneName);
   const poseOn = draft.guides.includes(POSE_LABEL);
+  const jewelryPicked = JEWELRY_OPTIONS.filter((o) => draft.guides.includes(o.label));
   const setPose = (on: boolean) => {
     setPoseChoice(on ? "yes" : "no");
     setDraft((d) => {
@@ -829,6 +840,34 @@ export default function PhotoSetupWizard({
                 </button>
               );
             })}
+          </div>
+          <div className="rounded-xl border-2 border-[#E3D6B8] bg-[#FBF6E8] p-3">
+            <p className="flex items-center gap-1.5 text-[15px] font-extrabold text-[#3B2F1E]">
+              <Gem size={16} className="text-[#B9852A]" /> কানে দুল বা নাকে ফুল/পিন আছে?
+              <span className="text-[12px] font-semibold text-stone-500">(ঐচ্ছিক)</span>
+            </p>
+            <p className="mt-0.5 text-[12.5px] leading-snug text-stone-600">রাখতে চাইলে চাপ দিন। কিছু না চাপলে ছবি আগের নিয়মেই তৈরি হবে।</p>
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {JEWELRY_OPTIONS.map((item) => {
+                const on = draft.guides.includes(item.label);
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggleGuide(item.label)}
+                    className={`${optionBase} ${on ? optionOn : optionOff} flex items-center gap-2.5 px-3 py-2.5 text-left`}
+                  >
+                    {on && <CheckBadge />}
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#B9852A]"><Gem size={18} /></span>
+                    <span className="min-w-0 pr-6">
+                      <span className="block text-[15px] font-extrabold leading-tight">{item.bn}</span>
+                      <span className="mt-0.5 block text-[12px] leading-snug text-stone-600">{item.hint}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
           <p className="rounded-xl border border-[#E3D6B8] bg-[#F7EFD9] px-3 py-2 text-[13px] leading-snug text-[#5A4A32]">
             টিপ: পাসপোর্ট, ভিসা বা সরকারি ফর্মের ছবিতে সাধারণত স্বাভাবিক বা হালকা হাসি নিরাপদ। ছবি কোথায় দেবেন তার নিয়ম দেখে নিন। শুধু মুখের ভাব বদলায়, চেহারা একই থাকে।
@@ -1372,6 +1411,13 @@ export default function PhotoSetupWizard({
                           label: "অভিব্যক্তি",
                           value: selectedExpression.bn,
                           set: expressionName !== "" && expressionName !== "Original",
+                          swatch: null as React.ReactNode,
+                        },
+                        {
+                          Icon: Gem,
+                          label: "গয়না",
+                          value: jewelryPicked.length ? jewelryPicked.map((o) => o.bn.replace(" রাখুন", "")).join(", ") + " থাকবে" : "আগের নিয়মে",
+                          set: jewelryPicked.length > 0,
                           swatch: null as React.ReactNode,
                         },
                       ]
