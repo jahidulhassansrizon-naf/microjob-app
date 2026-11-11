@@ -58,6 +58,7 @@ import PaymentGatewaySettingsPanel from "./_components/PaymentGatewaySettingsPan
 import UddoktaPaySettingsPanel from "./_components/UddoktaPaySettingsPanel";
 import SmtpSettingsPanel from "./_components/SmtpSettingsPanel";
 import MailCampaignPanel from "./_components/MailCampaignPanel";
+import WithdrawalCard from "./_components/WithdrawalCard";
 import SubscriptionPlansPanel from "./_components/SubscriptionPlansPanel";
 import SubscriptionActivityPanel from "./_components/SubscriptionActivityPanel";
 import BotStatusPanel from "./_components/BotStatusPanel";
@@ -161,6 +162,8 @@ type Overview = {
     totalSubscriptions: number;
     pendingPayments: number;
     totalRevenue: number;
+    totalWithdrawn?: number;
+    netRevenue?: number;
     newToday: number;
     newThisMonth: number;
     weeklyRegistrations: number;
@@ -1801,8 +1804,10 @@ export default function AdminDashboardClient() {
     },
     {
       title: "Total revenue",
-      value: overviewLoading ? "—" : money(stats?.totalRevenue),
-      detail: "All time, completed payments",
+      value: overviewLoading ? "—" : money(stats?.netRevenue ?? stats?.totalRevenue),
+      detail: stats?.totalWithdrawn
+        ? `${money(stats.totalRevenue)} earned − ${money(stats.totalWithdrawn)} withdrawn`
+        : "All time, completed payments",
       icon: CircleDollarSign,
       tint: "bg-[#FDF1D0] text-[#8A5A00]",
     },
@@ -2034,6 +2039,8 @@ export default function AdminDashboardClient() {
                   ))}
                 </div>
               </section>
+
+              <WithdrawalCard onChanged={() => void loadOverview(true)} />
 
               <section
                 aria-label="Welcome"

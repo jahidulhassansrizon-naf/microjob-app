@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import Subscription from "@/models/Subscription";
+import Withdrawal from "@/app/api/_lib/Withdrawal";
 import { PRESENCE_STALE_AFTER_MS } from "@/lib/presenceConstants";
 import { getAdminCredentials } from "@/lib/adminCredentials";
 import { requireAdmin } from "../_lib/adminAuth";
@@ -133,6 +134,15 @@ export async function GET(request: Request) {
       }),
     ]);
 
+    // Manual withdrawals recorded by the admin are subtracted from revenue.
+    let totalWithdrawn = 0;
+    try {
+      const withdrawnRows = await Withdrawal.aggregate([{ $group: { _id: null, total: { $sum: "$amount" } } }]);
+      totalWithdrawn = Number(withdrawnRows[0]?.total || 0);
+    } catch (withdrawalError) {
+      console.error("Admin overview withdrawals error:", withdrawalError);
+    }
+
     const registrationsByDate = new Map<string, number>(
       registrationRows.map((row: { _id: string; count: number }) => [row._id, row.count]),
     );
@@ -178,6 +188,8 @@ export async function GET(request: Request) {
           totalSubscriptions,
           pendingPayments,
           totalRevenue: Number(revenueRows[0]?.total || 0),
+          totalWithdrawn,
+          netRevenue: Number(revenueRows[0]?.total || 0) - totalWithdrawn,
           newToday,
           newThisMonth,
           weeklyRegistrations: weeklyTotal,
