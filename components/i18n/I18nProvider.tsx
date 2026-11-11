@@ -29,14 +29,23 @@ export function I18nProvider({
 }) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
+  // The static page HTML is always rendered in the default language, so the saved language is
+  // applied here, right after hydration. (There is deliberately no effect that writes `locale`
+  // back to storage: on the first render it would still hold the default and overwrite the
+  // visitor's saved choice. setLocale below already persists real changes.)
   useEffect(() => {
     const stored = readStoredLocale();
     setLocaleState(stored);
     persistLocale(stored);
   }, []);
 
+  // Release the "hold" PrePaintScript put on the page for visitors whose language is not the
+  // static default, but only after the text has really been re-rendered in that language.
   useEffect(() => {
-    persistLocale(locale);
+    const root = document.documentElement;
+    if (!root.hasAttribute("data-i18n-hold")) return;
+    const wanted = root.getAttribute("data-locale") === "bn" ? "bn" : "en";
+    if (locale === wanted) root.removeAttribute("data-i18n-hold");
   }, [locale]);
 
   const value = useMemo<I18nValue>(() => ({

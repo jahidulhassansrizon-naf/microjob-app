@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Bengali } from "next/font/google";
-import { cookies } from "next/headers";
 import Navbar from "@/components/Navbar";
 import PageBackgroundInitializer from "@/app/_components/PageBackgroundInitializer";
 import ActivityTracker from "@/app/_components/ActivityTracker";
@@ -18,7 +17,7 @@ import { SiteSettingsProvider } from "./_components/SiteSettingsProvider";
 import { DEFAULT_SITE_SETTINGS, buildSiteTitle } from "@/lib/siteSettings";
 import { getServerSiteSettings } from "@/lib/serverSiteSettings";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
-import { LOCALE_COOKIE, type Locale } from "@/lib/i18n";
+import { DEFAULT_LOCALE } from "@/lib/i18n";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -32,15 +31,19 @@ const banglaSans = Noto_Sans_Bengali({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-// The public site identity is stored in the existing MongoDB database. Keep this
-// segment dynamic so the browser title and description reflect Admin changes immediately.
+// The root layout no longer reads cookies, so pages without their own dynamic code are
+// pre-rendered once and served from the CDN (no function invocation per page view).
+// Site identity comes from MongoDB through getServerSiteSettings (cached, tagged
+// "site-settings"): saving in the admin panel calls revalidateTag, and revalidate = 300
+// is the safety net so even a missed tag refresh never keeps old branding for more than 5 minutes.
+// Language and the one-time login-success message are now handled in the browser
+// (PrePaintScript, I18nProvider, LoginSuccessOverlay).
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
 };
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getServerSiteSettings();
@@ -70,21 +73,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [cookieStore, initialSiteSettings] = await Promise.all([
-    cookies(),
-    getServerSiteSettings(),
-  ]);
-  const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
-  const initialLocale: Locale = cookieLocale === "bn" ? "bn" : "en";
-  const showLoginSuccess =
-    cookieStore.get("sohoj_login_success")?.value === "1";
-  const rawLoginName = cookieStore.get("sohoj_login_name")?.value ?? "";
-  let loginFirstName = rawLoginName;
-  try {
-    loginFirstName = decodeURIComponent(rawLoginName);
-  } catch {
-    // keep the raw value
-  }
+  const initialSiteSettings = await getServerSiteSettings();
+  // Static HTML is always rendered in the default language. PrePaintScript switches <html> to the
+  // visitor's saved language before first paint, and I18nProvider re-renders the text right after
+  // hydration (the page is held invisible for bn visitors in between, see globals.css).
+  const initialLocale = DEFAULT_LOCALE;
 
   return (
     <html
@@ -116,10 +109,7 @@ export default async function RootLayout({
           <FloatingUserAdminChat />
           <MyFilesSavedPopup />
           <PaidAccessWelcomePopup />
-          <LoginSuccessOverlay
-            initialVisible={showLoginSuccess}
-            initialName={showLoginSuccess ? loginFirstName : ""}
-          />
+          <LoginSuccessOverlay />
         </I18nProvider>
         </SiteSettingsProvider>
       </body>

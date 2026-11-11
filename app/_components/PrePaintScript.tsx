@@ -11,10 +11,22 @@
  * Keep this ES5, tiny, and wrapped in try/catch - it must never break the page.
  */
 export const UI_CACHE_KEY = "sohoj_ui_v1";
+/**
+ * The static page HTML is rendered in English. For visitors whose saved language is Bangla the
+ * page is kept invisible (html[data-i18n-hold], see globals.css) until I18nProvider has switched the
+ * text, so nobody sees an English flash. This is the failsafe: if JavaScript is slow or fails, the
+ * page is shown anyway after this many milliseconds. Set it to 0 to never hold (English may flash).
+ */
+export const I18N_HOLD_MAX_MS = 2500;
 export const NAV_ITEM_COUNT = 8; // must equal NAV_ITEMS.length in DashboardNavbar.tsx (checked there in dev)
 
 const SCRIPT = `(function(){try{
 var d=document.documentElement,s=d.style,N=${NAV_ITEM_COUNT};
+var lc='en';try{lc=localStorage.getItem('sohozkaj_locale')}catch(e){}
+if(lc!=='bn'&&lc!=='en'){var cm=document.cookie.match(/(?:^|; )sohozkaj_locale=([^;]+)/);lc=cm&&cm[1]==='bn'?'bn':'en'}
+if(lc==='bn'){d.lang='bn';d.setAttribute('data-locale','bn');d.setAttribute('data-i18n-hold','1');
+setTimeout(function(){d.removeAttribute('data-i18n-hold')},${I18N_HOLD_MAX_MS})}
+if(/(?:^|;\\s*)sohoj_login_success=1(?:;|$)/.test(document.cookie)){d.setAttribute('data-login-pending','1');setTimeout(function(){d.removeAttribute('data-login-pending')},4000)}
 var fine=window.matchMedia('(pointer:fine)').matches;
 d.setAttribute('data-fit',fine?'1':'0');
 var hr=new Date().getHours();

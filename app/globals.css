@@ -294,3 +294,21 @@ html::-webkit-scrollbar-thumb { border-width: 3px; }
   * { scrollbar-width: thin; scrollbar-color: #C4AE7C transparent; }
   html { scrollbar-color: #C4AE7C #F1E8D0; }
 }
+
+
+/* --- Static pages: language + login-success handling before React hydrates ------------------- */
+/* Bangla visitors: keep the (English) static HTML invisible until I18nProvider has translated it.
+   PrePaintScript sets the attribute and always removes it again after a short failsafe delay. */
+html[data-i18n-hold="1"] body { visibility: hidden; }
+
+/* Right after login: dim backdrop from the very first paint, so the dashboard never "pops" behind
+   the Login Successful card. LoginSuccessOverlay removes the attribute once the card is on screen. */
+html[data-login-pending="1"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1999;
+  background: rgba(42, 33, 24, 0.6);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
