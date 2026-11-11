@@ -56,8 +56,6 @@ jobs:
       # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).
       MAX_CONCURRENT_GENERATIONS: "20"
       MAX_JOB_RETRIES: "2"
-      # Email status report every N minutes (0 = only one report a day at 21:00 Dhaka time).
-      REPORT_EVERY_MINUTES: "30"
       ASK_KEY: ${{ secrets.ASK_KEY }}
       GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
       GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
@@ -71,8 +69,8 @@ jobs:
       GEMINI_SESSION_JSON_10: ${{ secrets.GEMINI_SESSION_JSON_10 }}
       VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
       EDGE_CONFIG_ID: ${{ secrets.EDGE_CONFIG_ID }}
-      # Email alerts through the website (route app/api/bot-alert).
-      ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+      # Email alerts are OFF (ALERT_WEBHOOK_URL is not set on purpose). The admin panel (Bot Status)
+      # reads everything from the bot on demand. BOT_ALERT_KEY is still needed for that detailed report.
       BOT_ALERT_KEY: ${{ secrets.BOT_ALERT_KEY }}
 
     defaults:

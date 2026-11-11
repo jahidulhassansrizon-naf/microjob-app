@@ -1,13 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Activity, RefreshCw } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
-import { visibleInterval } from "@/app/_lib/visiblePolling";
 
 const PANEL = "rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-[0_10px_28px_-20px_rgba(59,47,30,0.45)]";
 
-type Channel = { enabled: boolean; sent: number; failed: number; lastError: string; lastSentAt: string; resting?: boolean };
 type Problem = { level: "error" | "warn" | "info"; title: string; cause?: string; advice?: string };
 
 type BotStatus = {
@@ -29,7 +27,6 @@ type BotStatus = {
     slot: number; active: number; usable: boolean; healthy: boolean; downReason: string; failStreak: number;
     lastError: string; lastCause: string; lastAdvice: string; restingUntil: string; usableAgainAt: string; images: number;
   }>;
-  notifier?: { email: Channel };
   recentErrors?: Array<{ at: string; label: string; message: string }>;
   events?: Array<{ at: string; type: string; slot: number; message: string; cause: string; advice: string }>;
   jobs?: Array<{ at: string; ms: number; ok: boolean; error: string; attempts: Array<{ slot: number; result: string; ms: number }> }>;
@@ -54,6 +51,26 @@ function duration(seconds: number): string {
   return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
 }
 
+function bnDuration(seconds: number): string {
+  const m = Math.max(0, Math.round(seconds / 60));
+  return m >= 60 ? `${Math.floor(m / 60)} ঘণ্টা ${m % 60} মিনিট` : `${m} মিনিট`;
+}
+
+type SessionRow = NonNullable<BotStatus["sessions"]>[number];
+
+// Plain Bengali reason for a session that is not working (same wording as the old email report).
+function sessionReasonBn(x: SessionRow): string {
+  if (!x.usable) {
+    if (x.downReason === "logged-out") return "লগ-আউট হয়ে গেছে (নতুন সেশন সেভ করতে হবে)";
+    const back = dhakaShort(x.usableAgainAt);
+    if (x.downReason === "limit") return back ? `দৈনিক লিমিট শেষ, ${back} নাগাদ আবার চালু হবে` : "দৈনিক লিমিট শেষ";
+    return back ? `সাময়িক বন্ধ, ${back} নাগাদ আবার চালু হবে` : "সাময়িক বন্ধ";
+  }
+  const err = x.lastError ? ` (${x.lastError.slice(0, 110)})` : "";
+  const back = dhakaShort(x.restingUntil);
+  return back ? `বারবার ফেল করছে${err}, ${back} নাগাদ আবার চেষ্টা হবে` : `বারবার ফেল করছে${err}`;
+}
+
 const EVENT_LABEL: Record<string, string> = {
   "attempt-failed": "Attempt failed",
   "session-resting": "Session resting",
@@ -69,28 +86,6 @@ function Stat({ label, value, hint }: { label: string; value: string | number; h
       <p className="text-xs font-semibold uppercase tracking-wide text-[#7A6A50]">{label}</p>
       <p className="mt-1 text-2xl font-bold text-[#2B2116]">{value}</p>
       {hint && <p className="mt-0.5 text-xs text-[#6B5A40]">{hint}</p>}
-    </div>
-  );
-}
-
-function ChannelBox({ title, ch, note }: { title: string; ch: Channel | undefined; note?: string }) {
-  const on = ch?.enabled === true;
-  return (
-    <div className="rounded-xl border border-[#E3D6B8] bg-[#FFFDF6] p-4">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-bold text-[#2B2116]">{title}</p>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${on ? "bg-emerald-100 text-emerald-700" : "bg-[#F2E8D2] text-[#5A4A32]"}`}>
-          {on ? (ch?.resting ? "Resting" : "On") : "Off"}
-        </span>
-      </div>
-      <p className="mt-2 text-sm text-[#6B5A40]">
-        Sent <strong>{ch?.sent ?? 0}</strong> · Failed <strong>{ch?.failed ?? 0}</strong>
-        {ch?.lastSentAt ? ` · last ${dhakaShort(ch.lastSentAt)}` : ""}
-      </p>
-      {ch?.lastError && (
-        <p className="mt-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-2.5 py-1.5 text-xs font-semibold text-[#B91C1C]">{ch.lastError}</p>
-      )}
-      {note && <p className="mt-2 text-xs text-[#6B5A40]">{note}</p>}
     </div>
   );
 }
@@ -114,7 +109,7 @@ function ProblemItem({ p }: { p: Problem }) {
 
 export default function BotStatusPanel() {
   const [data, setData] = useState<BotStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -131,11 +126,6 @@ export default function BotStatusPanel() {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    void load();
-    return visibleInterval(() => void load(), 180_000);
-  }, [load]);
 
   const s = data?.stats;
   const done = (s?.jobsOk ?? 0) + (s?.jobsFailed ?? 0);
@@ -160,8 +150,8 @@ export default function BotStatusPanel() {
             <div>
               <h2 className="text-lg font-bold text-[#2B2116]">Image bot status</h2>
               <p className="text-sm text-[#6B5A40]">
-                Everything about the Gemini image bot in one place. Refreshes every 3 minutes
-                {data?.checkedAt ? ` · checked ${dhaka(data.checkedAt)}` : ""} (Dhaka time).
+                Everything about the Gemini image bot in one place. Nothing runs by itself: press the button to check
+                {data?.checkedAt ? ` · last checked ${dhaka(data.checkedAt)} (Dhaka time)` : ""}.
               </p>
             </div>
           </div>
@@ -171,9 +161,15 @@ export default function BotStatusPanel() {
             disabled={loading}
             className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#D8C9A6] bg-[#FFFDF6] px-4 text-sm font-bold text-[#3B2F1E] transition hover:bg-[#F6EDD4] disabled:opacity-60"
           >
-            <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh
+            <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> {loading ? "Checking..." : data ? "Refresh" : "Check bot status"}
           </button>
         </div>
+
+        {!data && !loading && !error && (
+          <p className="mt-4 rounded-xl border border-dashed border-[#D8C9A6] bg-[#FFFDF6] px-4 py-6 text-center text-sm font-semibold text-[#6B5A40]">
+            Press “Check bot status” to see the bot, the Google sessions and the images made in this run.
+          </p>
+        )}
 
         {error && <p className="mt-4 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-sm font-semibold text-[#B91C1C]">{error}</p>}
 
@@ -183,6 +179,66 @@ export default function BotStatusPanel() {
           </p>
         )}
       </section>
+
+      {data && (
+        <section className={`${PANEL} p-5 sm:p-6`}>
+          <h3 className="text-base font-bold text-[#2B2116]">
+            📊 বট রিপোর্ট{data.online ? ` (এই রান ${bnDuration(data.uptimeSeconds ?? 0)} ধরে চলছে)` : ""}
+          </h3>
+          {!data.online ? (
+            <p className="mt-3 rounded-xl bg-[#FEF2F2] px-4 py-3 text-sm font-bold text-[#B91C1C]">
+              🔴 বট এখন উত্তর দিচ্ছে না। হয়তো নতুন করে চালু হচ্ছে (১-২ মিনিট অপেক্ষা করে আবার চাপুন)। নিচে GitHub-এর রান দেখুন।
+            </p>
+          ) : (
+            s && (
+              <div className="mt-3 space-y-1.5 text-sm leading-relaxed text-[#3B2F1E]">
+                <p>
+                  <strong>ছবি:</strong> {s.jobsOk} সফল, {s.jobsFailed} ফেল (সাফল্য {rate}%)
+                </p>
+                {s.retries > 0 && (
+                  <p>
+                    <strong>রিট্রাই:</strong> {s.retries} বার (রিফিউজ {s.attemptsRefused}, টাইমআউট {s.attemptsTimedOut})
+                  </p>
+                )}
+                {s.jobsOk > 0 && (
+                  <>
+                    <p>
+                      <strong>গড় সময়:</strong> {s.avgSeconds} সেকেন্ড
+                    </p>
+                    <p>
+                      <strong>সর্বোচ্চ একসাথে:</strong> {s.peakActive}, <strong>লাইনে সর্বোচ্চ:</strong> {s.peakWaiting}
+                    </p>
+                  </>
+                )}
+                <p>
+                  <strong>এখন চলছে:</strong> {data.generation?.active ?? 0}টা, <strong>লাইনে অপেক্ষায়:</strong> {data.generation?.waiting ?? 0}টা
+                </p>
+                <p>
+                  <strong>সেশন:</strong>{" "}
+                  {sessions.map((x, i) => (
+                    <span key={x.slot}>
+                      {i > 0 ? " | " : ""}
+                      {x.slot}: {x.images}টা {x.usable && x.healthy ? "🟢" : "🔴"}
+                    </span>
+                  ))}
+                </p>
+                {sessions.filter((x) => !(x.usable && x.healthy)).map((x) => (
+                  <p key={`down-${x.slot}`} className="font-semibold text-[#B91C1C]">
+                    ⚠️ সেশন {x.slot}: {sessionReasonBn(x)}
+                  </p>
+                ))}
+                {sessions.length > 0 && upSessions === sessions.length && (
+                  <p className="font-bold text-emerald-700">✅ সব সেশন ঠিক আছে।</p>
+                )}
+                {sessions.length > 0 && upSessions === 0 && (
+                  <p className="font-bold text-[#B91C1C]">🚨 সব সেশন বন্ধ! এখন ছবি বানানো সম্ভব না।</p>
+                )}
+              </div>
+            )
+          )}
+          <p className="mt-4 border-t border-[#E3D6B8] pt-3 text-xs text-[#6B5A40]">নিচে প্রতিটা জিনিস আরও বিস্তারিত দেখানো আছে।</p>
+        </section>
+      )}
 
       {data && (
         <section className={`${PANEL} p-5 sm:p-6`}>
@@ -316,13 +372,6 @@ export default function BotStatusPanel() {
               </ul>
             </section>
           )}
-
-          <section className={`${PANEL} p-5 sm:p-6`}>
-            <h3 className="text-base font-bold text-[#2B2116]">Alerts to you</h3>
-            <div className="mt-4 grid gap-3">
-              <ChannelBox title="Email" ch={data.notifier?.email} note={data.notifier?.email?.enabled ? undefined : "Needs ALERT_WEBHOOK_URL and BOT_ALERT_KEY on the bot."} />
-            </div>
-          </section>
         </>
       )}
 

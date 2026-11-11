@@ -21,18 +21,6 @@ function text(value: unknown, max = 400): string {
   return typeof value === "string" ? value.slice(0, max) : "";
 }
 
-type Channel = { enabled: boolean; sent: number; failed: number; lastError: string; lastSentAt: string };
-
-function channel(value: any): Channel {
-  return {
-    enabled: value?.enabled === true,
-    sent: num(value?.sent),
-    failed: num(value?.failed),
-    lastError: text(value?.lastError),
-    lastSentAt: text(value?.lastSentAt, 40),
-  };
-}
-
 type Run = { number: number; status: string; conclusion: string; event: string; startedAt: string; updatedAt: string };
 
 let runsCache: { at: number; runs: Run[] | null } | null = null;
@@ -137,19 +125,6 @@ function buildProblems(report: any, runs: Run[] | null, detailed: boolean): Prob
       cause: `${st.retries} retries for ${st.jobs} images. Usually one or two sessions keep timing out.`,
       advice: "Look at the Google sessions table: the session with the most problems is the slow one.",
     });
-  }
-
-  const n = report.notifier;
-  if (!n.email.enabled) {
-    out.push({
-      level: "info",
-      title: "No alerts are set up",
-      cause: "Email alerts are not active on the bot.",
-      advice: "Set ALERT_WEBHOOK_URL and BOT_ALERT_KEY (GitHub secrets) to get email alerts.",
-    });
-  }
-  if (n.email.enabled && n.email.lastError) {
-    out.push({ level: "warn", title: "Email alerts are failing", cause: n.email.lastError, advice: "Check BOT_ALERT_KEY / BOT_ALERT_EMAIL on Vercel and the SMTP settings." });
   }
 
   if (runs && runs.length > 0) {
@@ -279,9 +254,6 @@ export async function GET(request: Request) {
       peakActive: num(stats.peakActive),
       peakWaiting: num(stats.peakWaiting),
       avgSeconds: jobsOk ? Math.round(num(stats.totalOkMs) / jobsOk / 1000) : 0,
-    },
-    notifier: {
-      email: channel(data.notifier?.email),
     },
   };
 
