@@ -93,6 +93,7 @@ const QUICK_EDITING_GUIDES = [
   "Reduce Glasses Glare",
   "Keep Earrings",
   "Keep Nose Pin",
+  "Studio Straight Pose",
 ];
 // When the screen is short, only the most important quick guides stay on the panel (in this order);
 // the rest move into the "Browse all editing guides" popup. Change the order here freely.
@@ -102,13 +103,14 @@ const GUIDE_PRIORITY = [
   "Clean Shave",
   "Black Hair Color",
   "Cover Gray Hair",
+  "Keep Earrings",
+  "Keep Nose Pin",
+  "Studio Straight Pose",
   "Tidy Facial Hair",
   "Glow & Makeup",
   "Enhance Eyebrows",
   "Keep Marks",
   "Reduce Glasses Glare",
-  "Keep Earrings",
-  "Keep Nose Pin",
 ];
 const guideRank = (item: string) => {
   const i = GUIDE_PRIORITY.indexOf(item);
@@ -908,7 +910,7 @@ export default function GenerationSettings({
         ${[15].map((n) => `.gs-wrap[data-cap="${n}"] .gs-cloth-grid > button:nth-child(n+${n + 2}) { display: none; }`).join("\n        ")}
         .gs-wrap[data-cap] .gs-cloth-grid > button:has(.gs-sel-badge) { display: flex !important; }
         /* short screens: only the top-priority quick guides stay (selected ones always stay); the rest live in "Browse all" */
-        ${[5].map((n) => `.gs-wrap[data-gcap="${n}"] .gs-guide-grid > button:is(${Array.from({ length: 12 - n }, (_, i) => `[data-prio="${n + 1 + i}"]`).join(",")}):not(.gs-guide-on) { display: none; }`).join("\n        ")}
+        ${[8].map((n) => `.gs-wrap[data-gcap="${n}"] .gs-guide-grid > button:is(${Array.from({ length: 14 - n }, (_, i) => `[data-prio="${n + 1 + i}"]`).join(",")}):not(.gs-guide-on) { display: none; }`).join("\n        ")}
         .gs-wrap[data-gcap] .gs-guide-grid > button[data-prio="99"]:not(.gs-guide-on) { display: none; }
         /* ---- Layout: no JS. Grids auto-fill the available width; sizes are fluid (clamp / vh) with readable minimums. ---- */
         .gs-wrap {
@@ -950,7 +952,7 @@ export default function GenerationSettings({
           .ai-scroll .gs-noscroll button, .ai-scroll .gs-noscroll button * { cursor: pointer; }
         }
       `}</style>
-      <div ref={fitRef} className="gs-wrap flex flex-col shrink-0" data-cap="15" data-gcap="5">
+      <div ref={fitRef} className="gs-wrap flex flex-col shrink-0" data-cap="15" data-gcap="8">
       <div className="xl:flex-1 xl:min-h-0 xl:justify-between flex flex-col">
         <div className="gs-head flex items-center justify-between mb-4 xl:mb-[clamp(6px,1.2vh,16px)]">
           <span className="font-semibold text-base xl:text-[length:1.25rem] text-[#3B2F1E] flex items-center gap-2">
