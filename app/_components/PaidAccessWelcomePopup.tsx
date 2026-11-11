@@ -15,6 +15,15 @@ const SEEN_STORAGE_KEYS: Record<Kind, string> = {
 };
 /** Re-check at most this often while the user navigates (a payment may have just completed). */
 const CHECK_THROTTLE_MS = 60000;
+/**
+ * When the server says "nothing to show" (or the visitor is not signed in), remember that for a few
+ * minutes in localStorage (shared by all tabs) so normal page-to-page navigation does not call
+ * /api/subscription/welcome again on every page. The memory is dropped on the payment and
+ * subscription pages, so a user who has just paid is checked again immediately, and it is tied to the
+ * signed-in token so a different account never reuses it.
+ */
+const NONE_CACHE_KEY = "sebalagbe:paid-welcome-none";
+const NONE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 const digitsBn = (v: string | number) =>
   String(v).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
@@ -112,6 +121,50 @@ function writeLocalSeen(kind: Kind, key: string) {
   }
 }
 
+function cacheScope(): string {
+  // Short non-reversible fingerprint of the token (never store the token itself).
+  try {
+    const token = window.localStorage.getItem("token") || "";
+    let hash = 5381;
+    for (let i = 0; i < token.length; i += 1) hash = ((hash << 5) + hash + token.charCodeAt(i)) | 0;
+    return `${token.length}:${(hash >>> 0).toString(36)}`;
+  } catch {
+    return "";
+  }
+}
+
+function hasFreshNoneCache(): boolean {
+  try {
+    const raw = window.localStorage.getItem(NONE_CACHE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw) as { scope?: unknown; at?: unknown };
+    return (
+      saved.scope === cacheScope() &&
+      typeof saved.at === "number" &&
+      Date.now() - saved.at >= 0 &&
+      Date.now() - saved.at < NONE_CACHE_TTL_MS
+    );
+  } catch {
+    return false;
+  }
+}
+
+function writeNoneCache() {
+  try {
+    window.localStorage.setItem(NONE_CACHE_KEY, JSON.stringify({ scope: cacheScope(), at: Date.now() }));
+  } catch {
+    /* optional */
+  }
+}
+
+function clearNoneCache() {
+  try {
+    window.localStorage.removeItem(NONE_CACHE_KEY);
+  } catch {
+    /* optional */
+  }
+}
+
 function getAuthHeaders(): Record<string, string> {
   try {
     const token = window.localStorage.getItem("token") || "";
@@ -144,6 +197,7 @@ export default function PaidAccessWelcomePopup() {
   const check = useCallback(async () => {
     if (checkingRef.current) return;
     if (Date.now() - lastCheckRef.current < CHECK_THROTTLE_MS) return;
+    if (hasFreshNoneCache()) return;
     checkingRef.current = true;
     lastCheckRef.current = Date.now();
     try {
@@ -152,9 +206,16 @@ export default function PaidAccessWelcomePopup() {
         cache: "no-store",
         headers: getAuthHeaders(),
       });
-      if (!response.ok) return;
+      if (!response.ok) {
+        // Definite "not signed in / not allowed" answers are remembered too; 5xx is never cached.
+        if (response.status === 401 || response.status === 403) writeNoneCache();
+        return;
+      }
       const data = await response.json().catch(() => null);
-      if (!data?.show || typeof data.key !== "string") return;
+      if (!data?.show || typeof data.key !== "string") {
+        if (data && data.show === false) writeNoneCache();
+        return;
+      }
       const kind: Kind = data.kind === "expired" ? "expired" : "welcome";
       if (data.key === dismissedKeyRef.current || data.key === readLocalSeen(kind)) return;
       // Someone already on the buying screens does not need the "expired" nudge.
@@ -178,6 +239,11 @@ export default function PaidAccessWelcomePopup() {
 
   // Check on first load and whenever the user moves to another page.
   useEffect(() => {
+    // Buying screens: forget "nothing to show" so the first page after a payment checks right away.
+    if (pathname && (pathname.startsWith("/payment") || pathname.startsWith("/subscription"))) {
+      clearNoneCache();
+      lastCheckRef.current = 0;
+    }
     if (isExcluded(pathname)) {
       welcomeRef.current = null;
       setWelcome(null);
