@@ -46,3 +46,4 @@ gemini-profile/
 playwright-service/test-results/
 playwright-service/trim-session.js
 playwright-service/view-session.js
+playwright-service/save-trimmed.js

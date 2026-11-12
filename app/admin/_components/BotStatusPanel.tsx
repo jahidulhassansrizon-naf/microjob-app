@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Activity, RefreshCw } from "lucide-react";
+import { Activity, AlertTriangle, Check, ChevronDown, Clock, RefreshCw, X } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 
-const PANEL = "rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-[0_10px_28px_-20px_rgba(59,47,30,0.45)]";
+const PANEL = "rounded-3xl border border-[#E6DAB9] bg-[#FFFCF3] shadow-[0_18px_40px_-28px_rgba(59,47,30,0.5)]";
 
 type Problem = { level: "error" | "warn" | "info"; title: string; cause?: string; advice?: string };
 
@@ -35,15 +35,24 @@ type BotStatus = {
   problems?: Problem[];
 };
 
+// Bangladesh time (Asia/Dhaka), 12-hour with AM/PM, e.g. "11:50:01 PM".
 function dhaka(iso?: string): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString("en-GB", { timeZone: "Asia/Dhaka", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  return d
+    .toLocaleTimeString("en-US", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true })
+    .replace(/\u202f/g, " ");
 }
 
+// Same, without seconds, e.g. "11:50 PM".
 function dhakaShort(iso?: string): string {
-  return dhaka(iso).slice(0, 5);
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d
+    .toLocaleTimeString("en-US", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "2-digit", hour12: true })
+    .replace(/\u202f/g, " ");
 }
 
 function duration(seconds: number): string {
@@ -72,40 +81,88 @@ function sessionReasonBn(x: SessionRow): string {
 }
 
 const EVENT_LABEL: Record<string, string> = {
-  "attempt-failed": "Attempt failed",
-  "session-resting": "Session resting",
-  "session-limit": "Daily limit",
-  "session-logged-out": "Logged out",
-  refused: "Gemini declined",
-  "job-failed": "Image failed",
+  "attempt-failed": "চেষ্টা ফেল করেছে",
+  "session-resting": "সেশন বিশ্রামে গেছে",
+  "session-limit": "দৈনিক লিমিট শেষ",
+  "session-logged-out": "লগ-আউট হয়ে গেছে",
+  refused: "Gemini রিফিউজ করেছে",
+  "job-failed": "ছবি বানানো ফেল",
 };
 
-function Stat({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+type Tone = "ok" | "warn" | "bad";
+
+const TONE: Record<Tone, { color: string; glow: string; soft: string; text: string }> = {
+  ok: { color: "#34D399", glow: "rgba(52,211,153,0.20)", soft: "bg-emerald-50 text-emerald-800", text: "text-emerald-700" },
+  warn: { color: "#F5B544", glow: "rgba(245,181,68,0.22)", soft: "bg-amber-50 text-amber-900", text: "text-amber-700" },
+  bad: { color: "#F87171", glow: "rgba(248,113,113,0.22)", soft: "bg-red-50 text-red-800", text: "text-red-700" },
+};
+
+function SectionTitle({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-[#E3D6B8] bg-[#FFFDF6] p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#7A6A50]">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-[#2B2116]">{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-[#6B5A40]">{hint}</p>}
+    <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+      <h3 className="text-lg font-bold text-[#2B2116]">{title}</h3>
+      {hint && <p className="text-sm text-[#7A6A50]">{hint}</p>}
+    </div>
+  );
+}
+
+function Fact({ label, value, hint, tone }: { label: string; value: string | number; hint?: string; tone?: Tone }) {
+  return (
+    <div className="rounded-2xl border border-[#EADFC4] bg-[#FBF5E4] p-4">
+      <p className="text-sm font-semibold text-[#6B5A40]">{label}</p>
+      <p className={`mt-1 text-3xl font-bold tabular-nums ${tone ? TONE[tone].text : "text-[#2B2116]"}`}>{value}</p>
+      {hint && <p className="mt-1 text-sm text-[#7A6A50]">{hint}</p>}
     </div>
   );
 }
 
 function ProblemItem({ p }: { p: Problem }) {
-  const tone =
+  const tone = p.level === "error" ? "bad" : p.level === "warn" ? "warn" : null;
+  const box =
     p.level === "error"
-      ? "border-l-[#DC2626] bg-[#FEF2F2]"
+      ? "border-red-200 bg-red-50"
       : p.level === "warn"
-        ? "border-l-[#D97706] bg-[#FFFBEB]"
-        : "border-l-[#64748B] bg-[#F8FAFC]";
-  const icon = p.level === "error" ? "🔴" : p.level === "warn" ? "🟠" : "ℹ️";
+        ? "border-amber-200 bg-amber-50"
+        : "border-slate-200 bg-slate-50";
   return (
-    <li className={`rounded-lg border border-[#E3D6B8] border-l-4 px-4 py-3 ${tone}`}>
-      <p className="text-sm font-bold text-[#2B2116]">{icon} {p.title}</p>
-      {p.cause && <p className="mt-1 text-sm text-[#3B2F1E]"><strong>Why:</strong> {p.cause}</p>}
-      {p.advice && <p className="mt-0.5 text-sm text-[#3B2F1E]"><strong>What to do:</strong> {p.advice}</p>}
+    <li className={`flex gap-3 rounded-2xl border p-4 ${box}`}>
+      <span
+        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white ${
+          p.level === "error" ? "bg-red-500" : p.level === "warn" ? "bg-amber-500" : "bg-slate-500"
+        }`}
+      >
+        {tone === "bad" ? <X size={15} /> : <AlertTriangle size={14} />}
+      </span>
+      <div className="min-w-0">
+        <p className="text-base font-bold text-[#2B2116]">{p.title}</p>
+        {p.cause && (
+          <p className="mt-1 text-sm leading-relaxed text-[#3B2F1E]">
+            <span className="font-bold">কেন হলো:</span> {p.cause}
+          </p>
+        )}
+        {p.advice && (
+          <p className="mt-1 text-sm leading-relaxed text-[#3B2F1E]">
+            <span className="font-bold">কী করবেন:</span> {p.advice}
+          </p>
+        )}
+      </div>
     </li>
   );
 }
+
+function Fold({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className={`group ${PANEL} px-5 py-4 sm:px-6`}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-lg font-bold text-[#2B2116] [&::-webkit-details-marker]:hidden">
+        {title}
+        <ChevronDown size={18} className="text-[#7A6A50] transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="mt-4">{children}</div>
+    </details>
+  );
+}
+
+const RUN_MINUTES = 315;
 
 export default function BotStatusPanel() {
   const [data, setData] = useState<BotStatus | null>(null);
@@ -134,24 +191,59 @@ export default function BotStatusPanel() {
   const upSessions = sessions.filter((x) => x.usable && x.healthy).length;
   const problems = data?.problems ?? [];
   const errorsCount = problems.filter((p) => p.level === "error").length;
-  const handoff =
-    data?.startedAt && !Number.isNaN(new Date(data.startedAt).getTime())
-      ? new Date(new Date(data.startedAt).getTime() + 315 * 60_000).toISOString()
-      : "";
+  const startedMs = data?.startedAt ? new Date(data.startedAt).getTime() : NaN;
+  const handoff = Number.isNaN(startedMs) ? "" : new Date(startedMs + RUN_MINUTES * 60_000).toISOString();
+  const runPct = Math.min(100, Math.max(2, ((data?.uptimeSeconds ?? 0) / (RUN_MINUTES * 60)) * 100));
+
+  const offline = !!data && !data.online;
+  const allDown = sessions.length > 0 && upSessions === 0;
+  let tone: Tone = "ok";
+  if (offline || allDown || errorsCount > 0) tone = "bad";
+  else if (upSessions < sessions.length || problems.length > 0) tone = "warn";
+
+  let title = "সব ঠিক আছে";
+  let sub = `${sessions.length}টা সেশনের সবকটা ঠিক আছে। ছবি বানানো যাচ্ছে।`;
+  if (offline) {
+    title = "বট এখন বন্ধ আছে";
+    sub = data?.reason || "বট উত্তর দিচ্ছে না। নতুন করে চালু হতে পারে, ১-২ মিনিট পরে আবার Refresh চাপুন।";
+  } else if (allDown) {
+    title = "সব সেশন বন্ধ, ছবি বানানো যাচ্ছে না";
+    sub = "নিচে প্রতিটা সেশনের কারণ দেওয়া আছে।";
+  } else if (tone === "bad") {
+    title = "একটা বড় সমস্যা আছে";
+    sub = `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ আর করণীয় দেওয়া আছে।`;
+  } else if (tone === "warn") {
+    title = "বট চলছে, তবে কিছু দেখার আছে";
+    sub = `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ দেওয়া আছে।`;
+  }
+  const t = TONE[tone];
 
   return (
-    <div className="space-y-6">
-      <section className={`${PANEL} p-5 sm:p-6`}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#DC2626] text-white shadow-sm">
-              <Activity size={18} />
-            </span>
-            <div>
-              <h2 className="text-lg font-bold text-[#2B2116]">Image bot status</h2>
-              <p className="text-sm text-[#6B5A40]">
-                Everything about the Gemini image bot in one place. Nothing runs by itself: press the button to check
-                {data?.checkedAt ? ` · last checked ${dhaka(data.checkedAt)} (Dhaka time)` : ""}.
+    <div className="space-y-5">
+      {/* Verdict */}
+      <section
+        className="relative overflow-hidden rounded-3xl border border-[#3A2F22] bg-[#1F1913] p-6 text-white shadow-[0_24px_50px_-28px_rgba(31,25,19,0.9)] sm:p-8"
+        style={data ? { backgroundImage: `radial-gradient(520px 220px at 0% 0%, ${t.glow}, transparent 70%)` } : undefined}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            {data ? (
+              <span className="relative flex h-16 w-16 shrink-0 items-center justify-center">
+                {tone === "ok" && <span className="absolute inset-0 rounded-full opacity-40 motion-safe:animate-ping" style={{ background: t.color }} />}
+                <span className="relative flex h-16 w-16 items-center justify-center rounded-full border-2" style={{ borderColor: t.color, background: t.glow, color: t.color }}>
+                  {tone === "ok" ? <Check size={30} strokeWidth={3} /> : tone === "warn" ? <AlertTriangle size={28} /> : <X size={30} strokeWidth={3} />}
+                </span>
+              </span>
+            ) : (
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-[#5A4A32] text-[#E0A53A]">
+                <Activity size={28} />
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#CDBFA3]">Image bot (Gemini)</p>
+              <h2 className="text-2xl font-bold leading-snug sm:text-3xl">{data ? title : "বটের অবস্থা দেখুন"}</h2>
+              <p className="mt-1 max-w-xl text-base leading-relaxed text-[#E6DAB9]">
+                {data ? sub : "বাটন চাপলে বট চালু আছে কিনা, সেশনগুলো ঠিক আছে কিনা আর কতগুলো ছবি বানানো হয়েছে, সব এক জায়গায় দেখা যাবে।"}
               </p>
             </div>
           </div>
@@ -159,214 +251,137 @@ export default function BotStatusPanel() {
             type="button"
             onClick={() => void load()}
             disabled={loading}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#D8C9A6] bg-[#FFFDF6] px-4 text-sm font-bold text-[#3B2F1E] transition hover:bg-[#F6EDD4] disabled:opacity-60"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-[#E0A53A] px-5 text-sm font-bold text-[#2B2116] transition hover:bg-[#EDB853] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60"
           >
-            <RefreshCw size={15} className={loading ? "animate-spin" : ""} /> {loading ? "Checking..." : data ? "Refresh" : "Check bot status"}
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+            {loading ? "চেক হচ্ছে..." : data ? "Refresh" : "বট চেক করুন"}
           </button>
         </div>
 
-        {!data && !loading && !error && (
-          <p className="mt-4 rounded-xl border border-dashed border-[#D8C9A6] bg-[#FFFDF6] px-4 py-6 text-center text-sm font-semibold text-[#6B5A40]">
-            Press “Check bot status” to see the bot, the Google sessions and the images made in this run.
-          </p>
+        {error && <p className="mt-5 rounded-xl border border-red-400/40 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-200">{error}</p>}
+
+        {data?.online && s && (
+          <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 lg:grid-cols-4">
+            {[
+              { k: "সেশন ঠিক আছে", v: `${upSessions}/${sessions.length}` },
+              { k: "ছবি বানানো হয়েছে", v: String(s.jobsOk) },
+              { k: "সফলতার হার", v: `${rate}%` },
+              { k: "গড় সময়", v: s.jobsOk > 0 ? `${s.avgSeconds} সেকেন্ড` : "–" },
+            ].map((x) => (
+              <div key={x.k} className="bg-[#1F1913] px-5 py-4">
+                <dd className="text-2xl font-bold tabular-nums sm:text-3xl">{x.v}</dd>
+                <dt className="mt-0.5 text-sm text-[#CDBFA3]">{x.k}</dt>
+              </div>
+            ))}
+          </dl>
         )}
 
-        {error && <p className="mt-4 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-sm font-semibold text-[#B91C1C]">{error}</p>}
-
         {data && (
-          <p className={`mt-4 rounded-xl px-4 py-3 text-sm font-bold ${data.online ? "bg-emerald-50 text-emerald-700" : "bg-[#FEF2F2] text-[#B91C1C]"}`}>
-            {data.online ? `Bot is ONLINE · sessions ready ${upSessions}/${sessions.length}` : `Bot is OFFLINE · ${data.reason || "no answer"}`}
+          <p className="mt-5 flex items-center gap-2 text-sm text-[#CDBFA3]">
+            <Clock size={14} />
+            শেষ চেক: {dhaka(data.checkedAt)} (বাংলাদেশ সময়). নিজে নিজে আপডেট হয় না, নতুন তথ্য দেখতে Refresh চাপুন।
           </p>
         )}
       </section>
 
-      {data && (
-        <section className={`${PANEL} p-5 sm:p-6`}>
-          <h3 className="text-base font-bold text-[#2B2116]">
-            📊 বট রিপোর্ট{data.online ? ` (এই রান ${bnDuration(data.uptimeSeconds ?? 0)} ধরে চলছে)` : ""}
-          </h3>
-          {!data.online ? (
-            <p className="mt-3 rounded-xl bg-[#FEF2F2] px-4 py-3 text-sm font-bold text-[#B91C1C]">
-              🔴 বট এখন উত্তর দিচ্ছে না। হয়তো নতুন করে চালু হচ্ছে (১-২ মিনিট অপেক্ষা করে আবার চাপুন)। নিচে GitHub-এর রান দেখুন।
-            </p>
-          ) : (
-            s && (
-              <div className="mt-3 space-y-1.5 text-sm leading-relaxed text-[#3B2F1E]">
-                <p>
-                  <strong>ছবি:</strong> {s.jobsOk} সফল, {s.jobsFailed} ফেল (সাফল্য {rate}%)
-                </p>
-                {s.retries > 0 && (
-                  <p>
-                    <strong>রিট্রাই:</strong> {s.retries} বার (রিফিউজ {s.attemptsRefused}, টাইমআউট {s.attemptsTimedOut})
-                  </p>
-                )}
-                {s.jobsOk > 0 && (
-                  <>
-                    <p>
-                      <strong>গড় সময়:</strong> {s.avgSeconds} সেকেন্ড
-                    </p>
-                    <p>
-                      <strong>সর্বোচ্চ একসাথে:</strong> {s.peakActive}, <strong>লাইনে সর্বোচ্চ:</strong> {s.peakWaiting}
-                    </p>
-                  </>
-                )}
-                <p>
-                  <strong>এখন চলছে:</strong> {data.generation?.active ?? 0}টা, <strong>লাইনে অপেক্ষায়:</strong> {data.generation?.waiting ?? 0}টা
-                </p>
-                <p>
-                  <strong>সেশন:</strong>{" "}
-                  {sessions.map((x, i) => (
-                    <span key={x.slot}>
-                      {i > 0 ? " | " : ""}
-                      {x.slot}: {x.images}টা {x.usable && x.healthy ? "🟢" : "🔴"}
-                    </span>
-                  ))}
-                </p>
-                {sessions.filter((x) => !(x.usable && x.healthy)).map((x) => (
-                  <p key={`down-${x.slot}`} className="font-semibold text-[#B91C1C]">
-                    ⚠️ সেশন {x.slot}: {sessionReasonBn(x)}
-                  </p>
-                ))}
-                {sessions.length > 0 && upSessions === sessions.length && (
-                  <p className="font-bold text-emerald-700">✅ সব সেশন ঠিক আছে।</p>
-                )}
-                {sessions.length > 0 && upSessions === 0 && (
-                  <p className="font-bold text-[#B91C1C]">🚨 সব সেশন বন্ধ! এখন ছবি বানানো সম্ভব না।</p>
-                )}
-              </div>
-            )
-          )}
-          <p className="mt-4 border-t border-[#E3D6B8] pt-3 text-xs text-[#6B5A40]">নিচে প্রতিটা জিনিস আরও বিস্তারিত দেখানো আছে।</p>
-        </section>
-      )}
-
-      {data && (
-        <section className={`${PANEL} p-5 sm:p-6`}>
-          <h3 className="text-base font-bold text-[#2B2116]">
-            Problems right now {problems.length > 0 && <span className="ml-1 text-sm font-semibold text-[#6B5A40]">({errorsCount} serious, {problems.length - errorsCount} other)</span>}
-          </h3>
-          {problems.length === 0 ? (
-            <p className="mt-3 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">✅ No problems found. Everything looks fine.</p>
-          ) : (
-            <ul className="mt-3 space-y-2">{problems.map((p, i) => <ProblemItem key={`${p.title}-${i}`} p={p} />)}</ul>
-          )}
+      {/* Problems (only when there are some) */}
+      {data && problems.length > 0 && (
+        <section className={`${PANEL} p-5 sm:p-7`}>
+          <SectionTitle title="সমস্যা আর করণীয়" hint={`${errorsCount} টা গুরুতর, ${problems.length - errorsCount} টা অন্য`} />
+          <ul className="mt-4 space-y-3">
+            {problems.map((p, i) => (
+              <ProblemItem key={`${p.title}-${i}`} p={p} />
+            ))}
+          </ul>
         </section>
       )}
 
       {data?.online && s && (
         <>
-          <section className={`${PANEL} p-5 sm:p-6`}>
-            <h3 className="text-base font-bold text-[#2B2116]">This bot run</h3>
-            <p className="mt-1 text-xs text-[#6B5A40]">
-              A bot run lasts about 5 hours 20 minutes, then a new one takes over. The numbers start again from zero in each run.
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Stat label="Running for" value={duration(data.uptimeSeconds ?? 0)} hint={data.startedAt ? `Started ${dhakaShort(data.startedAt)}` : ""} />
-              <Stat label="Next takeover" value={handoff ? `~${dhakaShort(handoff)}` : "–"} hint="A new run starts shortly before" />
-              <Stat label="Images made" value={s.jobsOk} hint={`${s.jobs} requests`} />
-              <Stat label="Failed" value={s.jobsFailed} hint={`Success rate ${rate}%`} />
-              <Stat label="Auto retries" value={s.retries} hint={`Declined ${s.attemptsRefused} · timeout ${s.attemptsTimedOut}`} />
-              <Stat label="Average time" value={`${s.avgSeconds}s`} hint="per image" />
-              <Stat label="Working now" value={data.generation?.active ?? 0} hint={`Capacity ${data.generation?.currentCapacity ?? 0}`} />
-              <Stat label="Waiting in line" value={data.generation?.waiting ?? 0} hint={`Peak at once ${s.peakActive} · peak line ${s.peakWaiting}`} />
-            </div>
-          </section>
-
-          <section className={`${PANEL} p-5 sm:p-6`}>
-            <h3 className="text-base font-bold text-[#2B2116]">Google sessions</h3>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
-                <thead>
-                  <tr className="text-xs uppercase tracking-wide text-[#7A6A50]">
-                    <th className="py-2 pr-4">Session</th>
-                    <th className="py-2 pr-4">State</th>
-                    <th className="py-2 pr-4">Working now</th>
-                    <th className="py-2 pr-4">Images this run</th>
-                    <th className="py-2 pr-4">Back at</th>
-                    <th className="py-2">Last problem</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((x) => (
-                    <tr key={x.slot} className="border-t border-[#E3D6B8] align-top">
-                      <td className="py-2.5 pr-4 font-bold text-[#2B2116]">#{x.slot}</td>
-                      <td className="py-2.5 pr-4">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                            !x.usable ? "bg-[#FEE2E2] text-[#B91C1C]" : !x.healthy ? "bg-[#FEF3C7] text-[#92400E]" : "bg-emerald-100 text-emerald-700"
-                          }`}
-                        >
-                          {!x.usable ? "Stopped" : !x.healthy ? "Resting (failing)" : "Ready"}
-                        </span>
-                      </td>
-                      <td className="py-2.5 pr-4">{x.active} / {data.perSessionConcurrency ?? 0}</td>
-                      <td className="py-2.5 pr-4">{x.images}</td>
-                      <td className="py-2.5 pr-4">{dhakaShort(x.restingUntil || x.usableAgainAt) || "–"}</td>
-                      <td className="py-2.5 text-xs text-[#6B5A40]">
-                        {x.failStreak > 0 ? (
-                          <>
-                            <strong>{x.failStreak} in a row.</strong> {x.lastCause || x.lastError}
-                          </>
-                        ) : (
-                          "–"
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-3 text-xs text-[#6B5A40]">
-              &quot;Stopped&quot;: the daily limit was reached (back at the time shown) or the Google login expired. &quot;Resting (failing)&quot;: it failed or timed out several times in a row, so the bot skips it for a while and tries again later.
-            </p>
-          </section>
-
-          {data.detailed && (data.jobs ?? []).length > 0 && (
-            <section className={`${PANEL} p-5 sm:p-6`}>
-              <h3 className="text-base font-bold text-[#2B2116]">Latest images (newest first)</h3>
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[640px] text-left text-sm">
-                  <thead>
-                    <tr className="text-xs uppercase tracking-wide text-[#7A6A50]">
-                      <th className="py-2 pr-4">Started</th>
-                      <th className="py-2 pr-4">Result</th>
-                      <th className="py-2 pr-4">Time</th>
-                      <th className="py-2">Tries (session → result)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data.jobs ?? []).slice().reverse().slice(0, 20).map((j, i) => (
-                      <tr key={`${j.at}-${i}`} className="border-t border-[#E3D6B8] align-top">
-                        <td className="py-2 pr-4">{dhaka(j.at)}</td>
-                        <td className="py-2 pr-4">
-                          <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${j.ok ? "bg-emerald-100 text-emerald-700" : "bg-[#FEE2E2] text-[#B91C1C]"}`}>
-                            {j.ok ? "OK" : "Failed"}
-                          </span>
-                        </td>
-                        <td className="py-2 pr-4">{Math.round(j.ms / 1000)}s</td>
-                        <td className="py-2 text-xs text-[#3B2F1E]">
-                          {j.attempts.map((a) => `#${a.slot} ${a.result} (${Math.round(a.ms / 1000)}s)`).join("  →  ") || "–"}
-                          {j.error && <span className="block text-[#B91C1C]">{j.error}</span>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* This run */}
+          <section className={`${PANEL} p-5 sm:p-7`}>
+            <SectionTitle title="এখন কী হচ্ছে" hint="প্রতিটা রান প্রায় ৫ ঘণ্টা ২০ মিনিট চলে, তারপর নতুন রান দায়িত্ব নেয়। সংখ্যাগুলো প্রতি রানে ০ থেকে শুরু হয়।" />
+            <div className="mt-5">
+              <div className="h-3 overflow-hidden rounded-full bg-[#EADFC4]">
+                <div className="h-full rounded-full bg-[#C98A1B]" style={{ width: `${runPct}%` }} />
               </div>
-              <p className="mt-3 text-xs text-[#6B5A40]">An image with several tries was slow because the first session(s) failed. This shows exactly which one.</p>
-            </section>
-          )}
+              <div className="mt-2 flex flex-wrap justify-between gap-x-4 text-sm text-[#6B5A40]">
+                <span>শুরু {data.startedAt ? dhakaShort(data.startedAt) : "–"}</span>
+                <span className="font-bold text-[#2B2116]">{bnDuration(data.uptimeSeconds ?? 0)} ধরে চলছে</span>
+                <span>নতুন রান ~{handoff ? dhakaShort(handoff) : "–"}</span>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Fact label="এখন ছবি বানাচ্ছে" value={data.generation?.active ?? 0} hint={`সর্বোচ্চ ${data.generation?.currentCapacity ?? 0}টা একসাথে`} />
+              <Fact label="লাইনে অপেক্ষায়" value={data.generation?.waiting ?? 0} hint={`আজকের রানে সর্বোচ্চ ${s.peakWaiting}`} />
+              <Fact label="ফেল হয়েছে" value={s.jobsFailed} hint={`মোট ${s.jobs}টা অনুরোধ`} tone={s.jobsFailed > 0 ? "warn" : undefined} />
+              <Fact label="অটো রিট্রাই" value={s.retries} hint={`রিফিউজ ${s.attemptsRefused}, টাইমআউট ${s.attemptsTimedOut}`} />
+            </div>
+          </section>
 
-          {data.detailed && (data.events ?? []).length > 0 && (
-            <section className={`${PANEL} p-5 sm:p-6`}>
-              <h3 className="text-base font-bold text-[#2B2116]">Events (newest first)</h3>
-              <ul className="mt-3 space-y-2">
-                {(data.events ?? []).slice().reverse().slice(0, 25).map((e, i) => (
-                  <li key={`${e.at}-${i}`} className="rounded-lg border border-[#E3D6B8] bg-[#FFFDF6] px-3 py-2 text-sm text-[#3B2F1E]">
-                    <span className="font-bold">{dhaka(e.at)}</span> · {e.slot ? `Session #${e.slot} · ` : ""}
-                    <strong>{EVENT_LABEL[e.type] || e.type}</strong>
-                    <span className="block text-xs text-[#6B5A40]">{e.message}</span>
-                    {e.cause && <span className="block text-xs text-[#6B5A40]"><strong>Why:</strong> {e.cause} {e.advice}</span>}
+          {/* Sessions */}
+          <section className={`${PANEL} p-5 sm:p-7`}>
+            <SectionTitle title="Google সেশন" hint={`${upSessions}/${sessions.length} ঠিক আছে`} />
+            <ul className="mt-5 grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
+              {sessions.map((x) => {
+                const st: Tone = !x.usable ? "bad" : !x.healthy ? "warn" : "ok";
+                const label = !x.usable ? "বন্ধ" : !x.healthy ? "বিশ্রামে" : "ঠিক আছে";
+                const cap = data.perSessionConcurrency ?? 0;
+                const pct = cap > 0 ? Math.min(100, (x.active / cap) * 100) : 0;
+                return (
+                  <li key={x.slot} className={`rounded-2xl border p-4 ${st === "ok" ? "border-[#EADFC4] bg-[#FBF5E4]" : st === "warn" ? "border-amber-200 bg-amber-50" : "border-red-200 bg-red-50"}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-base font-bold text-[#2B2116]">Session {x.slot}</span>
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: TONE[st].color }} />
+                    </div>
+                    <p className={`mt-1 text-sm font-bold ${TONE[st].text}`}>{label}</p>
+                    <p className="mt-3 text-sm text-[#6B5A40]">
+                      <span className="text-lg font-bold tabular-nums text-[#2B2116]">{x.images}</span>টা ছবি বানিয়েছে
+                    </p>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#EADFC4]" aria-hidden>
+                      <div className="h-full rounded-full bg-[#C98A1B]" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="mt-1 text-xs text-[#7A6A50]">এখন কাজ করছে {x.active}/{cap}</p>
+                  </li>
+                );
+              })}
+            </ul>
+            {sessions.some((x) => !(x.usable && x.healthy) || x.failStreak > 0) && (
+              <ul className="mt-4 space-y-2">
+                {sessions
+                  .filter((x) => !(x.usable && x.healthy) || x.failStreak > 0)
+                  .map((x) => (
+                    <li key={`why-${x.slot}`} className="rounded-xl bg-[#FBF5E4] px-4 py-3 text-sm leading-relaxed text-[#3B2F1E]">
+                      <span className="font-bold">Session {x.slot}:</span>{" "}
+                      {!(x.usable && x.healthy) ? sessionReasonBn(x) : `সাম্প্রতিক ${x.failStreak}বার ফেল করেছে। ${x.lastCause || x.lastError}`}
+                      {x.lastAdvice && <span className="block text-[#6B5A40]">কী করবেন: {x.lastAdvice}</span>}
+                    </li>
+                  ))}
+              </ul>
+            )}
+            <p className="mt-4 text-sm leading-relaxed text-[#7A6A50]">
+              “বন্ধ” মানে দৈনিক লিমিট শেষ অথবা Google লগ-আউট হয়ে গেছে। “বিশ্রামে” মানে পরপর কয়েকবার ফেল করায় বট কিছুক্ষণ ওই সেশন বাদ দিয়ে পরে আবার চেষ্টা করবে।
+            </p>
+          </section>
+
+          {/* Latest images */}
+          {data.detailed && (data.jobs ?? []).length > 0 && (
+            <section className={`${PANEL} p-5 sm:p-7`}>
+              <SectionTitle title="সাম্প্রতিক ছবি" hint="সবচেয়ে নতুন আগে। একাধিক চেষ্টা মানে প্রথম সেশন ফেল করেছিল।" />
+              <ul className="mt-4 divide-y divide-[#EADFC4]">
+                {(data.jobs ?? []).slice().reverse().slice(0, 12).map((j, i) => (
+                  <li key={`${j.at}-${i}`} className="flex flex-wrap items-center gap-x-4 gap-y-1.5 py-3">
+                    <span className="w-24 text-sm font-semibold tabular-nums text-[#2B2116]">{dhaka(j.at)}</span>
+                    <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${j.ok ? "bg-emerald-100 text-emerald-800" : "bg-red-100 text-red-800"}`}>{j.ok ? "সফল" : "ফেল"}</span>
+                    <span className="text-sm tabular-nums text-[#6B5A40]">{Math.round(j.ms / 1000)} সেকেন্ড</span>
+                    <span className="flex flex-wrap gap-1.5">
+                      {j.attempts.map((a, k) => (
+                        <span key={k} className={`rounded-md px-2 py-0.5 text-xs font-semibold ${a.result === "ok" ? "bg-[#F2E8D2] text-[#5A4A32]" : "bg-amber-100 text-amber-900"}`}>
+                          Session {a.slot}: {a.result} ({Math.round(a.ms / 1000)}s)
+                        </span>
+                      ))}
+                    </span>
+                    {j.error && <span className="basis-full text-sm text-red-700">{j.error}</span>}
                   </li>
                 ))}
               </ul>
@@ -375,37 +390,58 @@ export default function BotStatusPanel() {
         </>
       )}
 
+      {/* GitHub runs */}
       {data?.runs && data.runs.length > 0 && (
-        <section className={`${PANEL} p-5 sm:p-6`}>
-          <h3 className="text-base font-bold text-[#2B2116]">GitHub bot runs</h3>
-          <ul className="mt-3 space-y-2">
-            {data.runs.map((r) => (
-              <li key={r.number} className="flex flex-wrap items-center gap-x-3 rounded-lg border border-[#E3D6B8] bg-[#FFFDF6] px-3 py-2 text-sm text-[#3B2F1E]">
-                <span className="font-bold">#{r.number}</span>
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                    r.status === "in_progress" ? "bg-emerald-100 text-emerald-700" : r.conclusion === "success" ? "bg-[#F2E8D2] text-[#5A4A32]" : "bg-[#FEF3C7] text-[#92400E]"
-                  }`}
-                >
-                  {r.status === "completed" ? r.conclusion || "completed" : r.status.replace("_", " ")}
-                </span>
-                <span>{r.event === "schedule" ? "scheduled" : r.event === "workflow_dispatch" ? "started by hand or by the previous run" : r.event}</span>
-                <span className="text-xs text-[#6B5A40]">started {dhakaShort(r.startedAt)}</span>
-              </li>
-            ))}
+        <section className={`${PANEL} p-5 sm:p-7`}>
+          <SectionTitle title="GitHub রান" hint="বট যে রান-এ চলে। একটা শেষ হওয়ার আগে পরেরটা শুরু হয়।" />
+          <ul className="mt-4 space-y-2">
+            {data.runs.map((r) => {
+              const live = r.status === "in_progress";
+              const label = live ? "চলছে" : r.conclusion === "success" ? "সম্পন্ন" : r.conclusion === "cancelled" ? "বাতিল" : r.conclusion === "failure" ? "ব্যর্থ" : r.status === "queued" ? "অপেক্ষায়" : r.conclusion || r.status;
+              const pill = live ? "bg-emerald-100 text-emerald-800" : r.conclusion === "success" ? "bg-[#F2E8D2] text-[#5A4A32]" : r.conclusion === "failure" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900";
+              return (
+                <li key={r.number} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-[#FBF5E4] px-4 py-3 text-sm text-[#3B2F1E]">
+                  <span className="w-12 font-bold tabular-nums text-[#2B2116]">#{r.number}</span>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-xs font-bold ${pill}`}>
+                    {live && <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 motion-safe:animate-pulse" />}
+                    {label}
+                  </span>
+                  <span className="text-[#6B5A40]">
+                    {r.event === "schedule" ? "নির্ধারিত সময়ে শুরু" : r.event === "workflow_dispatch" ? "হাতে বা আগের রান শুরু করেছে" : r.event}
+                  </span>
+                  <span className="ml-auto tabular-nums text-[#6B5A40]">শুরু {dhakaShort(r.startedAt)}</span>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
 
+      {/* Technical details, folded away */}
+      {data?.online && data.detailed && (data.events ?? []).length > 0 && (
+        <Fold title="ঘটনার তালিকা (টেকনিক্যাল)">
+          <ul className="space-y-2">
+            {(data.events ?? []).slice().reverse().slice(0, 25).map((e, i) => (
+              <li key={`${e.at}-${i}`} className="rounded-xl bg-[#FBF5E4] px-4 py-3 text-sm text-[#3B2F1E]">
+                <span className="font-bold tabular-nums">{dhaka(e.at)}</span> {e.slot ? `· Session ${e.slot} ` : ""}· <strong>{EVENT_LABEL[e.type] || e.type}</strong>
+                <span className="mt-0.5 block text-[#6B5A40]">{e.message}</span>
+                {e.cause && (
+                  <span className="mt-0.5 block text-[#6B5A40]">
+                    <strong>কেন:</strong> {e.cause} {e.advice}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Fold>
+      )}
+
       {data?.online && data.detailed && (data.logTail ?? []).length > 0 && (
-        <section className={`${PANEL} p-5 sm:p-6`}>
-          <details>
-            <summary className="cursor-pointer text-base font-bold text-[#2B2116]">Bot log (last {(data.logTail ?? []).length} lines)</summary>
-            <pre className="mt-3 max-h-96 overflow-auto rounded-lg border border-[#E3D6B8] bg-[#2B2116] p-3 text-xs leading-relaxed text-[#F6EDD4]">
-              {(data.logTail ?? []).map((l) => `${dhaka(l.at)} ${l.level === "error" ? "ERR " : ""}${l.text}`).join("\n")}
-            </pre>
-          </details>
-        </section>
+        <Fold title={`বট লগ (শেষ ${(data.logTail ?? []).length} লাইন)`}>
+          <pre className="max-h-96 overflow-auto rounded-2xl border border-[#3A2F22] bg-[#1F1913] p-4 text-xs leading-relaxed text-[#F6EDD4]">
+            {(data.logTail ?? []).map((l) => `${dhaka(l.at)} ${l.level === "error" ? "ERR " : ""}${l.text}`).join("\n")}
+          </pre>
+        </Fold>
       )}
     </div>
   );
