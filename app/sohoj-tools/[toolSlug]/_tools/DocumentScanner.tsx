@@ -5550,20 +5550,6 @@ export default function DocumentScanner() {
       setDeletingSavedDocumentId(null);
     }
   };
-  const createCurrentWorkingCanvas =
-    useCallback(async (): Promise<HTMLCanvasElement | null> => {
-      if (!selectedImageSrc) return null;
-      const source = croppedOriginalSrc || selectedImageSrc;
-      const img = await loadImage(source);
-      return createRotatedCanvas(img, normalizeAngle(rotation - bakedRotation));
-    }, [
-      selectedImageSrc,
-      croppedOriginalSrc,
-      rotation,
-      bakedRotation,
-      loadImage,
-      createRotatedCanvas,
-    ]);
   const handleResetAdjustments = () => {
     setBlackness(0);
     setContrast(0);
@@ -9255,7 +9241,14 @@ export default function DocumentScanner() {
               </div>
 
               <div className="scanner-preview-column flex-1 min-w-0 min-h-0 flex flex-col gap-2">
-              <div ref={previewBoxRef} className="scanner-preview-canvas flex-1 bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl flex items-center justify-center p-1 sm:p-1.5 relative overflow-hidden min-h-[380px] sm:min-h-[480px] lg:min-h-[620px]">
+              <div ref={previewBoxRef} className={`scanner-preview-canvas flex-1 bg-[#FBF6E8] border border-[#E3D6B8] rounded-xl flex items-center justify-center p-1 sm:p-1.5 relative overflow-hidden transition-[min-height] duration-200 ${
+                  // While cropping, give the picture as much room as possible
+                  // so the edges are easy to see when placing the corners.
+                  isManualCropping
+                    ? "min-h-[75vh] sm:min-h-[calc(100vh-160px)]"
+                    : "min-h-[380px] sm:min-h-[480px] lg:min-h-[620px]"
+                }`}
+              >
 
                 {images.length === 0 ? (
                   <label className="flex flex-col items-center justify-center gap-3 cursor-pointer text-[#6B5A40] hover:text-[#5A4A32] transition-colors p-6 text-center">

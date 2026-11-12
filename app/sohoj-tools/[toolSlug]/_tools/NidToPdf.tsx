@@ -3,10 +3,12 @@ import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type SyntheticEvent,
@@ -31,6 +33,7 @@ import {
   ChevronRight,
   Eye,
   CheckCircle2,
+  Printer,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import { createPortal } from "react-dom";
@@ -45,11 +48,36 @@ import { detectDocumentCornersCv } from "./documentCorners";
 /* -------------------------------------------------------------------------- */
 const NID_TRANSLATIONS: Record<string, string> = {
   "crop —": "ক্রপ —",
-  "drag all four orange corner handles onto the card edges. the selected area will be straightened to a cr80-sized rectangle.":
-    "কমলার চারটি কোণার হ্যান্ডেল কার্ডের প্রান্তে টেনে বসান। নির্বাচিত অংশটি CR80 আকারের একটি সোজা আয়তক্ষেত্রে রূপান্তরিত হবে।",
+  "drag all four blue corner handles onto the card edges. the selected area will be straightened to a cr80-sized rectangle.":
+    "নীল রঙের চারটি বিন্দু (১ থেকে ৪) কার্ডের চার কোণায় টেনে বসান। নির্বাচিত অংশটি CR80 আকারের একটি সোজা আয়তক্ষেত্রে রূপান্তরিত হবে।",
+  "tip: press and hold a dot to see a zoomed view. click a dot and use the arrow keys (shift = bigger steps) to fine-tune.":
+    "পরামর্শ: বিন্দু ধরে রাখলে বড় করে দেখা যাবে। বিন্দুতে ক্লিক করে কিবোর্ডের তীর চিহ্ন দিয়ে (Shift চাপলে বড় ধাপে) সূক্ষ্মভাবে সরাতে পারবেন।",
+  "crop area looks good": "ক্রপের এলাকা ঠিক আছে",
+  "crop area is too small. move the corner handles farther apart.":
+    "ক্রপের এলাকা খুব ছোট। বিন্দুগুলো আরও দূরে সরান।",
+  "crop corners crossed. keep the four corners in clockwise or counter-clockwise order.":
+    "বিন্দুগুলোর রেখা একে অপরকে কেটে গেছে। ১→২→৩→৪ ক্রমে ঘুরিয়ে কার্ডের চার কোণায় বসান।",
+  "crop corners are too close together. move each handle to a different card corner.":
+    "বিন্দুগুলো খুব কাছাকাছি। প্রতিটি বিন্দু কার্ডের আলাদা কোণায় বসান।",
   "loading image…": "ছবি লোড হচ্ছে…",
   "cropping…": "ক্রপ করা হচ্ছে…",
   "reset corners": "কোণাগুলো রিসেট করুন",
+  "preview —": "পূর্বরূপ —",
+  "this is your uploaded photo. crop it so the card fills the frame.":
+    "এটি আপনার আপলোড করা ছবি। কার্ডটি ফ্রেম জুড়ে আনতে ক্রপ করুন।",
+  "check your photo": "ছবিটি দেখে নিন",
+  "not cropped yet. press crop manually to select the card edges, or close if the photo is already fine.":
+    "এখনো ক্রপ করা হয়নি। কার্ডের প্রান্ত বেছে নিতে নিজে ক্রপ করুন চাপুন, ছবি ঠিক থাকলে বন্ধ করুন।",
+  "photo size:": "ছবির আকার:",
+  "use as it is": "যেমন আছে তেমন ব্যবহার করুন",
+  "keep this photo without cropping": "ক্রপ না করেই এই ছবি রাখুন",
+  "crop this photo": "এই ছবি ক্রপ করুন",
+  "loading photo…": "ছবি লোড হচ্ছে…",
+  "the image could not be loaded for preview.":
+    "ছবিটি পূর্বরূপের জন্য লোড করা যায়নি।",
+  "click to view this image larger": "ছবিটি বড় করে দেখতে ক্লিক করুন",
+  "zoom with the buttons below or ctrl + scroll to place the dots more precisely.":
+    "নিখুঁতভাবে বসাতে নিচের বাটন বা Ctrl + স্ক্রল দিয়ে জুম করুন।",
   cancel: "বাতিল করুন",
   "apply crop": "ক্রপ প্রয়োগ করুন",
   "crop preview —": "ক্রপের পূর্বরূপ —",
@@ -107,6 +135,8 @@ const NID_TRANSLATIONS: Record<string, string> = {
   reset: "রিসেট করুন",
   "creating...": "তৈরি করা হচ্ছে...",
   "create pdf": "PDF তৈরি করুন",
+  print: "প্রিন্ট করুন",
+  "preparing...": "প্রস্তুত হচ্ছে...",
   "close manual crop": "ম্যানুয়াল ক্রপ বন্ধ করুন",
   "crop target": "ক্রপ করার ছবি",
   "close crop preview": "ক্রপের পূর্বরূপ বন্ধ করুন",
@@ -152,12 +182,6 @@ const NID_TRANSLATIONS: Record<string, string> = {
     "স্বয়ংক্রিয়ভাবে ক্রপ করা ছবি প্রস্তুত করা যায়নি।",
   "could not prepare the image for manual crop.":
     "ম্যানুয়াল ক্রপের জন্য ছবি প্রস্তুত করা যায়নি।",
-  "crop area is too small. move the corner handles farther apart.":
-    "ক্রপের এলাকা খুব ছোট। চারটি কোণার হ্যান্ডেল আরও দূরে সরান।",
-  "crop corners are too close together. move each handle to a different card corner.":
-    "ক্রপের কোণাগুলো খুব কাছাকাছি। প্রতিটি হ্যান্ডেল আলাদা কার্ডের কোণায় সরান।",
-  "crop corners crossed. keep the four corners in clockwise or counter-clockwise order.":
-    "ক্রপের কোণাগুলো পরস্পর অতিক্রম করেছে। চারটি কোণ ঘড়ির কাঁটার দিকে বা বিপরীত দিকে সঠিক ক্রমে রাখুন।",
   "crop points do not form a valid perspective shape.":
     "ক্রপের পয়েন্টগুলো বৈধ পার্সপেক্টিভ আকৃতি তৈরি করছে না।",
   "exactly four crop points are required.":
@@ -298,7 +322,12 @@ async function waitForOpenCv(signal?: AbortSignal): Promise<void> {
 }
 const NID_CROP_WIDTH = 856;
 const NID_CROP_HEIGHT = 540;
-const NID_CROP_ASPECT_RATIO = NID_CROP_WIDTH / NID_CROP_HEIGHT;
+// Largest enlargement applied to a small photo in the crop dialog.
+const CROP_MAX_UPSCALE = 6;
+// Extra zoom on top of "fit to screen" in the crop dialog (1 = fit).
+const CROP_MIN_ZOOM = 1;
+const CROP_MAX_ZOOM = 5;
+const CROP_ZOOM_STEP = 1.25;
 // ============================================================================
 // PRINT / PDF ENGINE — shared by handlePrint and handleCreatePdf
 // ============================================================================
@@ -374,23 +403,31 @@ const NID_PAGE_CSS = `
   .nid-joiner-main { flex: 1 1 0%; min-height: 0; max-height: 100%; gap: 12px !important; }
 
   /* The settings no longer have their own scrollbar on the desktop target. */
-  .nid-joiner-settings { grid-column: span 4 / span 4; height: 100%; overflow: hidden; }
+  .nid-joiner-settings { grid-column: span 4 / span 4; height: 100%; overflow-x: hidden; overflow-y: auto; }
   .nid-joiner-settings > * { min-height: 0; }
   .nid-settings-panel {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-content: start;
     gap: 6px 8px !important;
-    height: 100%;
+    min-height: 100%;
     padding: 8px !important;
-    overflow: hidden;
   }
   .nid-joiner-settings .nid-settings-panel.space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 0 !important; }
-  .nid-settings-heading,
+  .nid-settings-quick,
   .nid-settings-auto-crop,
-  .nid-settings-cleanup,
-  .nid-settings-print { grid-column: 1 / -1; min-width: 0; }
-  .nid-settings-heading { padding-bottom: 4px !important; font-size: 14px !important; }
+  .nid-settings-watermark,
+  .nid-settings-cleanup { grid-column: 1 / -1; min-width: 0; }
+  .nid-settings-quick { gap: 4px; }
+  .nid-settings-quick button { padding-top: 5px !important; padding-bottom: 5px !important; font-size: 12px !important; }
+  .nid-settings-quick > div:first-child > span:first-child { font-size: 13px !important; }
+  .nid-settings-quick > div:first-child > span:last-child { font-size: 11px !important; }
+  .nid-settings-watermark { padding-top: 5px !important; margin-top: 0 !important; }
+  .nid-settings-watermark label:first-child { font-size: 12px !important; }
+  .nid-settings-watermark label span { font-size: 11px !important; }
+  .nid-settings-watermark label { font-size: 12px !important; }
+  .nid-settings-watermark input[type="text"],
+  .nid-settings-watermark select { padding-top: 4px !important; padding-bottom: 4px !important; font-size: 12px !important; }
   .nid-settings-auto-crop { padding: 7px !important; }
   .nid-settings-auto-crop .mt-2 { margin-top: 4px !important; }
   .nid-settings-auto-crop .text-\\[15px\\] { font-size: 12px !important; }
@@ -428,7 +465,6 @@ const NID_PAGE_CSS = `
   .nid-settings-range-grid > div { min-width: 0; }
   .nid-settings-range-grid > div > div:first-child { gap: 4px; font-size: 10px !important; line-height: 1.2; }
   .nid-settings-range-grid input[type="range"] { height: 5px; }
-  .nid-settings-print { padding-top: 6px !important; padding-bottom: 6px !important; margin-top: 0 !important; }
 
   .nid-joiner-preview { grid-column: span 8 / span 8; height: 100%; padding: 10px !important; overflow: hidden; }
   .nid-joiner-preview > :first-child { flex: 0 0 auto; padding-bottom: 7px !important; }
@@ -483,6 +519,8 @@ interface SheetExportOptions {
   copies: number;
   roundedCorners: boolean;
   filter: CardFilter;
+  /** "For ... only" text stamped across each card; empty = none. */
+  watermark: string;
   front: CardInput | null;
   back: CardInput | null;
 }
@@ -691,11 +729,105 @@ function createWhiteCanvas(width: number, height: number) {
   ctx.fillRect(0, 0, width, height);
   return { canvas, ctx };
 }
-/** Renders ONE card at print resolution: fit -> filter -> rounded corners -> border -> rotation. */
+// ---- "For ... only" stamp -------------------------------------------------
+// Banks, SIM shops and offices keep NID copies, so people stamp the purpose
+// across the copy to stop it from being reused. The preview (SVG) and the
+// export (canvas) both use the numbers below, so they look the same.
+const WATERMARK_MAX_LENGTH = 48;
+const WATERMARK_FONT =
+  '"Hind Siliguri","Noto Sans Bengali","Noto Sans",system-ui,sans-serif';
+const WATERMARK_COLOR = "rgba(185, 28, 28, 0.30)";
+const WATERMARK_ANGLE_DEG = -18;
+const WATERMARK_ROW_POSITIONS = [0.22, 0.5, 0.78]; // fractions of card height
+let watermarkMeasureCtx: CanvasRenderingContext2D | null = null;
+/** Font size (in 856 x 540 card units) that keeps the text inside the card. */
+function getWatermarkFontSize(text: string): number {
+  if (!watermarkMeasureCtx) {
+    watermarkMeasureCtx = document.createElement("canvas").getContext("2d");
+  }
+  const ctx = watermarkMeasureCtx;
+  if (!ctx || !text) return 40;
+  ctx.font = `700 100px ${WATERMARK_FONT}`;
+  const widthAt100 = ctx.measureText(text).width || 1;
+  return Math.max(
+    14,
+    Math.min(
+      (NID_CROP_WIDTH * 0.8 * 100) / widthAt100,
+      NID_CROP_HEIGHT * 0.13,
+    ),
+  );
+}
+async function ensureWatermarkFont(text: string) {
+  try {
+    await document.fonts?.load(`700 40px ${WATERMARK_FONT}`, text);
+  } catch {
+    // The stamp still works with a fallback font.
+  }
+}
+function drawWatermark(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  text: string,
+) {
+  const k = width / NID_CROP_WIDTH;
+  ctx.save();
+  ctx.font = `700 ${getWatermarkFontSize(text) * k}px ${WATERMARK_FONT}`;
+  ctx.fillStyle = WATERMARK_COLOR;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (const row of WATERMARK_ROW_POSITIONS) {
+    ctx.save();
+    ctx.translate(width / 2, height * row);
+    ctx.rotate((WATERMARK_ANGLE_DEG * Math.PI) / 180);
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+/** Live preview of the stamp; sits on top of one card photo. */
+function WatermarkOverlay({ text }: { text: string }) {
+  const [, setFontReady] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    void ensureWatermarkFont(text).then(() => {
+      if (alive) setFontReady((n) => n + 1);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [text]);
+  const fontSize = getWatermarkFontSize(text);
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox={`0 0 ${NID_CROP_WIDTH} ${NID_CROP_HEIGHT}`}
+      preserveAspectRatio="none"
+      className="absolute inset-0 z-[5] w-full h-full pointer-events-none"
+    >
+      {WATERMARK_ROW_POSITIONS.map((row) => (
+        <text
+          key={row}
+          transform={`translate(${NID_CROP_WIDTH / 2} ${NID_CROP_HEIGHT * row}) rotate(${WATERMARK_ANGLE_DEG})`}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={fontSize}
+          fontWeight={700}
+          fontFamily={WATERMARK_FONT}
+          fill={WATERMARK_COLOR}
+        >
+          {text}
+        </text>
+      ))}
+    </svg>
+  );
+}
+/** Renders ONE card at print resolution: fit -> filter -> stamp -> rounded corners -> border -> rotation. */
 async function renderCardCanvas(
   input: CardInput,
   filter: CardFilter,
   rounded: boolean,
+  watermark: string,
 ): Promise<HTMLCanvasElement> {
   const img = await loadImageFromFile(input.file);
   const pxPerMm = EXPORT_DPI / MM_PER_INCH;
@@ -714,6 +846,8 @@ async function renderCardCanvas(
   base.ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
   // 2) filters
   applyCardFilter(base.ctx, w, h, filter);
+  // Stamp after the filter, so black-and-white mode does not wash it out.
+  if (watermark) drawWatermark(base.ctx, w, h, watermark);
   // 3) rounded clip + border on a white card
   const radius = rounded ? CARD_RADIUS_MM * pxPerMm : 0;
   const borderPx = Math.max(1, Math.round(CARD_BORDER_MM * pxPerMm));
@@ -745,9 +879,14 @@ async function renderCardCanvas(
   return out.canvas;
 }
 async function renderCards(o: SheetExportOptions) {
+  if (o.watermark) await ensureWatermarkFont(o.watermark);
   const [front, back] = await Promise.all([
-    o.front ? renderCardCanvas(o.front, o.filter, o.roundedCorners) : null,
-    o.back ? renderCardCanvas(o.back, o.filter, o.roundedCorners) : null,
+    o.front
+      ? renderCardCanvas(o.front, o.filter, o.roundedCorners, o.watermark)
+      : null,
+    o.back
+      ? renderCardCanvas(o.back, o.filter, o.roundedCorners, o.watermark)
+      : null,
   ]);
   return { front, back } as Record<CardSide, HTMLCanvasElement | null>;
 }
@@ -837,7 +976,7 @@ async function printSheet(o: SheetExportOptions) {
           .filter((placement) => blobUrls[placement.side])
           .map(
             (placement) =>
-              `<img class="card" alt={t("")} src="${blobUrls[placement.side]}" style="left:${mm(placement.x)};top:${mm(placement.y)};width:${mm(placement.width)};height:${mm(placement.height)}">`,
+              `<img class="card" alt="" src="${blobUrls[placement.side]}" style="left:${mm(placement.x)};top:${mm(placement.y)};width:${mm(placement.width)};height:${mm(placement.height)}">`,
           )
           .join("")}</section>`,
     )
@@ -1310,12 +1449,78 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [dispSize, setDispSize] = useState({ width: 0, height: 0 });
   const [cropError, setCropError] = useState<string | null>(null);
+  const [focusIdx, setFocusIdx] = useState<number | null>(null);
+  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
+  const [stageBox, setStageBox] = useState({ width: 0, height: 0 });
+  const [zoom, setZoom] = useState(1);
+  // Where the pointer was (as a fraction of the photo) when a zoom started, so
+  // the same spot stays under the pointer after the photo is resized.
+  const zoomAnchorRef = useRef<{
+    fx: number;
+    fy: number;
+    clientX: number;
+    clientY: number;
+  } | null>(null);
+  // Distance between the grabbed spot and the dot centre, so a dot does not
+  // jump to the pointer when it is picked up slightly off-centre.
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
   const imageUrl = useObjectUrl(file);
+  // Size the photo to fill the stage, also enlarging small photos (CSS
+  // max-width/height alone never scales an image up), so the card edges are
+  // easy to see while placing the four dots.
+  const fitSize = useMemo(() => {
+    const { width: nw, height: nh } = naturalSize;
+    const { width: sw, height: sh } = stageBox;
+    if (nw <= 0 || nh <= 0 || sw <= 0 || sh <= 0) return null;
+    const scale =
+      Math.min(sw / nw, sh / nh, CROP_MAX_UPSCALE) * zoom;
+    return { width: Math.floor(nw * scale), height: Math.floor(nh * scale) };
+  }, [naturalSize, stageBox, zoom]);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const measure = () => {
+      const cs = window.getComputedStyle(stage);
+      const padX =
+        (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      const padY =
+        (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      setStageBox({
+        // offsetWidth/Height include scrollbars, so the "fit" size stays the
+        // same when zooming makes scrollbars appear.
+        width: Math.max(0, stage.offsetWidth - padX - 2),
+        height: Math.max(0, stage.offsetHeight - padY - 2),
+      });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, []);
+  // Live feedback: tells the user at once if the four dots form a bad shape,
+  // instead of waiting until they press "Apply crop".
+  const liveCropIssue = useMemo<string | null>(() => {
+    if (dispSize.width <= 0 || dispSize.height <= 0) return null;
+    try {
+      validateCropPoints(
+        points.map((point) => ({
+          x: point.x * dispSize.width,
+          y: point.y * dispSize.height,
+        })),
+        dispSize.width,
+        dispSize.height,
+      );
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : "Invalid crop area.";
+    }
+  }, [points, dispSize.width, dispSize.height]);
   useEffect(() => {
     setIsImageLoading(true);
     setImageError(null);
     setCropError(null);
     setActiveIdx(null);
+    setZoom(1);
     activePointerIdRef.current = null;
     setPoints([
       { x: 0.05, y: 0.05 },
@@ -1340,6 +1545,10 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
     const handleLoaded = () => {
       setIsImageLoading(false);
       setImageError(null);
+      setNaturalSize({
+        width: image.naturalWidth,
+        height: image.naturalHeight,
+      });
       updateDisplaySize();
       observer = new ResizeObserver(updateDisplaySize);
       observer.observe(image);
@@ -1365,6 +1574,59 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
       window.removeEventListener("resize", updateDisplaySize);
     };
   }, [imageUrl, updateDisplaySize]);
+  // Changes the zoom and keeps the given screen point (default: the middle of
+  // the visible area) fixed on the photo.
+  const zoomBy = useCallback(
+    (factor: number, at?: { clientX: number; clientY: number }) => {
+      const image = imgRef.current;
+      const stage = stageRef.current;
+      if (!image || !stage) return;
+      const rect = image.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      const stageRect = stage.getBoundingClientRect();
+      const clientX = at?.clientX ?? stageRect.left + stageRect.width / 2;
+      const clientY = at?.clientY ?? stageRect.top + stageRect.height / 2;
+      zoomAnchorRef.current = {
+        fx: (clientX - rect.left) / rect.width,
+        fy: (clientY - rect.top) / rect.height,
+        clientX,
+        clientY,
+      };
+      setZoom((current) =>
+        Math.min(CROP_MAX_ZOOM, Math.max(CROP_MIN_ZOOM, current * factor)),
+      );
+    },
+    [],
+  );
+  // After the photo is resized, scroll so the anchored spot is back under the
+  // pointer, and refresh the overlay size right away (no one-frame lag).
+  useLayoutEffect(() => {
+    const anchor = zoomAnchorRef.current;
+    const image = imgRef.current;
+    const stage = stageRef.current;
+    zoomAnchorRef.current = null;
+    if (!anchor || !image || !stage) return;
+    const rect = image.getBoundingClientRect();
+    stage.scrollLeft += rect.left + anchor.fx * rect.width - anchor.clientX;
+    stage.scrollTop += rect.top + anchor.fy * rect.height - anchor.clientY;
+    updateDisplaySize();
+  }, [zoom, updateDisplaySize]);
+  // Ctrl + scroll (or a trackpad pinch) zooms. This needs a non-passive
+  // listener, because React's onWheel cannot call preventDefault.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      zoomBy(event.deltaY < 0 ? CROP_ZOOM_STEP : 1 / CROP_ZOOM_STEP, {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
+    };
+    stage.addEventListener("wheel", handleWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", handleWheel);
+  }, [zoomBy]);
   const getPointFromClientPosition = useCallback(
     (clientX: number, clientY: number): CropPoint => {
       const image = imgRef.current;
@@ -1380,7 +1642,12 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
   );
   const updatePoint = useCallback(
     (idx: number, clientX: number, clientY: number) => {
-      const nextPoint = getPointFromClientPosition(clientX, clientY);
+      const pointer = getPointFromClientPosition(clientX, clientY);
+      const offset = dragOffsetRef.current;
+      const nextPoint = {
+        x: Math.max(0, Math.min(1, pointer.x + offset.x)),
+        y: Math.max(0, Math.min(1, pointer.y + offset.y)),
+      };
       setPoints((prev) => {
         const next = [...prev];
         next[idx] = nextPoint;
@@ -1397,7 +1664,19 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
     e.preventDefault();
     e.stopPropagation();
     activePointerIdRef.current = e.pointerId;
+    const grabbed = getPointFromClientPosition(e.clientX, e.clientY);
+    dragOffsetRef.current = {
+      x: points[idx].x - grabbed.x,
+      y: points[idx].y - grabbed.y,
+    };
     setActiveIdx(idx);
+    // preventDefault() blocks the normal focus, so focus the dot by hand;
+    // this lets the arrow keys nudge it right after a click.
+    try {
+      (e.currentTarget as unknown as HTMLElement).focus({ preventScroll: true });
+    } catch {
+      // Focus is optional.
+    }
     setCropError(null);
     const stage = stageRef.current;
     if (stage) {
@@ -1432,6 +1711,7 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
       }
     }
     activePointerIdRef.current = null;
+    dragOffsetRef.current = { x: 0, y: 0 };
     setActiveIdx(null);
   }, []);
   const handlePointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -1455,6 +1735,31 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
       { x: 0.05, y: 0.95 },
     ]);
     setCropError(null);
+  };
+  const handleHandleKeyDown = (
+    idx: number,
+    e: ReactKeyboardEvent<SVGCircleElement>,
+  ) => {
+    if (isProcessing || isImageLoading || imageError) return;
+    if (dispSize.width <= 0 || dispSize.height <= 0) return;
+    const step = e.shiftKey ? 10 : 1;
+    let dx = 0;
+    let dy = 0;
+    if (e.key === "ArrowLeft") dx = -step;
+    else if (e.key === "ArrowRight") dx = step;
+    else if (e.key === "ArrowUp") dy = -step;
+    else if (e.key === "ArrowDown") dy = step;
+    else return;
+    e.preventDefault();
+    setCropError(null);
+    setPoints((prev) => {
+      const next = [...prev];
+      next[idx] = {
+        x: Math.max(0, Math.min(1, prev[idx].x + dx / dispSize.width)),
+        y: Math.max(0, Math.min(1, prev[idx].y + dy / dispSize.height)),
+      };
+      return next;
+    });
   };
   const handleApplyCrop = async () => {
     const image = imgRef.current;
@@ -1525,13 +1830,53 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
         </button>
       </div>
 
-      <div className="px-4 sm:px-6 py-2 bg-[#F6EEDB]/50 text-[13px] text-[#6B5A40] font-medium border-b border-[#E3D6B8] shrink-0">
-        <NidT>
-          {
-            "Drag all four orange corner handles onto the card edges. The selected\n        area will be straightened to a CR80-sized rectangle.\n      "
-          }
-        </NidT>
+      <div className="px-4 sm:px-6 py-2.5 bg-[#F6EEDB]/50 text-[#6B5A40] font-medium border-b border-[#E3D6B8] shrink-0">
+        <p className="text-[14px] font-semibold text-[#3B2F1E]">
+          <NidT>
+            {
+              "Drag all four blue corner handles onto the card edges. The selected\n        area will be straightened to a CR80-sized rectangle.\n      "
+            }
+          </NidT>
+        </p>
+        <p className="mt-0.5 text-[12.5px]">
+          <NidT>
+            {
+              "Tip: press and hold a dot to see a zoomed view. Click a dot and use the arrow keys (Shift = bigger steps) to fine-tune."
+            }
+          </NidT>{" "}
+          <span className="[@media(pointer:coarse)]:hidden">
+            <NidT>
+              {
+                "Zoom with the buttons below or Ctrl + scroll to place the dots more precisely."
+              }
+            </NidT>
+          </span>
+        </p>
       </div>
+
+      {activeIdx !== null && dispSize.width > 0 && imageUrl && (() => {
+        const LOUPE = 150;
+        const ZOOM = 3;
+        const p = points[activeIdx];
+        const onRight = p.x < 0.5;
+        return (
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none fixed top-[130px] z-[9999] overflow-hidden rounded-full border-4 border-white bg-white shadow-2xl ring-2 ring-[#2563EB] ${onRight ? "right-4" : "left-4"}`}
+            style={{
+              width: LOUPE,
+              height: LOUPE,
+              backgroundImage: `url("${imageUrl}")`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: `${dispSize.width * ZOOM}px ${dispSize.height * ZOOM}px`,
+              backgroundPosition: `${LOUPE / 2 - p.x * dispSize.width * ZOOM}px ${LOUPE / 2 - p.y * dispSize.height * ZOOM}px`,
+            }}
+          >
+            <span className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-[#2563EB]/80" />
+            <span className="absolute bottom-0 top-0 left-1/2 w-px -translate-x-1/2 bg-[#2563EB]/80" />
+          </div>
+        );
+      })()}
 
       <div
         ref={stageRef}
@@ -1541,9 +1886,9 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
         onPointerLeave={() => {
           // Pointer capture keeps an active drag alive even after leaving the stage.
         }}
-        className="flex-1 min-h-0 w-full flex items-center justify-center p-3 sm:p-4 relative overflow-auto scroll touch-none"
+        className="flex-1 min-h-0 w-full flex p-3 sm:p-4 relative overflow-auto scroll touch-none"
       >
-        <div className="relative inline-block max-w-full max-h-full shadow-lg rounded-sm bg-white touch-none">
+        <div className="relative m-auto shrink-0 shadow-lg rounded-sm bg-white touch-none">
           {imageUrl && (
             <img
               ref={imgRef}
@@ -1551,7 +1896,12 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
               alt={t("Crop target")}
               draggable={false}
               onLoad={updateDisplaySize}
-              className="max-w-[calc(100vw-24px)] sm:max-w-[calc(100vw-48px)] max-h-[calc(100vh-190px)] object-contain block pointer-events-none select-none"
+              style={
+                fitSize
+                  ? { width: fitSize.width, height: fitSize.height }
+                  : undefined
+              }
+              className="max-w-none max-h-none block pointer-events-none select-none"
             />
           )}
 
@@ -1563,41 +1913,89 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
               viewBox={`0 0 ${dispSize.width} ${dispSize.height}`}
               preserveAspectRatio="none"
             >
+              {/* Darken everything outside the selection so it stands out. */}
+              <path
+                d={`M0,0H${dispSize.width}V${dispSize.height}H0Z M${pPx
+                  .map((point) => `${point.x},${point.y}`)
+                  .join(" L")}Z`}
+                fill="rgba(15, 23, 42, 0.38)"
+                fillRule="evenodd"
+                pointerEvents="none"
+              />
               <polygon
                 points={pPx.map((point) => `${point.x},${point.y}`).join(" ")}
-                fill="rgba(59, 130, 246, 0.12)"
-                stroke="#0088ff"
+                fill={
+                  liveCropIssue
+                    ? "rgba(220, 38, 38, 0.10)"
+                    : "rgba(59, 130, 246, 0.04)"
+                }
+                stroke={liveCropIssue ? "#DC2626" : "#0088ff"}
                 strokeWidth="2"
                 vectorEffect="non-scaling-stroke"
                 pointerEvents="none"
               />
 
-              {pPx.map((point, idx) => (
-                <g key={idx}>
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r="15"
-                    fill="transparent"
-                    stroke="transparent"
-                    className="cursor-grab active:cursor-grabbing pointer-events-auto"
-                    onPointerDown={(e) => handlePointerDown(idx, e)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`${sideTitle} crop corner ${idx + 1}`}
-                  />
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r="8"
-                    fill="#2563EB"
-                    stroke="#ffffff"
-                    strokeWidth="2.5"
-                    vectorEffect="non-scaling-stroke"
-                    className="cursor-grab active:cursor-grabbing pointer-events-none"
-                  />
-                </g>
-              ))}
+              {pPx.map((point, idx) => {
+                const isActive = activeIdx === idx;
+                const isFocused = focusIdx === idx;
+                return (
+                  <g key={idx}>
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="26"
+                      fill="transparent"
+                      stroke="transparent"
+                      className="cursor-grab active:cursor-grabbing pointer-events-auto outline-none"
+                      onPointerDown={(e) => handlePointerDown(idx, e)}
+                      onKeyDown={(e) => handleHandleKeyDown(idx, e)}
+                      onFocus={() => setFocusIdx(idx)}
+                      onBlur={() =>
+                        setFocusIdx((current) =>
+                          current === idx ? null : current,
+                        )
+                      }
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${sideTitle} crop corner ${idx + 1}`}
+                    />
+                    {(isActive || isFocused) && (
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r="17"
+                        fill="rgba(37, 99, 235, 0.18)"
+                        stroke="#2563EB"
+                        strokeWidth="1.5"
+                        vectorEffect="non-scaling-stroke"
+                        pointerEvents="none"
+                      />
+                    )}
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r="11"
+                      fill={isActive ? "#1D4ED8" : "#2563EB"}
+                      stroke="#ffffff"
+                      strokeWidth="2.5"
+                      vectorEffect="non-scaling-stroke"
+                      pointerEvents="none"
+                    />
+                    <text
+                      x={point.x}
+                      y={point.y}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize="12"
+                      fontWeight="700"
+                      fill="#ffffff"
+                      pointerEvents="none"
+                    >
+                      {idx + 1}
+                    </text>
+                  </g>
+                );
+              })}
             </svg>
           )}
 
@@ -1629,6 +2027,23 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
             <NidT>{cropError}</NidT>
           </div>
         )}
+        {!cropError && !isImageLoading && !imageError && liveCropIssue && (
+          <div
+            role="status"
+            className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] font-semibold text-amber-900"
+          >
+            <NidT>{liveCropIssue}</NidT>
+          </div>
+        )}
+        {!cropError && !isImageLoading && !imageError && !liveCropIssue && dispSize.width > 0 && (
+          <div
+            role="status"
+            className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-emerald-700"
+          >
+            <CheckCircle2 size={15} />
+            <NidT>{"Crop area looks good"}</NidT>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <button
@@ -1639,6 +2054,42 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
           >
             <NidT>{"Reset corners\n          "}</NidT>
           </button>
+
+          <div className="flex items-center justify-center gap-1 text-[#3B2F1E] [@media(pointer:coarse)]:hidden">
+            <button
+              type="button"
+              onClick={() => zoomBy(1 / CROP_ZOOM_STEP)}
+              disabled={zoom <= CROP_MIN_ZOOM}
+              title={t("Zoom Out")}
+              aria-label={t("Zoom Out")}
+              className="p-2 border border-[#E3D6B8] rounded-xl hover:bg-[#EFE3C8] transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ZoomOut size={16} />
+            </button>
+            <span className="min-w-[48px] text-center text-[13px] font-bold tabular-nums">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => zoomBy(CROP_ZOOM_STEP)}
+              disabled={zoom >= CROP_MAX_ZOOM}
+              title={t("Zoom In")}
+              aria-label={t("Zoom In")}
+              className="p-2 border border-[#E3D6B8] rounded-xl hover:bg-[#EFE3C8] transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ZoomIn size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoom(1)}
+              disabled={zoom === 1}
+              title={t("Reset Zoom")}
+              aria-label={t("Reset Zoom")}
+              className="p-2 border border-[#E3D6B8] rounded-xl hover:bg-[#EFE3C8] transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Maximize2 size={16} />
+            </button>
+          </div>
 
           <div className="flex items-center justify-end gap-2">
             <button
@@ -1677,12 +2128,21 @@ function CropModal({ file, sideTitle, onClose, onApply }: CropModalProps) {
 interface CropReviewModalProps {
   file: File;
   sideTitle: string;
+  /** Same CSS filter as the sheet preview, so the review matches the PDF. */
+  filterStyle: string;
+  /** "For ... only" stamp shown on the sheet; empty = none. */
+  watermark: string;
+  /** false = the photo as uploaded (not cropped to the card yet). */
+  cropped: boolean;
   onClose: () => void;
   onManualCrop: () => void;
 }
 function CropReviewModal({
   file,
   sideTitle,
+  filterStyle,
+  watermark,
+  cropped,
   onClose,
   onManualCrop,
 }: CropReviewModalProps) {
@@ -1716,8 +2176,17 @@ function CropReviewModal({
   };
   const handleImageError = () => {
     setImageLoading(false);
-    setImageError("The cropped image could not be loaded for preview.");
+    setImageError(
+      cropped
+        ? "The cropped image could not be loaded for preview."
+        : "The image could not be loaded for preview.",
+    );
   };
+  // A cropped card is always 856 x 540; an uploaded photo keeps its own shape.
+  const frameAspect =
+    cropped || !dimensions.width || !dimensions.height
+      ? NID_CROP_WIDTH / NID_CROP_HEIGHT
+      : dimensions.width / dimensions.height;
   const modal = (
     <div
       className="fixed inset-0 z-[9999] w-screen h-[100dvh] min-h-[100svh] bg-[#3B2F1E]/95 backdrop-blur-md flex flex-col font-sans page-font overflow-hidden"
@@ -1736,14 +2205,14 @@ function CropReviewModal({
                 id="nid-crop-review-title"
                 className="text-[17px] sm:text-[18px] font-extrabold text-[#3B2F1E] truncate"
               >
-                <NidT>{"Crop Preview \u2014 "}</NidT>
+                <NidT>{cropped ? "Crop Preview \u2014 " : "Preview \u2014 "}</NidT>
                 {sideTitle}
               </h2>
               <p className="text-[13px] sm:text-[14px] text-[#6B5A40] font-medium truncate mt-0.5">
                 <NidT>
-                  {
-                    "This is the exact cropped image that will be used in your PDF.\n              "
-                  }
+                  {cropped
+                    ? "This is the exact cropped image that will be used in your PDF."
+                    : "This is your uploaded photo. Crop it so the card fills the frame."}
                 </NidT>
               </p>
             </div>
@@ -1765,9 +2234,11 @@ function CropReviewModal({
           <div className="w-full max-w-7xl rounded-3xl border border-[#FBF6E8]/15 bg-[#FBF6E8]/10 p-2 sm:p-4 shadow-xl">
             <div className="w-full rounded-2xl bg-[#F3E9D2] border border-[#FBF6E8]/20 flex items-center justify-center overflow-hidden relative [background-image:radial-gradient(#B0A080_1px,transparent_1px)] [background-size:16px_16px]">
               <div
-                className="relative w-[min(96vw,1240px)] max-h-[74vh] aspect-[856/540] rounded-xl bg-white overflow-hidden shadow-[0_18px_50px_rgba(59,47,30,0.3)]"
+                className="relative rounded-xl bg-white overflow-hidden shadow-[0_18px_50px_rgba(59,47,30,0.3)]"
                 style={{
-                  aspectRatio: `${NID_CROP_WIDTH} / ${NID_CROP_HEIGHT}`,
+                  aspectRatio: String(frameAspect),
+                  // As wide as possible, but never taller than 74% of the screen.
+                  width: `min(96vw, 1240px, calc(74vh * ${frameAspect}))`,
                 }}
               >
                 {imageUrl && (
@@ -1777,15 +2248,24 @@ function CropReviewModal({
                     onLoad={handleImageLoad}
                     onError={handleImageError}
                     draggable={false}
-                    className="absolute inset-0 block w-full h-full max-w-none max-h-none object-fill select-none bg-white"
+                    style={{ filter: filterStyle }}
+                    className={`absolute inset-0 block w-full h-full max-w-none max-h-none select-none bg-white ${
+                      cropped ? "object-fill" : "object-contain"
+                    }`}
                   />
+                )}
+
+                {cropped && watermark && !imageLoading && !imageError && (
+                  <WatermarkOverlay text={watermark} />
                 )}
 
                 {imageLoading && !imageError && (
                   <div className="absolute inset-0 flex items-center justify-center bg-[#FBF6E8]/90">
                     <div className="rounded-full bg-[#3B2F1E]/90 text-white px-4 py-2 text-[13px] font-bold shadow-xl">
                       <NidT>
-                        {"Loading final crop\u2026\n                    "}
+                        {cropped
+                          ? "Loading final crop\u2026"
+                          : "Loading photo\u2026"}
                       </NidT>
                     </div>
                   </div>
@@ -1809,19 +2289,21 @@ function CropReviewModal({
                     className="text-emerald-600 shrink-0"
                   />
                   <p className="text-[15px] sm:text-[17px] font-extrabold text-[#3B2F1E]">
-                    <NidT>{"Review the final crop\n                  "}</NidT>
+                    <NidT>
+                      {cropped ? "Review the final crop" : "Check your photo"}
+                    </NidT>
                   </p>
                 </div>
                 <p className="text-[13px] sm:text-[14px] text-[#6B5A40] font-medium mt-1.5 leading-relaxed">
                   <NidT>
-                    {
-                      "Check that the full NID card is visible, all four corners are\n                  included, and no important text or edge is cut off.\n                "
-                    }
+                    {cropped
+                      ? "Check that the full NID card is visible, all four corners are included, and no important text or edge is cut off."
+                      : "Not cropped yet. Press Crop manually to select the card edges, or close if the photo is already fine."}
                   </NidT>
                 </p>
                 {dimensions.width > 0 && dimensions.height > 0 && (
                   <p className="text-[13px] text-[#6B5A40] font-semibold mt-1">
-                    <NidT>{"Output size: "}</NidT>
+                    <NidT>{cropped ? "Output size: " : "Photo size: "}</NidT>
                     {dimensions.width}
                     <NidT>{"\u00D7 "}</NidT>
                     {dimensions.height}
@@ -1844,7 +2326,7 @@ function CropReviewModal({
                     <span className="min-w-0">
                       <span className="block text-[15px] font-extrabold text-[#3B2F1E]">
                         <NidT>
-                          {"Not correct? Crop manually\n                      "}
+                          {cropped ? "Not correct? Crop manually" : "Crop this photo"}
                         </NidT>
                       </span>
                       <span className="block text-[13px] font-semibold text-[#DC2626]/80 mt-0.5">
@@ -1871,16 +2353,16 @@ function CropReviewModal({
                     <span className="min-w-0">
                       <span className="block text-[15px] font-extrabold text-white">
                         <NidT>
-                          {
-                            "Looks correct \u2014 use this crop\n                      "
-                          }
+                          {cropped
+                            ? "Looks correct \u2014 use this crop"
+                            : "Use as it is"}
                         </NidT>
                       </span>
                       <span className="block text-[13px] font-semibold text-white/90 mt-0.5">
                         <NidT>
-                          {
-                            "Keep this image and continue to PDF\n                      "
-                          }
+                          {cropped
+                            ? "Keep this image and continue to PDF"
+                            : "Keep this photo without cropping"}
                         </NidT>
                       </span>
                     </span>
@@ -1897,7 +2379,8 @@ function CropReviewModal({
 }
 // --- MAIN NID TO PDF PAGE ---
 export default function NidToPdf() {
-  const { t } = useNidText();
+  const { t, locale } = useNidText();
+  const isBn = String(locale ?? "").toLowerCase().startsWith("bn");
   const [autoCrop, setAutoCrop] = useState(false);
   const [orientation, setOrientation] = useState<"portrait" | "landscape">(
     "portrait",
@@ -1920,6 +2403,8 @@ export default function NidToPdf() {
   const [blackBoost, setBlackBoost] = useState<number>(0);
   const [saturation, setSaturation] = useState<number>(0);
   const [textDeepen, setTextDeepen] = useState<number>(0);
+  const [watermarkInput, setWatermarkInput] = useState("");
+  const [watermarkDate, setWatermarkDate] = useState(false);
   const [frontImage, setFrontImage] = useState<File | null>(null);
   const [backImage, setBackImage] = useState<File | null>(null);
   const [frontCropSource, setFrontCropSource] = useState<File | null>(null);
@@ -1932,6 +2417,7 @@ export default function NidToPdf() {
   );
   const [autoCropChoiceOpen, setAutoCropChoiceOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isPreparingPrint, setIsPreparingPrint] = useState(false);
   const [processingSide, setProcessingSide] = useState<"front" | "back" | null>(
     null,
   );
@@ -2314,6 +2800,18 @@ export default function NidToPdf() {
   const frontWrapperHeight = isFrontPortrait ? cardDim.width : cardDim.height;
   const backWrapperWidth = isBackPortrait ? cardDim.height : cardDim.width;
   const backWrapperHeight = isBackPortrait ? cardDim.width : cardDim.height;
+  // The text stamped on the copy ("For ... only", plus the date if asked).
+  const watermarkText = useMemo(() => {
+    const base = watermarkInput.trim();
+    if (!base) return "";
+    if (!watermarkDate) return base;
+    const date = new Date().toLocaleDateString(isBn ? "bn-BD" : "en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    return `${base} · ${date}`;
+  }, [watermarkInput, watermarkDate, isBn]);
   const buildSheetExportOptions = (): SheetExportOptions => ({
     orientation,
     layout,
@@ -2321,6 +2819,7 @@ export default function NidToPdf() {
     copies,
     roundedCorners,
     filter: imageFilterParams,
+    watermark: watermarkText,
     front: frontImage
       ? {
           file: frontImage,
@@ -2339,6 +2838,7 @@ export default function NidToPdf() {
   const handlePrint = async () => {
     if (isPrintingRef.current || (!frontImage && !backImage)) return;
     isPrintingRef.current = true;
+    setIsPreparingPrint(true);
     try {
       await printSheet(buildSheetExportOptions());
     } catch (error) {
@@ -2346,6 +2846,7 @@ export default function NidToPdf() {
       setProcessingError("Could not prepare the print job. Please try again.");
     } finally {
       isPrintingRef.current = false;
+      setIsPreparingPrint(false);
     }
   };
   const handleCreatePdf = async () => {
@@ -2405,6 +2906,9 @@ export default function NidToPdf() {
         <CropReviewModal
           file={frontImage}
           sideTitle="Front of NID card"
+          filterStyle={imageFilterStyle}
+          watermark={watermarkText}
+          cropped={frontCropReviewReady}
           onClose={() => setCropReviewSide(null)}
           onManualCrop={() => openManualCropFromReview("front")}
         />
@@ -2414,6 +2918,9 @@ export default function NidToPdf() {
         <CropReviewModal
           file={backImage}
           sideTitle="Back of NID card"
+          filterStyle={imageFilterStyle}
+          watermark={watermarkText}
+          cropped={backCropReviewReady}
           onClose={() => setCropReviewSide(null)}
           onManualCrop={() => openManualCropFromReview("back")}
         />
@@ -2661,7 +3168,11 @@ export default function NidToPdf() {
           setSaturation={setSaturation}
           textDeepen={textDeepen}
           setTextDeepen={setTextDeepen}
-          handlePrint={handlePrint}
+          watermarkInput={watermarkInput}
+          setWatermarkInput={setWatermarkInput}
+          watermarkDate={watermarkDate}
+          setWatermarkDate={setWatermarkDate}
+          watermarkMaxLength={WATERMARK_MAX_LENGTH}
         />
         </div>
 
@@ -2782,11 +3293,11 @@ export default function NidToPdf() {
                 {Array.from({ length: copies }).map((_, copyIndex) => (
                   <div
                     key={copyIndex}
-                    className={`relative w-full flex justify-center items-center ${layout === "side-by-side" ? "flex-row" : "flex-col"}`}
+                    className={`group/row relative w-full flex justify-center items-center ${layout === "side-by-side" ? "flex-row" : "flex-col"}`}
                     style={{ gap: sheetPx.cardGap }}
                   >
                     {copyIndex === 0 && imageCount > 0 && (
-                      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#3B2F1E]/90 text-white rounded-full p-1 flex items-center gap-1 shadow-xl border border-[#4A3B26]/50 z-20 backdrop-blur-xs print:hidden">
+                      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#3B2F1E]/90 text-white rounded-full p-1 flex items-center gap-1 shadow-xl border border-[#4A3B26]/50 z-20 backdrop-blur-xs print:hidden opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity duration-200 [@media(hover:none)]:opacity-100">
                         {imageCount === 2 && (
                           <>
                             <button
@@ -2837,28 +3348,24 @@ export default function NidToPdf() {
                         {frontImageUrl ? (
                           <div
                             className={`relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-[#E3D6B8] ${
-                              frontCropReviewReady && processingSide !== "front"
+                              processingSide !== "front"
                                 ? "cursor-zoom-in hover:ring-2 hover:ring-[#DC2626]/40"
                                 : ""
                             }`}
-                            role={frontCropReviewReady ? "button" : undefined}
-                            tabIndex={frontCropReviewReady ? 0 : undefined}
+                            role="button"
+                            tabIndex={0}
                             title={
                               frontCropReviewReady
                                 ? t("Click to verify this cropped image")
-                                : undefined
+                                : t("Click to view this image larger")
                             }
                             onClick={() => {
-                              if (
-                                frontCropReviewReady &&
-                                processingSide !== "front"
-                              ) {
+                              if (processingSide !== "front") {
                                 setCropReviewSide("front");
                               }
                             }}
                             onKeyDown={(event) => {
                               if (
-                                frontCropReviewReady &&
                                 processingSide !== "front" &&
                                 (event.key === "Enter" || event.key === " ")
                               ) {
@@ -2883,21 +3390,20 @@ export default function NidToPdf() {
                               </div>
                             )}
 
-                            {frontCropReviewReady &&
-                              processingSide !== "front" && (
-                                <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[11px] font-bold shadow-md print:hidden flex items-center gap-1">
-                                  <Eye size={10} />
-                                  {frontAutoCropped ? (
-                                    <NidT>
-                                      {"Auto crop applied · Click to verify"}
-                                    </NidT>
-                                  ) : (
-                                    <NidT>
-                                      {"Manual crop applied · Click to verify"}
-                                    </NidT>
-                                  )}
-                                </span>
-                              )}
+                            {processingSide !== "front" && (
+                              <span
+                                title={
+                                  frontCropReviewReady
+                                    ? frontAutoCropped
+                                      ? t("Auto crop applied · Click to verify")
+                                      : t("Manual crop applied · Click to verify")
+                                    : t("Click to view this image larger")
+                                }
+                                className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-emerald-600 text-white shadow-md print:hidden flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 [@media(hover:none)]:opacity-80"
+                              >
+                                <Eye size={11} />
+                              </span>
+                            )}
 
                             <img
                               src={frontImageUrl}
@@ -2909,6 +3415,10 @@ export default function NidToPdf() {
                               }`}
                               style={{ filter: imageFilterStyle }}
                             />
+
+                            {watermarkText && (
+                              <WatermarkOverlay text={watermarkText} />
+                            )}
 
                             <div
                               className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-[#3B2F1E]/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-[#4A3B26]/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden"
@@ -3020,28 +3530,24 @@ export default function NidToPdf() {
                         {backImageUrl ? (
                           <div
                             className={`relative group w-full h-full overflow-hidden flex justify-center items-center bg-transparent border border-[#E3D6B8] ${
-                              backCropReviewReady && processingSide !== "back"
+                              processingSide !== "back"
                                 ? "cursor-zoom-in hover:ring-2 hover:ring-[#DC2626]/40"
                                 : ""
                             }`}
-                            role={backCropReviewReady ? "button" : undefined}
-                            tabIndex={backCropReviewReady ? 0 : undefined}
+                            role="button"
+                            tabIndex={0}
                             title={
                               backCropReviewReady
                                 ? t("Click to verify this cropped image")
-                                : undefined
+                                : t("Click to view this image larger")
                             }
                             onClick={() => {
-                              if (
-                                backCropReviewReady &&
-                                processingSide !== "back"
-                              ) {
+                              if (processingSide !== "back") {
                                 setCropReviewSide("back");
                               }
                             }}
                             onKeyDown={(event) => {
                               if (
-                                backCropReviewReady &&
                                 processingSide !== "back" &&
                                 (event.key === "Enter" || event.key === " ")
                               ) {
@@ -3066,21 +3572,20 @@ export default function NidToPdf() {
                               </div>
                             )}
 
-                            {backCropReviewReady &&
-                              processingSide !== "back" && (
-                                <span className="absolute top-2 left-2 z-10 rounded-full bg-emerald-600 text-white px-2 py-1 text-[11px] font-bold shadow-md print:hidden flex items-center gap-1">
-                                  <Eye size={10} />
-                                  {backAutoCropped ? (
-                                    <NidT>
-                                      {"Auto crop applied · Click to verify"}
-                                    </NidT>
-                                  ) : (
-                                    <NidT>
-                                      {"Manual crop applied · Click to verify"}
-                                    </NidT>
-                                  )}
-                                </span>
-                              )}
+                            {processingSide !== "back" && (
+                              <span
+                                title={
+                                  backCropReviewReady
+                                    ? backAutoCropped
+                                      ? t("Auto crop applied · Click to verify")
+                                      : t("Manual crop applied · Click to verify")
+                                    : t("Click to view this image larger")
+                                }
+                                className="absolute top-1.5 right-1.5 z-10 w-5 h-5 rounded-full bg-emerald-600 text-white shadow-md print:hidden flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 [@media(hover:none)]:opacity-80"
+                              >
+                                <Eye size={11} />
+                              </span>
+                            )}
 
                             <img
                               src={backImageUrl}
@@ -3092,6 +3597,10 @@ export default function NidToPdf() {
                               }`}
                               style={{ filter: imageFilterStyle }}
                             />
+
+                            {watermarkText && (
+                              <WatermarkOverlay text={watermarkText} />
+                            )}
 
                             <div
                               className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-[#3B2F1E]/90 text-white rounded-full px-2.5 py-1 flex items-center gap-2 shadow-xl border border-[#4A3B26]/50 z-30 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all duration-200 print:hidden"
@@ -3212,6 +3721,37 @@ export default function NidToPdf() {
             className="px-4 py-2 border border-[#E3D6B8] text-[#3B2F1E] text-[15px] font-bold rounded-xl hover:bg-[#EFE3C8] transition-all cursor-pointer active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40"
           >
             <NidT>{"Reset\n          "}</NidT>
+          </button>
+
+          <button
+            onClick={handlePrint}
+            disabled={
+              (!frontImage && !backImage) ||
+              isPreparingPrint ||
+              isGeneratingPdf ||
+              processingSide !== null
+            }
+            className={`px-4 py-2 text-[15px] font-bold rounded-xl flex items-center gap-1.5 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 ${
+              frontImage || backImage
+                ? "border-[#DC2626] bg-[#FEF2F2] text-[#B91C1C] hover:bg-[#FEE2E2] cursor-pointer active:scale-[0.98]"
+                : "border-[#E3D6B8] bg-[#F6EEDB] text-[#9A8A6C] opacity-70 cursor-not-allowed"
+            } ${isPreparingPrint ? "opacity-75 !cursor-wait" : ""}`}
+          >
+            {isPreparingPrint ? (
+              <>
+                <RefreshCw size={14} className="animate-spin" />
+                <span>
+                  <NidT>{"Preparing..."}</NidT>
+                </span>
+              </>
+            ) : (
+              <>
+                <Printer size={15} />
+                <span>
+                  <NidT>{"Print"}</NidT>
+                </span>
+              </>
+            )}
           </button>
 
           <button
