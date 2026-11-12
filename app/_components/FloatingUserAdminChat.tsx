@@ -11,6 +11,7 @@ import {
 } from "react";
 import { usePathname } from "next/navigation";
 import {
+  Bot,
   CheckCheck,
   Headphones,
   LoaderCircle,
@@ -1400,9 +1401,9 @@ export default function FloatingUserAdminChat() {
             />
             <span className="absolute inset-0 flex items-center justify-center">
               <span
-                className={`flex h-[30px] w-[30px] items-center justify-center rounded-full text-white ring-2 ring-white ${isOpen ? "bg-slate-800" : "bg-rose-600"}`}
+                className={`flex h-[26px] w-[26px] items-center justify-center rounded-full text-white ring-2 ring-white ${isOpen ? "bg-slate-800" : "bg-rose-600"}`}
               >
-                {isOpen ? <Minus size={18} /> : <MessageCircle size={17} />}
+                {isOpen ? <Minus size={16} /> : <Bot size={15} strokeWidth={2.2} />}
               </span>
             </span>
             {!isOpen && unreadCount > 0 && (
