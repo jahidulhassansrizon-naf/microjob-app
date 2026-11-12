@@ -53,10 +53,10 @@ const TRANSPARENT_BACKGROUND_STYLE: React.CSSProperties = {
 /* the new photo rises out of the shaft.                               */
 /* All keyframes use the "pp-gate-" prefix so they never clash.        */
 /* ------------------------------------------------------------------ */
-const GATE_OPEN_MS = 1350;
-const GATE_CLOSE_MS = 850;
-const GATE_REVEAL_MS = 1600;
-const GATE_REVEAL_DELAY_MS = 150;
+const GATE_OPEN_MS = 900;
+const GATE_CLOSE_MS = 600;
+const GATE_REVEAL_MS = 800;
+const GATE_REVEAL_DELAY_MS = 0;
 const GATE_STAGES = [
     "Measuring your photo",
     "Detecting face and landmarks",
@@ -185,7 +185,7 @@ function GateOverlay({ active, image, background, splitImages = null }: {
         if (phase !== "closing" && phase !== "waiting")
             return;
         const stageTimer = window.setInterval(() => setStage((i: number) => Math.min(i + 1, GATE_STAGES.length - 1)), 2400);
-        const pctTimer = window.setInterval(() => setPct((p: number) => p + (96 - p) * 0.022), 150);
+        const pctTimer = window.setInterval(() => setPct((p: number) => p + (96 - p) * 0.044), 300);
         return () => {
             window.clearInterval(stageTimer);
             window.clearInterval(pctTimer);
@@ -199,7 +199,7 @@ function GateOverlay({ active, image, background, splitImages = null }: {
     const doorAnimation = (side: "l" | "r") => phase === "closing"
         ? `pp-gate-${side}-close ${GATE_CLOSE_MS - 50}ms cubic-bezier(0.7, 0, 0.2, 1) forwards`
         : phase === "revealing"
-            ? `pp-gate-${side}-open 850ms cubic-bezier(0.65, 0, 0.35, 1) forwards`
+            ? `pp-gate-${side}-open 600ms cubic-bezier(0.65, 0, 0.35, 1) forwards`
             : undefined;
     const doorStyle = (side: "l" | "r"): React.CSSProperties => ({
         transform: doorTransform(side),
@@ -211,7 +211,7 @@ function GateOverlay({ active, image, background, splitImages = null }: {
     });
     const showHud = phase === "closing" || phase === "waiting" || phase === "revealing";
     const hudAnimation = phase === "closing"
-        ? "pp-gate-fade-in 500ms ease-out 600ms both"
+        ? "pp-gate-fade-in 400ms ease-out 350ms both"
         : phase === "revealing"
             ? "pp-gate-fade-out 350ms ease-out forwards"
             : undefined;
@@ -244,7 +244,6 @@ function GateOverlay({ active, image, background, splitImages = null }: {
                 animation: phase === "waiting" ? "pp-gate-led 2s ease-in-out infinite" : undefined,
                 opacity: phase === "opening" ? 0.5 : 0.9,
             }}/>
-        {phase === "waiting" && (<div className="pp-gate-loop absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/60 to-transparent" style={{ animation: "pp-gate-sheen 4s ease-in-out infinite" }}/>)}
       </>);
     };
     const bracketCorners: React.CSSProperties[] = [
@@ -284,7 +283,7 @@ function GateOverlay({ active, image, background, splitImages = null }: {
                     ...getBackgroundStyle(background),
                     transformOrigin: "50% 55%",
                     boxShadow: "0 10px 40px rgba(59,47,30,0.35)",
-                    animation: `pp-gate-fall-d${index === 0 ? "l" : "r"} 1250ms cubic-bezier(0.55, 0.05, 0.85, 0.45) 200ms both`,
+                    animation: `pp-gate-fall-d${index === 0 ? "l" : "r"} 750ms cubic-bezier(0.55, 0.05, 0.85, 0.45) 100ms both`,
                 }}>
               {splitImages[index] && (<img src={splitImages[index] as string} alt="" className="h-full w-full object-contain"/>)}
             </div>))}
@@ -294,8 +293,8 @@ function GateOverlay({ active, image, background, splitImages = null }: {
                 transformOrigin: "50% 55%",
                 boxShadow: "0 10px 40px rgba(59,47,30,0.35)",
                 animation: phase === "opening"
-                    ? `pp-gate-fall 1100ms cubic-bezier(0.55, 0.05, 0.85, 0.45) 200ms both`
-                    : "pp-gate-rise 1050ms cubic-bezier(0.2, 0.7, 0.25, 1) 380ms both",
+                    ? `pp-gate-fall 700ms cubic-bezier(0.55, 0.05, 0.85, 0.45) 100ms both`
+                    : "pp-gate-rise 600ms cubic-bezier(0.2, 0.7, 0.25, 1) 100ms both",
             }}>
           <img src={cloneSrc} alt="" className="h-full w-full object-contain"/>
         </div>)}
@@ -310,31 +309,12 @@ function GateOverlay({ active, image, background, splitImages = null }: {
                 animation: `pp-gate-flash 600ms ease-out ${GATE_CLOSE_MS - 150}ms both`,
             }}/>)}
 
-      {/* Slow scanning beam and rising dust while the doors are sealed */}
-      {(phase === "closing" || phase === "waiting") && (<div className="absolute inset-0 overflow-hidden">
-          <div className="pp-gate-loop absolute inset-x-[6%] top-0 h-[6%]" style={{
-                background: "linear-gradient(180deg, transparent, rgba(220,38,38,0.14), transparent)",
-                animation: "pp-gate-beam 5.5s ease-in-out infinite",
-            }}/>
-          {[12, 27, 42, 58, 73, 88].map((left, i) => (<span key={left} className="pp-gate-loop absolute bottom-10 h-[3px] w-[3px] rounded-full bg-[#DC2626]/50" style={{
-                    left: `${left}%`,
-                    animation: `pp-gate-dust ${3.4 + (i % 3) * 0.7}s ease-out ${i * 0.55}s infinite`,
-                }}/>))}
-        </div>)}
-
       {/* Processing HUD */}
       {showHud && (<div className="absolute inset-0 flex flex-col items-center justify-between px-3 pb-3 pt-3" style={{ animation: hudAnimation }}>
           {/* Title */}
-          <div className="flex max-w-full items-center gap-1.5 rounded-full border border-[#E3D6B8] bg-[#FBF6E8]/95 px-3.5 py-1.5 shadow-md backdrop-blur-sm">
+          <div className="flex max-w-full items-center gap-1.5 rounded-full border border-[#E3D6B8] bg-[#FBF6E8]/95 px-3.5 py-1.5 shadow-md">
             <span className="pp-gate-loop h-1.5 w-1.5 shrink-0 rounded-full bg-[#DC2626]" style={{ animation: "pp-gate-pulse 1.4s ease-in-out infinite", boxShadow: "0 0 6px #DC2626" }}/>
-            <span className="pp-gate-loop text-center text-[12px] font-semibold leading-tight sm:text-[13px]" style={{
-                backgroundImage: "linear-gradient(90deg, #5A4A32, #3B2F1E, #DC2626, #3B2F1E, #5A4A32)",
-                backgroundSize: "200% 100%",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                color: "transparent",
-                animation: "pp-gate-shimmer 3s linear infinite",
-            }}>
+            <span className="text-center text-[12px] font-semibold leading-tight text-[#3B2F1E] sm:text-[13px]">
               {t("Your photo is generating, please wait.")}
             </span>
           </div>
@@ -349,8 +329,6 @@ function GateOverlay({ active, image, background, splitImages = null }: {
                 mask: "radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 6px))",
                 animation: "pp-gate-spin 26s linear infinite",
             }}/>
-              {/* ripples radiating from the core */}
-              {[0, 1.2].map((delay) => (<span key={delay} className="pp-gate-loop absolute inset-[30%] rounded-full" style={{ border: "1px solid rgba(220,38,38,0.4)", animation: `pp-gate-ripple 3s ease-out ${delay}s infinite` }}/>))}
               {/* orbiting dots */}
               <div className="pp-gate-loop absolute inset-[5%]" style={{ animation: "pp-gate-spin 7s linear infinite" }}>
                 <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#DC2626]" style={{ boxShadow: "0 0 8px 1px rgba(220,38,38,0.6)" }}/>
@@ -384,7 +362,7 @@ function GateOverlay({ active, image, background, splitImages = null }: {
 
           {/* Stage checklist + progress */}
           <div className="flex w-full flex-col items-center gap-2">
-            <div className="pp-gate-list w-[86%] max-w-[260px] flex-col gap-1 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8]/95 px-3 py-2 shadow-md backdrop-blur-sm">
+            <div className="pp-gate-list w-[86%] max-w-[260px] flex-col gap-1 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8]/95 px-3 py-2 shadow-md">
               {GATE_STAGES.map((label, i) => {
                 const done = i < stage;
                 const current = i === stage;

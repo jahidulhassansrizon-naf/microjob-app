@@ -1440,6 +1440,7 @@ export default function PhotoEditorPage() {
                     cache: "no-store",
                 });
                 result = await response.json().catch(() => null);
+                console.info(`[ai-editor timing] bot reply received after ${((Date.now() - generateStartedAt) / 1000).toFixed(1)}s (status ${response.status})`);
                 // One quiet automatic retry for temporary failures (bot busy, gateway timeout).
                 // Not for "Gemini could not make this image" (422): the bot already tried
                 // other accounts for that. Not when the subscription is
@@ -1537,6 +1538,7 @@ export default function PhotoEditorPage() {
             return;
         }
         generationInFlightRef.current = true;
+        const timingStartedAt = Date.now();
         let generationSucceeded = false;
         setResultItem(null);
         setPrintSession(null);
@@ -1656,6 +1658,7 @@ export default function PhotoEditorPage() {
                 ...basePayload,
                 image: rawImage,
             });
+            console.info(`[ai-editor timing] bot + resize + upload done after ${((Date.now() - timingStartedAt) / 1000).toFixed(1)}s`);
             let outputDimensions: { widthPx: number; heightPx: number; dpi?: number } | null = exactExport;
             if (!outputDimensions) {
                 outputDimensions = await getImageRasterDimensions(generatedUrl);
@@ -1668,6 +1671,7 @@ export default function PhotoEditorPage() {
             setUploadedImage(generatedUrl);
             setIsDualPreviewActive(false);
             const savedGeneratedUrl = await saveBrightenedCopy(generatedUrl, currentBgHex);
+            console.info(`[ai-editor timing] brightened copy saved after ${((Date.now() - timingStartedAt) / 1000).toFixed(1)}s`);
             const newDocData = {
                 url: savedGeneratedUrl,
                 originalUrl: finalOriginal,
@@ -1753,6 +1757,7 @@ export default function PhotoEditorPage() {
             }
             generationInFlightRef.current = false;
             setIsGenerating(false);
+            console.info(`[ai-editor timing] TOTAL (button press to result) ${((Date.now() - timingStartedAt) / 1000).toFixed(1)}s`);
         }
     };
     const [deleteTarget, setDeleteTarget] = useState<any>(null);
