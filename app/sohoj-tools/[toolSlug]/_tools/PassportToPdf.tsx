@@ -1859,6 +1859,9 @@ export default function PassportToPdf() {
   const [blackBoost, setBlackBoost] = useState<number>(0);
   const [saturation, setSaturation] = useState<number>(0);
   const [textDeepen, setTextDeepen] = useState<number>(0);
+  const [watermarkInput, setWatermarkInput] = useState<string>("");
+  const [watermarkDate, setWatermarkDate] = useState<boolean>(false);
+  const WATERMARK_MAX_LENGTH = 60;
   const [frontImage, setFrontImage] = useState<File | null>(null);
   const [frontAspect, setFrontAspect] = useState<number>(DEFAULT_PAGE_ASPECT);
   const [backAspect, setBackAspect] = useState<number>(DEFAULT_PAGE_ASPECT);
@@ -2631,6 +2634,11 @@ export default function PassportToPdf() {
           setSaturation={setSaturation}
           textDeepen={textDeepen}
           setTextDeepen={setTextDeepen}
+          watermarkInput={watermarkInput}
+          setWatermarkInput={setWatermarkInput}
+          watermarkDate={watermarkDate}
+          setWatermarkDate={setWatermarkDate}
+          watermarkMaxLength={WATERMARK_MAX_LENGTH}
         />
 
         <div className="lg:col-span-8 bg-[#FBF6E8] p-5 rounded-2xl border border-[#E3D6B8] shadow-xs flex flex-col justify-between">
