@@ -40,4 +40,9 @@ session-limits.json
 chrome-profile-*/
 **/chrome-profile-*/
 facebook-session.json
+session24.json
+gemini-profile/
+**/gemini-profile/
 playwright-service/test-results/
+playwright-service/trim-session.js
+playwright-service/view-session.js

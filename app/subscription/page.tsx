@@ -4,105 +4,66 @@ import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
 import {
   useCallback,
   useEffect,
-  useRef,
   useState,
+  type FormEvent,
   type ReactNode,
 } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  CalendarCheck,
+  BadgeCheck,
   CalendarClock,
   Check,
   Clock3,
-  ShieldCheck,
-  ShoppingBag,
-  Users,
-  Wallet,
+  Copy,
+  CreditCard,
+  Images,
+  LayoutTemplate,
+  LifeBuoy,
+  LoaderCircle,
   Lock,
+  Send,
+  ShieldCheck,
   Sparkles,
-  X,
+  Wallet,
 } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
-import BrandName from "@/app/_components/BrandName";
-import OfferVideoFrame from "../_components/OfferVideoFrame";
+import { WalletLogo } from "@/app/payment/manual/_components/WalletLogos";
 import {
   SUBSCRIPTION_PLANS as DEFAULT_PLANS,
-  SUBSCRIPTION_PLAN_FEATURES as features,
   type SubscriptionPlan,
 } from "@/app/_lib/subscriptionPlans";
 
-/* Subscription plan details are shared with checkout via app/_lib/subscriptionPlans.ts. */
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
 const formatPrice = (value: number) =>
   `৳${Math.round(value).toLocaleString("en-US")}`;
 const getDiscount = (price: number, regularPrice: number) =>
-  Math.max(0, Math.round((1 - price / regularPrice) * 100));
+  regularPrice > 0
+    ? Math.max(0, Math.round((1 - price / regularPrice) * 100))
+    : 0;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const toBnDigits = (value: string | number) =>
+  String(value).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
 
-function getTiming(sub: {
-  startedAt: string | null;
-  expiresAt: string | null;
-}) {
-  const start = sub.startedAt ? Date.parse(sub.startedAt) : NaN;
+function getTiming(sub: { startedAt: string | null; expiresAt: string | null }) {
   const end = sub.expiresAt ? Date.parse(sub.expiresAt) : NaN;
-  const now = Date.now();
   const hasEnd = Number.isFinite(end);
-  const msLeft = hasEnd ? end - now : null;
+  const msLeft = hasEnd ? end - Date.now() : null;
   const expired = msLeft !== null && msLeft <= 0;
   const daysLeft =
     msLeft === null ? null : Math.max(0, Math.floor(msLeft / DAY_MS));
-  const progress =
-    Number.isFinite(start) && hasEnd && end > start
-      ? Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
-      : null;
-  return { expired, daysLeft, progress };
+  return { expired, daysLeft };
 }
 
 const capitalize = (value: string) =>
   value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : "";
 
+/* ------------------------------------------------------------------ */
+/* Bangla translation for plan names / badges (admin-managed plans)    */
+/* ------------------------------------------------------------------ */
 const SUBSCRIPTION_BN: Record<string, string> = {
-  "limited-time launch offer": "সীমিত সময়ের লঞ্চ অফার",
-  "choose the access duration that works for you. pay once; renew only when you want.":
-    "আপনার প্রয়োজন অনুযায়ী অ্যাক্সেসের মেয়াদ বেছে নিন। একবার পেমেন্ট করুন; চাইলে মেয়াদ শেষে নিজে থেকে নবায়ন করুন।",
-  "full access to all paid tools for 1 month":
-    "১ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
-  "full access to all paid tools for 6 months":
-    "৬ মাসের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
-  "full access to all paid tools for 1 year":
-    "১ বছরের জন্য সব পেইড টুলে পূর্ণ অ্যাক্সেস",
-  "regular price": "নিয়মিত মূল্য",
-  "monthly plan": "মাসিক প্ল্যান",
-  "most popular": "সবচেয়ে জনপ্রিয়",
-  "/ 1 month": "/ ১ মাস",
-  "/ 6 months": "/ ৬ মাস",
-  "/ 1 year": "/ ১ বছর",
-  "ai editor, ai template, and bulk photo edit are included":
-    "AI Editor, AI Template ও Bulk Photo Edit অন্তর্ভুক্ত",
-  "one-time payment": "একবারের পেমেন্ট",
-  "no auto-renewal": "স্বয়ংক্রিয় নবায়ন নেই",
-  "included with your subscription": "আপনার সাবস্ক্রিপশনে যা যা থাকছে",
-  "choose your subscription plan": "আপনার সাবস্ক্রিপশনের প্ল্যান নির্বাচন করুন",
-  "current subscription": "বর্তমান সাবস্ক্রিপশন",
-  "no active plan": "কোনো সক্রিয় প্ল্যান নেই",
-  "choose a plan below to unlock all the paid tools.":
-    "সব পেইড টুল ব্যবহার করতে নিচের যেকোনো একটি প্ল্যান বেছে নিন।",
-  expired: "মেয়াদ শেষ",
-  active: "সক্রিয়",
-  "day left": "দিন বাকি",
-  "days left": "দিন বাকি",
-  "this plan ended on": "এই প্ল্যানের মেয়াদ শেষ হয়েছে",
-  ". choose a plan below to renew.":
-    "। নবায়ন করতে নিচের একটি প্ল্যান বেছে নিন।",
-  "your access is active until": "আপনার অ্যাক্সেস চালু থাকবে",
-  ". you can choose any plan whenever you want.":
-    " পর্যন্ত। চাইলে যেকোনো প্ল্যান নিয়ে আবার নবায়ন করতে পারবেন।",
-  "amount paid": "পরিশোধিত অর্থ",
-  "access type": "অ্যাক্সেসের ধরন",
-  "granted by admin": "অ্যাডমিন প্রদত্ত",
-  started: "শুরুর তারিখ",
-  ended: "মেয়াদ শেষ",
-  expires: "মেয়াদ শেষ হবে",
   "1 month": "১ মাস",
   "3 months": "৩ মাস",
   "6 months": "৬ মাস",
@@ -111,43 +72,13 @@ const SUBSCRIPTION_BN: Record<string, string> = {
   "90 days": "৯০ দিন",
   "180 days": "১৮০ দিন",
   "365 days": "৩৬৫ দিন",
-  "flexible monthly access": "প্রতি মাসে নবায়নের সুবিধা",
-  "for regular users": "নিয়মিত ব্যবহারকারীদের জন্য",
-  "longer access, less hassle": "দীর্ঘমেয়াদি ব্যবহার, কম ঝামেলা",
-  "full-year access": "পুরো এক বছরের সুবিধা",
-  "most chosen": "সবচেয়ে জনপ্রিয়",
-  "best value": "সবচেয়ে সাশ্রয়ী",
-  "billed monthly": "মাসিক বিল",
-  "your selection": "আপনার নির্বাচন",
-  total: "সর্বমোট",
-  "access to all available paid tools": "সব উপলভ্য পেইড টুল ব্যবহারের সুযোগ",
-  "use the same account across supported tools":
-    "সমর্থিত সব টুলে একই অ্যাকাউন্ট ব্যবহার করুন",
-  "manage your subscription status from this page":
-    "এই পেজ থেকেই আপনার সাবস্ক্রিপশনের অবস্থা পরিচালনা করুন",
-  "payment verification and subscription access are handled automatically":
-    "অ্যাডমিন পেমেন্ট যাচাই করে অনুমোদন দিলে সাবস্ক্রিপশন চালু হবে",
-  "payment is verified before subscription access is activated":
-    "পেমেন্ট যাচাই হওয়ার পর সাবস্ক্রিপশন অ্যাক্সেস চালু হবে",
-  "back to tools": "টুলসে ফিরে যান",
-  "redirecting to payment...": "পেমেন্ট পেজে নেওয়া হচ্ছে...",
-  "online payment is ready.": "অনলাইন পেমেন্টের ব্যবস্থা প্রস্তুত।",
-  "unable to create payment request.": "পেমেন্টের অনুরোধ তৈরি করা যায়নি।",
-  "payment could not be started. please try again.":
-    "পেমেন্ট শুরু করা যায়নি। আবার চেষ্টা করুন।",
-  "watch video": "ভিডিও দেখুন",
-  "replay video": "আবার দেখুন",
-  "recent subscription activity": "সাম্প্রতিক সাবস্ক্রিপশন",
-  "payment review in progress": "পেমেন্ট যাচাই চলছে",
-  "your payment details have been submitted. paid access starts after admin approval.":
-    "আপনার পেমেন্টের তথ্য জমা হয়েছে। অ্যাডমিন অনুমোদন দিলে পেইড অ্যাক্সেস চালু হবে।",
-  "transaction id": "ট্রানজেকশন আইডি",
-  "waiting for review": "যাচাইয়ের অপেক্ষায়",
-  "total buyers": "মোট ক্রেতা",
-  "bought today": "আজ কিনেছেন",
-  "bought just now": "এইমাত্র কিনেছেন",
-  "minutes ago": "মিনিট আগে",
-  "purchase notification": "ক্রয় নোটিফিকেশন",
+  "monthly plan": "মাসিক প্ল্যান",
+  "most popular": "সবচেয়ে জনপ্রিয়",
+  "best value": "সবচেয়ে সাশ্রয়ী",
+  "most chosen": "সবচেয়ে জনপ্রিয়",
+  "regular price": "নিয়মিত মূল্য",
+  expired: "মেয়াদ শেষ",
+  active: "সক্রিয়",
   "1 month plan": "১ মাসের প্যাকেজ",
   "6 months plan": "৬ মাসের প্যাকেজ",
   "1 year plan": "১ বছরের প্যাকেজ",
@@ -178,42 +109,10 @@ function translateSubscriptionText(
   const exact = SUBSCRIPTION_BN[key];
   if (exact !== undefined) return exact;
 
-  let match = /^continue with (.+)$/i.exec(key);
-  if (match)
-    return `${translateSubscriptionText(match[1], locale, baseL)} নিয়ে এগিয়ে যান`;
-
-  match = /^save\s+(৳[\d,]+)\s*·\s*(\d+)%\s*off$/i.exec(key);
+  const match = /^save\s+(৳[\d,]+)\s*·\s*(\d+)%\s*off$/i.exec(key);
   if (match) {
-    const banglaDigits = (value: string) =>
-      value.replace(/\d/g, (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)]);
-    return `${banglaDigits(match[1])} সাশ্রয় · ${banglaDigits(match[2])}% ছাড়`;
+    return `${toBnDigits(match[1])} সাশ্রয় · ${toBnDigits(match[2])}% ছাড়`;
   }
-
-  match = /^unlock (1 month|6 months|1 year) access for (৳[\d,]+)$/i.exec(key);
-  if (match) {
-    const periods: Record<string, string> = {
-      "1 month": "১ মাস",
-      "6 months": "৬ মাস",
-      "1 year": "১ বছর",
-    };
-    const price = match[2].replace(
-      /\d/g,
-      (digit) => "০১২৩৪৫৬৭৮৯"[Number(digit)],
-    );
-    return `${periods[match[1].toLowerCase()]}-এর অ্যাক্সেস ${price}-তে নিন`;
-  }
-
-  match = /^(৳[\d,]+)\s*\/\s*month$/i.exec(key);
-  if (match) return `${match[1]} / মাস`;
-
-  match = /^save\s+(\d+)\s*%$/i.exec(key);
-  if (match) return `${match[1]}% সাশ্রয়`;
-
-  match = /^(\d+)\s+days? left$/i.exec(key);
-  if (match) return `${match[1]} দিন বাকি`;
-
-  match = /^(\d+)\s+minutes? ago$/i.exec(key);
-  if (match) return `${match[1]} মিনিট আগে`;
 
   const translated = baseL(raw);
   if (translated && translated !== raw) {
@@ -241,558 +140,183 @@ function T({ children }: { children: ReactNode }) {
   return <>{t(children)}</>;
 }
 
-const toBnDigits = (value: string | number) =>
-  String(value).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);
+/* ------------------------------------------------------------------ */
+/* Types                                                               */
+/* ------------------------------------------------------------------ */
+type SubscriptionStatus = {
+  id: string;
+  planId: string;
+  planName: string;
+  amount: number;
+  paymentStatus: string;
+  accessStatus: string;
+  startedAt: string | null;
+  expiresAt: string | null;
+  source?: string;
+};
+type PendingSubscriptionStatus = {
+  id: string;
+  planName: string;
+  amount: number;
+  paymentMethod: string;
+  transactionId: string;
+  submittedAt: string | null;
+  reviewStatus: string;
+};
+type ManualInfo = {
+  paymentNumbers: Record<string, string>;
+};
+type PayMode = "auto" | "manual" | null;
+type GatewayKey = "uddokta" | "pipra";
 
-function ManualPaymentGuide({ amount }: { amount: number }) {
-  const bnAmount = toBnDigits(amount);
-  const steps: { title: string; body: ReactNode }[] = [
-    {
-      title: "Manual Payment বাটনে ক্লিক করুন",
-      body: <>আপনার নিজের পেমেন্ট পেজ খুলবে।</>,
-    },
-    {
-      title: "Nagad অথবা bKash বেছে নিন",
-      body: (
-        <>যে মোবাইল ফাইন্যান্সিয়াল সার্ভিস ব্যবহার করেন, সেটি নির্বাচন করুন।</>
-      ),
-    },
-    {
-      title: `ঠিক ${bnAmount} টাকা Send Money করুন`,
-      body: (
-        <>
-          পেমেন্ট পেজে দেওয়া নম্বর কপি করে সেই নম্বরে ঠিক{" "}
-          <strong>{bnAmount} টাকা</strong> পাঠান।
-        </>
-      ),
-    },
-    {
-      title: "TrxID ও প্রেরকের নম্বর জমা দিন",
-      body: (
-        <>
-          পেমেন্ট সফল হওয়ার পর SMS-এ পাওয়া TrxID এবং যে নম্বর থেকে টাকা
-          পাঠিয়েছেন সেটি লিখে জমা দিন।
-        </>
-      ),
-    },
-    {
-      title: "অ্যাডমিন যাচাই করবেন",
-      body: (
-        <>
-          আপনার পেমেন্ট ম্যানুয়ালি যাচাই করা হবে। Approve হলেই নির্বাচিত
-          প্যাকেজের মেয়াদ অনুযায়ী অ্যাক্সেস চালু হবে।
-        </>
-      ),
-    },
-  ];
+/* ------------------------------------------------------------------ */
+/* Left side: premium features                                         */
+/* ------------------------------------------------------------------ */
+const TOOL_FEATURES: {
+  icon: typeof Sparkles;
+  title: string;
+  body: string;
+}[] = [
+  {
+    icon: Sparkles,
+    title: "AI Editor",
+    body: "AI দিয়ে ছবি এডিট ও প্রসেস করুন, কোনো ঝামেলা ছাড়াই।",
+  },
+  {
+    icon: LayoutTemplate,
+    title: "AI Template",
+    body: "রেডিমেড টেমপ্লেট দিয়ে দ্রুত ডিজাইন তৈরি করুন।",
+  },
+  {
+    icon: Images,
+    title: "Bulk Photo Edit",
+    body: "একসাথে অনেকগুলো ছবি এডিট করে সময় বাঁচান।",
+  },
+];
 
+const PERKS: { icon: typeof Check; text: string }[] = [
+  { icon: BadgeCheck, text: "সব পেইড টুলে পূর্ণ অ্যাক্সেস" },
+  { icon: Check, text: "সব টুলে একই অ্যাকাউন্ট ব্যবহার করুন" },
+  { icon: Check, text: "একবারের পেমেন্ট, স্বয়ংক্রিয় নবায়ন নেই" },
+  { icon: ShieldCheck, text: "যাচাই করা পেমেন্টের পরই অ্যাক্সেস চালু" },
+  { icon: LifeBuoy, text: "সমস্যা হলে অ্যাডমিন সাপোর্ট" },
+];
+
+function FeaturesPanel() {
   return (
     <section
-      aria-label="ম্যানুয়াল পেমেন্ট করার নিয়ম"
-      className="flex flex-1 flex-col rounded-xl border border-[#E8DFCC] bg-white p-4 shadow-sm"
+      aria-label="প্রিমিয়াম সুবিধা"
+      className="overflow-hidden rounded-2xl border border-[#E8DFCC] bg-white shadow-sm"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#B91C1C]">
-            <BrandName accentClassName="text-[#DC2626]" /> · Payment guide
-          </p>
-          <h2 className="text-lg font-bold tracking-tight text-[#2B2116]">
-            পেমেন্ট করবেন যেভাবে
-          </h2>
-        </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FEF2F2] px-2.5 py-1 text-xs font-semibold text-[#B91C1C] ring-1 ring-inset ring-[#FECACA]">
-          <Check size={13} strokeWidth={3} /> ধাপে ধাপে গাইড
+      <div className="bg-gradient-to-br from-[#DC2626] to-[#991B1B] px-6 py-6 text-white">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider">
+          <Sparkles size={13} /> Premium
         </span>
-      </div>
-
-      <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2.5 text-[13px] leading-5 text-amber-900">
-        <p className="font-bold">
-          অনলাইন পেমেন্টে সমস্যা হলে Manual Payment ব্যবহার করুন।
-        </p>
-        <p className="mt-0.5 font-medium">
-          bKash অথবা Nagad দিয়ে Send Money করে TrxID ও প্রেরকের নম্বর জমা দিন।
-          অ্যাডমিন পেমেন্ট যাচাই করে Approve করলে আপনার সাবস্ক্রিপশন চালু হবে।
+        <h2 className="mt-3 text-2xl font-extrabold leading-tight sm:text-3xl">
+          প্রিমিয়াম চালু হলে
+          <br />
+          যা যা পাবেন
+        </h2>
+        <p className="mt-2 text-sm font-medium leading-6 text-red-100 sm:text-[15px]">
+          একটি প্ল্যানেই সব পেইড টুল আনলক হয়ে যাবে।
         </p>
       </div>
 
-      <ol className="mt-3 flex flex-1 flex-col gap-2">
-        {steps.map((step, index) => {
-          const last = index === steps.length - 1;
-          return (
-            <li
-              key={step.title}
-              className={`flex flex-1 items-center gap-3 rounded-lg border px-3 py-2.5 ${last ? "border-[#FECACA] bg-[#FEF2F2]" : "border-[#EEE6D3] bg-[#FCFAF5]"}`}
-            >
-              <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${last ? "bg-[#B91C1C]" : "bg-[#DC2626]"}`}
-              >
-                {toBnDigits(index + 1)}
-              </span>
-              <div className="min-w-0">
-                <p className="text-[15px] font-bold leading-5 text-[#2B2116]">
-                  {step.title}
-                </p>
-                <p className="mt-0.5 text-[13px] leading-5 text-[#5A4A32]">
-                  {step.body}
-                </p>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+      <div className="space-y-3 px-5 py-5">
+        {TOOL_FEATURES.map(({ icon: Icon, title, body }) => (
+          <div
+            key={title}
+            className="flex items-start gap-3.5 rounded-xl border border-[#EEE6D3] bg-[#FCFAF5] px-4 py-3.5"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#FEF2F2] text-[#DC2626] ring-1 ring-inset ring-[#FECACA]">
+              <Icon size={21} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-base font-bold text-[#2B2116]">{title}</p>
+              <p className="mt-0.5 text-[13.5px] leading-5 text-[#5A4A32]">
+                {body}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
 
-      <p className="mt-3 flex items-start gap-2 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2.5 text-[13px] font-semibold leading-5 text-[#B91C1C]">
-        <ShieldCheck size={17} className="mt-0.5 shrink-0" />
-        মনে রাখবেন: শুধু TrxID জমা দিলে অ্যাক্সেস চালু হবে না। পেমেন্ট যাচাই করে
-        অ্যাডমিন Approve করার পরই অ্যাক্সেস চালু হবে।
-      </p>
+      <ul className="space-y-2.5 border-t border-[#EEE6D3] px-6 py-5">
+        {PERKS.map(({ icon: Icon, text }) => (
+          <li
+            key={text}
+            className="flex items-center gap-2.5 text-[14.5px] font-semibold text-[#3B2F1E]"
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#FEF2F2] text-[#DC2626]">
+              <Icon size={14} strokeWidth={3} />
+            </span>
+            {text}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
-/** Recent subscription activity block. No env variable needed; total buyers is set from Admin > Subscription Activity. */
-// Default only. The real number is set by the admin (Admin > Subscription Activity) and loaded from the database.
-const DEMO_TOTAL_BUYERS = 850;
-// Demo sales history. Every period gets a random-looking but FIXED count (seeded by today's date)
-// and all periods together add up to DEMO_TOTAL_BUYERS. Longest period is 2 months.
-type DemoUnit = "today" | "minute" | "hour" | "day" | "week" | "month";
-type DemoBucket = { unit: DemoUnit; n: number; min: number; max: number };
-
-const DEMO_BUCKETS: DemoBucket[] = [
-  { unit: "today", n: 0, min: 14, max: 34 },
-  { unit: "minute", n: 1, min: 1, max: 2 },
-  { unit: "minute", n: 5, min: 1, max: 3 },
-  { unit: "minute", n: 15, min: 1, max: 5 },
-  { unit: "minute", n: 30, min: 1, max: 6 },
-  { unit: "hour", n: 1, min: 1, max: 7 },
-  { unit: "hour", n: 3, min: 1, max: 7 },
-  { unit: "hour", n: 6, min: 2, max: 9 },
-  { unit: "hour", n: 12, min: 3, max: 11 },
-  { unit: "day", n: 1, min: 14, max: 34 },
-  { unit: "day", n: 2, min: 14, max: 34 },
-  { unit: "day", n: 3, min: 14, max: 34 },
-  { unit: "week", n: 1, min: 102, max: 147 },
-  { unit: "week", n: 2, min: 125, max: 170 },
-  { unit: "month", n: 1, min: 204, max: 272 },
-  { unit: "month", n: 2, min: 0, max: 0 }, // gets whatever is left so the total is exact
-];
-
-function demoHash(str: string) {
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) % 100000;
-}
-/** One count per DEMO_BUCKETS entry; the sum is always DEMO_TOTAL_BUYERS. */
-function buildDemoCounts(total: number): number[] {
-  const d = new Date();
-  const dayKey = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-  const scale = total / DEMO_TOTAL_BUYERS;
-  let left = total;
-  return DEMO_BUCKETS.map((b, i) => {
-    const isLast = i === DEMO_BUCKETS.length - 1;
-    const base = b.min + (demoHash(`${dayKey}-${i}`) % (b.max - b.min + 1));
-    const c = isLast ? Math.max(0, left) : Math.max(1, Math.round(base * scale));
-    left -= c;
-    return c;
-  });
-}
-function demoBucketLabel(
-  b: DemoBucket,
-  isBn: boolean,
-  numberLocale: string,
-  todayText: string,
-) {
-  if (b.unit === "today") return todayText;
-  const n = b.n.toLocaleString(numberLocale);
-  const bn = {
-    minute: "মিনিট",
-    hour: "ঘণ্টা",
-    day: "দিন",
-    week: "সপ্তাহ",
-    month: "মাস",
-  } as const;
-  const en = {
-    minute: "minute",
-    hour: "hour",
-    day: "day",
-    week: "week",
-    month: "month",
-  } as const;
-  return isBn
-    ? `${n} ${bn[b.unit]} আগে কিনেছেন`
-    : `Bought ${b.n} ${en[b.unit]}${b.n === 1 ? "" : "s"} ago`;
-}
-const DEMO_TOAST_INTERVAL_MS = 1500;
-const DEMO_TOAST_VISIBLE_MS = 60000;
-// Close korar por toast ta koto por abar ashbe (ekhane 5 minute).
-const DEMO_TOAST_REAPPEAR_MS = 5 * 60 * 1000;
-
-const DEMO_NAMES = [
-  "মোঃ সাকিব হাসান",
-  "তানজিলা আক্তার",
-  "আরিফুল ইসলাম",
-  "সুমাইয়া রহমান",
-  "রাকিব হোসেন",
-  "নুসরাত জাহান",
-  "ইমরান হোসেন",
-  "ফারজানা ইয়াসমিন",
-  "মেহেদী হাসান",
-  "সাদিয়া ইসলাম",
-  "শাহরিয়ার কবির",
-  "মিম আক্তার",
-  "তৌহিদুল ইসলাম",
-  "আফরিন সুলতানা",
-  "জুবায়ের আহমেদ",
-  "রিফাত রহমান",
-  "সুমন মিয়া",
-  "জান্নাতুল ফেরদৌস",
-  "নাঈম হাসান",
-  "মাহিয়া আক্তার",
-  "মোঃ রাকিবুল ইসলাম",
-  "সাব্বির আহমেদ",
-  "আয়েশা সিদ্দিকা",
-  "আব্দুল্লাহ আল মামুন",
-  "রুবিনা খাতুন",
-  "মাসুদ রানা",
-  "শারমিন আক্তার",
-  "হাসিবুল হাসান",
-  "কামরুল ইসলাম",
-  "পারভীন সুলতানা",
-  "ফয়সাল আহমেদ",
-  "লিমা আক্তার",
-  "জহিরুল ইসলাম",
-  "নাজমুল হুদা",
-  "রোকসানা পারভীন",
-  "তামিম ইকবাল",
-  "মৌসুমী আক্তার",
-  "আনোয়ার হোসেন",
-  "সোহেল রানা",
-  "নাসরিন সুলতানা",
-  "মোঃ শফিকুল ইসলাম",
-  "বিলকিস বেগম",
-  "রবিউল আউয়াল",
-  "মরিয়ম আক্তার",
-  "ইকবাল হোসেন",
-  "ফাহিম আহমেদ",
-  "তাসলিমা খাতুন",
-  "মেহরাব হোসেন",
-  "হালিমা আক্তার",
-  "সজীব হাসান",
-  "নুরুল ইসলাম",
-  "জেসমিন আক্তার",
-  "আশিকুর রহমান",
-  "রেহানা পারভীন",
-  "শামীম আহমেদ",
-  "সানজিদা ইসলাম",
-  "মিজানুর রহমান",
-  "ববিতা সুলতানা",
-  "ইয়াসিন আরাফাত",
-  "সুরাইয়া আক্তার",
-] as const;
-
-// Mixed "time ago" values (in minutes): just now, minutes, hours, days, weeks, months.
-const DEMO_AGO_MINUTES = [
-  0, 2, 5, 8, 10, 15, 20, 25, 30, 40, 45, 50, 60, 90, 120, 180, 240, 360, 480,
-  720, 960, 1440, 2160, 2880, 4320, 5760, 10080, 14400, 20160, 30240, 43200,
-] as const;
-
-function formatAgo(
-  totalMinutes: number,
-  isBn: boolean,
-  locale: string,
-): string {
-  const units: {
-    limit: number;
-    size: number;
-    bn: string;
-    en: [string, string];
-  }[] = [
-    { limit: 60, size: 1, bn: "মিনিট", en: ["minute", "minutes"] },
-    { limit: 1440, size: 60, bn: "ঘণ্টা", en: ["hour", "hours"] },
-    { limit: 10080, size: 1440, bn: "দিন", en: ["day", "days"] },
-    { limit: 43200, size: 10080, bn: "সপ্তাহ", en: ["week", "weeks"] },
-    { limit: Infinity, size: 43200, bn: "মাস", en: ["month", "months"] },
-  ];
-  const unit = units.find((u) => totalMinutes < u.limit) ?? units[0];
-  const value = Math.max(1, Math.floor(totalMinutes / unit.size));
-  const num = value.toLocaleString(locale);
-  return isBn
-    ? `${num} ${unit.bn} আগে`
-    : `${num} ${value === 1 ? unit.en[0] : unit.en[1]} ago`;
-}
-
-type DemoPurchase = { name: string; initials: string; minutes: number };
-
-const DEMO_PURCHASES: DemoPurchase[] = DEMO_NAMES.map((name, i) => {
-  const firstWord = name.replace(/^মোঃ\s*/, "").split(" ")[0];
-  return {
-    name,
-    initials: Array.from(firstWord).slice(0, 2).join(""),
-    minutes: DEMO_AGO_MINUTES[(i * 5) % DEMO_AGO_MINUTES.length],
-  };
-});
-
-const AVATAR_TONES = [
-  "from-[#DC2626] to-[#B91C1C]",
-  "from-[#8B5E34] to-[#5A4A32]",
-  "from-[#EF4444] to-[#DC2626]",
-  "from-[#C8923F] to-[#A9741F]",
-  "from-[#6B5A40] to-[#3B2F1E]",
-  "from-[#B91C1C] to-[#991B1B]",
-];
-
-function RecentSubscriptionActivity({ plans }: { plans: SubscriptionPlan[] }) {
-  const { t, locale } = useSubscriptionText();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [toastVisible, setToastVisible] = useState(false);
-  const [toastDismissed, setToastDismissed] = useState(false);
-  const [dayCounts, setDayCounts] = useState<number[] | null>(null);
-  const [totalBuyers, setTotalBuyers] = useState<number | null>(null);
-  const dismissedUntilRef = useRef(0);
-  const isBn = Boolean(locale?.toLowerCase().startsWith("bn"));
-  const numberLocale = isBn ? "bn-BD" : "en-US";
-
-  useEffect(() => {
-    let hideTimer: number | undefined;
-    const showToast = () => {
-      if (Date.now() < dismissedUntilRef.current) return;
-      setToastDismissed(false);
-      setToastVisible(true);
-      window.clearTimeout(hideTimer);
-      hideTimer = window.setTimeout(
-        () => setToastVisible(false),
-        DEMO_TOAST_VISIBLE_MS,
-      );
-    };
-    const firstToast = window.setTimeout(showToast, 1500);
-    const cycle = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % DEMO_PURCHASES.length);
-      showToast();
-    }, DEMO_TOAST_INTERVAL_MS);
-    return () => {
-      window.clearTimeout(firstToast);
-      window.clearTimeout(hideTimer);
-      window.clearInterval(cycle);
-    };
-  }, []);
-
-  // Built on the client only (uses today's date), so server and browser markup never differ.
-  useEffect(() => {
-    let cancelled = false;
-    const apply = (total: number) => {
-      if (cancelled) return;
-      setTotalBuyers(total);
-      setDayCounts(buildDemoCounts(total));
-    };
-    fetch("/api/subscription/activity-settings", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        const total = Number(data?.totalBuyers);
-        apply(Number.isFinite(total) && total >= 100 ? Math.floor(total) : DEMO_TOTAL_BUYERS);
-      })
-      .catch(() => apply(DEMO_TOTAL_BUYERS));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const activePurchase = DEMO_PURCHASES[activeIndex % DEMO_PURCHASES.length];
-  const activePlans = plans.length ? plans : DEFAULT_PLANS;
-  const activePlan = activePlans[activeIndex % activePlans.length];
-  const tone = AVATAR_TONES[activeIndex % AVATAR_TONES.length];
-  // The second card changes together with every new purchase: today -> 1 minute ago -> ... -> 1 hour ago -> ... -> 2 months ago.
-  const statIndex = activeIndex % DEMO_BUCKETS.length;
-  const statLabel = demoBucketLabel(
-    DEMO_BUCKETS[statIndex],
-    isBn,
-    numberLocale,
-    t("Bought today"),
-  );
-  const statValue = dayCounts?.[statIndex];
-  const timeLabel = (p: DemoPurchase) =>
-    p.minutes === 0
-      ? t("Bought just now")
-      : formatAgo(p.minutes, isBn, numberLocale);
-
-  return (
-    <>
-      <section
-        aria-label={t("Recent subscription activity")}
-        className="rounded-xl border border-[#E8DFCC] bg-white p-3.5 text-[#2B2116] shadow-sm"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 text-base font-bold sm:text-lg">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#DC2626] text-white shadow-sm">
-              <Users size={17} />
-            </span>
-            <span>{t("Recent subscription activity")}</span>
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-            {isBn ? "লাইভ আপডেট" : "Live updates"}
-          </span>
-        </div>
-
-        <div className="mt-2.5 grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-[#FCFAF5] px-3 py-2 ring-1 ring-inset ring-[#EEE6D3]">
-            <p className="text-sm font-medium text-[#6B5A40]">
-              {t("Total buyers")}
-            </p>
-            <p className="mt-0.5 text-2xl font-extrabold leading-none tabular-nums text-[#DC2626]">
-              {totalBuyers === null ? "–" : totalBuyers.toLocaleString(numberLocale)}
-              {totalBuyers !== null && <span className="text-xl">+</span>}
-            </p>
-          </div>
-          <div className="rounded-lg bg-[#FCFAF5] px-3 py-2 ring-1 ring-inset ring-[#EEE6D3]">
-            <p className="text-sm font-medium text-[#6B5A40]">{statLabel}</p>
-            <p className="mt-0.5 text-2xl font-extrabold leading-none tabular-nums text-[#DC2626]">
-              {statValue === undefined
-                ? "–"
-                : statValue.toLocaleString(numberLocale)}
-            </p>
-          </div>
-        </div>
-
-        <ul className="mt-2" aria-live="off">
-          <li
-            key={activeIndex}
-            style={{ animation: "sub-feed-in 250ms ease-out" }}
-            className="flex items-center gap-3 rounded-lg border border-[#EEE6D3] bg-white px-3 py-2"
-          >
-            <span
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${tone} text-sm font-bold text-white shadow-sm`}
-            >
-              {activePurchase.initials}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-bold text-[#2B2116]">
-                {activePurchase.name}
-              </p>
-              <p className="text-sm text-[#6B5A40]">
-                {t(`${activePlan.name} plan`)} · {formatPrice(activePlan.price)}
-              </p>
-            </div>
-            <span className="flex shrink-0 items-center gap-1 text-sm font-semibold text-[#B91C1C]">
-              <Clock3 size={13} />
-              {timeLabel(activePurchase)}
-            </span>
-          </li>
-        </ul>
-        <p className="mt-1 text-right text-[10px] font-semibold uppercase tracking-wider text-[#9A8A6C]">
-          {isBn
-            ? "লাইভ সাবস্ক্রিপশন কার্যক্রম"
-            : "Live Subscription Activities"}
-        </p>
-      </section>
-
-      <div
-        aria-live="polite"
-        aria-label={t("Purchase notification")}
-        className={`fixed bottom-4 left-4 z-[45] w-[min(330px,calc(100vw-32px))] transition-all duration-300 sm:bottom-5 sm:left-5 ${toastVisible && !toastDismissed ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`}
-      >
-        <div className="overflow-hidden rounded-2xl border border-[#E8DFCC] bg-white shadow-xl">
-          <div className="flex items-center justify-between gap-2 bg-[#DC2626] px-3 py-2 text-white">
-            <span className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wide">
-              <ShoppingBag size={13} /> {t("Purchase notification")}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                dismissedUntilRef.current = Date.now() + DEMO_TOAST_REAPPEAR_MS;
-                setToastDismissed(true);
-              }}
-              aria-label="Close purchase notification"
-              className="rounded-md p-0.5 text-[#FECACA] transition hover:bg-white/15 hover:text-white"
-            >
-              <X size={14} />
-            </button>
-          </div>
-          <div
-            key={activePurchase.name}
-            className="flex items-center gap-3 p-3"
-            style={{ animation: "sub-feed-in 200ms ease-out" }}
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FEF2F2] text-sm font-bold text-[#DC2626] ring-1 ring-inset ring-[#FECACA]">
-              {activePurchase.initials}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-base font-bold text-[#2B2116]">
-                {activePurchase.name}
-              </p>
-              <p className="mt-0.5 text-sm text-[#5A4A32]">
-                {t(`${activePlan.name} plan`)} · {formatPrice(activePlan.price)}
-              </p>
-              <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-[#B91C1C]">
-                <Clock3 size={13} /> {timeLabel(activePurchase)}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
 export default function SubscriptionPage() {
-  type SubscriptionStatus = {
-    id: string;
-    planId: string;
-    planName: string;
-    amount: number;
-    paymentStatus: string;
-    accessStatus: string;
-    startedAt: string | null;
-    expiresAt: string | null;
-    source?: string;
-  };
-  type PendingSubscriptionStatus = {
-    id: string;
-    planName: string;
-    amount: number;
-    paymentMethod: string;
-    transactionId: string;
-    submittedAt: string | null;
-    reviewStatus: string;
-  };
-
   const { t, locale } = useSubscriptionText();
+  const isBn = Boolean(locale?.toLowerCase().startsWith("bn"));
+
+  // Plans
   const [plans, setPlans] = useState<SubscriptionPlan[]>(DEFAULT_PLANS);
   const [plansLoading, setPlansLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string>(DEFAULT_PLANS[0]?.id || "1-month");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [isPipraPayProcessing, setIsPipraPayProcessing] = useState(false);
-  const [isPipraPayEnabled, setIsPipraPayEnabled] = useState(false);
-  const [isUddoktaPayProcessing, setIsUddoktaPayProcessing] = useState(false);
-  const [isUddoktaPayEnabled, setIsUddoktaPayEnabled] = useState(false);
-  const [paymentError, setPaymentError] = useState("");
+  const [selectedId, setSelectedId] = useState<string>(
+    DEFAULT_PLANS[0]?.id || "1-month",
+  );
+  const selected =
+    plans.find((plan) => plan.id === selectedId) ??
+    plans[0] ??
+    DEFAULT_PLANS[0];
+
+  // Current / pending subscription
   const [currentSubscription, setCurrentSubscription] =
     useState<SubscriptionStatus | null>(null);
   const [pendingSubscription, setPendingSubscription] =
     useState<PendingSubscriptionStatus | null>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
-  const selected = plans.find((plan) => plan.id === selectedId) ?? plans[0] ?? DEFAULT_PLANS[0];
+
+  // Payment mode + gateways
+  const [mode, setMode] = useState<PayMode>(null);
+  const [isPipraPayEnabled, setIsPipraPayEnabled] = useState(false);
+  const [isUddoktaPayEnabled, setIsUddoktaPayEnabled] = useState(false);
+  const [gatewayStatusChecked, setGatewayStatusChecked] = useState(false);
+  const [gatewayBusy, setGatewayBusy] = useState<GatewayKey | null>(null);
+  const [paymentError, setPaymentError] = useState("");
+
+  // Manual payment
+  const [manualInfo, setManualInfo] = useState<ManualInfo | null>(null);
+  const [manualState, setManualState] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
+  const [manualLoadError, setManualLoadError] = useState("");
+  const [manualWallet, setManualWallet] = useState("");
+  const [senderNumber, setSenderNumber] = useState("");
+  const [transactionId, setTransactionId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [manualError, setManualError] = useState("");
+  const [manualNotice, setManualNotice] = useState("");
+  const [copiedWallet, setCopiedWallet] = useState("");
 
   const formatDate = (value: string | null) => {
     if (!value) return "—";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString(
-      locale?.toLowerCase().startsWith("bn") ? "bn-BD" : "en-BD",
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      },
-    );
+    return date.toLocaleDateString(isBn ? "bn-BD" : "en-BD", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
   };
 
-  const loadCurrentSubscription = async () => {
+  const loadCurrentSubscription = useCallback(async () => {
     try {
       setSubscriptionLoading(true);
       const response = await fetch("/api/subscription/current", {
@@ -815,29 +339,44 @@ export default function SubscriptionPage() {
     } finally {
       setSubscriptionLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void loadCurrentSubscription();
     const controller = new AbortController();
+
     void fetch("/api/subscription/plans", {
-      method: "GET", credentials: "include", cache: "no-store", signal: controller.signal,
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+      signal: controller.signal,
     })
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
-        if (response.ok && data?.success === true && Array.isArray(data.plans) && data.plans.length) {
+        if (
+          response.ok &&
+          data?.success === true &&
+          Array.isArray(data.plans) &&
+          data.plans.length
+        ) {
           const nextPlans = data.plans as SubscriptionPlan[];
           setPlans(nextPlans);
-          setSelectedId((current) => nextPlans.some((plan) => plan.id === current) ? current : nextPlans[0].id);
+          setSelectedId((current) =>
+            nextPlans.some((plan) => plan.id === current)
+              ? current
+              : nextPlans[0].id,
+          );
         }
       })
       .catch((error) => {
-        if (!controller.signal.aborted) console.error("Failed to load subscription plans:", error);
+        if (!controller.signal.aborted)
+          console.error("Failed to load subscription plans:", error);
       })
       .finally(() => {
         if (!controller.signal.aborted) setPlansLoading(false);
       });
-    void fetch("/api/payment/piprapay-status", {
+
+    const pipra = fetch("/api/payment/piprapay-status", {
       method: "GET",
       credentials: "include",
       cache: "no-store",
@@ -852,7 +391,8 @@ export default function SubscriptionPage() {
         if (!controller.signal.aborted)
           console.error("Failed to load PipraPay checkout status:", error);
       });
-    void fetch("/api/uddoktapay/status", {
+
+    const uddokta = fetch("/api/uddoktapay/status", {
       method: "GET",
       credentials: "include",
       cache: "no-store",
@@ -867,75 +407,120 @@ export default function SubscriptionPage() {
         if (!controller.signal.aborted)
           console.error("Failed to load UddoktaPay checkout status:", error);
       });
+
+    void Promise.all([pipra, uddokta]).finally(() => {
+      if (!controller.signal.aborted) setGatewayStatusChecked(true);
+    });
+
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadCurrentSubscription]);
 
-  const handleSelect = (id: string) => {
-    setSelectedId(id);
-    setPaymentError("");
-  };
+  const autoAvailable = isUddoktaPayEnabled || isPipraPayEnabled;
 
-  const handlePipraPayCheckout = async () => {
-    if (
-      isPipraPayProcessing ||
-      isUddoktaPayProcessing ||
-      isProcessing ||
-      plansLoading ||
-      !isPipraPayEnabled
-    )
-      return;
-    setIsPipraPayProcessing(true);
-    setPaymentError("");
+  // If online payment turns out to be off, fall back to manual automatically.
+  useEffect(() => {
+    if (gatewayStatusChecked && !autoAvailable && mode === "auto") {
+      setMode("manual");
+    }
+  }, [gatewayStatusChecked, autoAvailable, mode]);
+
+  /* ---------------- Manual payment: load numbers ---------------- */
+  const loadManualInfo = useCallback(async (planId: string) => {
+    setManualState("loading");
+    setManualLoadError("");
     try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        credentials: "include",
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: selected.id }),
-      });
+      const response = await fetch(
+        `/api/payment/manual-submit?plan=${encodeURIComponent(planId)}`,
+        { credentials: "include", cache: "no-store" },
+      );
       const data = await response.json().catch(() => ({}));
-      if (
-        !response.ok ||
-        data?.success !== true ||
-        typeof data?.payment_url !== "string"
-      ) {
-        throw new Error(
-          data?.message ||
-            "PipraPay payment could not be started. Please try again.",
-        );
-      }
-      const checkoutUrl = new URL(data.payment_url);
-      if (checkoutUrl.protocol !== "https:") {
-        throw new Error(
-          "PipraPay returned an unsafe checkout URL. Please contact support.",
-        );
-      }
-      window.location.assign(checkoutUrl.toString());
+      if (!response.ok || !data?.success)
+        throw new Error(data?.message || "পেমেন্টের তথ্য লোড করা যায়নি।");
+      setManualInfo({ paymentNumbers: data.paymentNumbers || {} });
+      setManualState("ready");
     } catch (error) {
-      setPaymentError(
+      setManualLoadError(
         error instanceof Error
           ? error.message
-          : "PipraPay payment could not be started. Please try again.",
+          : "পেমেন্টের তথ্য লোড করা যায়নি।",
       );
-      setIsPipraPayProcessing(false);
+      setManualState("error");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mode === "manual" && manualState === "idle" && selected?.id) {
+      void loadManualInfo(selected.id);
+    }
+  }, [mode, manualState, selected?.id, loadManualInfo]);
+
+  const wallets = manualInfo
+    ? Object.entries(manualInfo.paymentNumbers)
+        .filter(([, number]) => Boolean(number))
+        .map(([name, number]) => ({ name, number }))
+    : [];
+  const activeWallet =
+    wallets.find((w) => w.name === manualWallet)?.name ||
+    wallets[0]?.name ||
+    "";
+
+  const copyNumber = async (name: string, number: string) => {
+    try {
+      await navigator.clipboard.writeText(number);
+      setCopiedWallet(name);
+      window.setTimeout(() => setCopiedWallet(""), 1800);
+    } catch {
+      setManualError("নম্বর কপি করা যায়নি। নম্বরটি হাতে কপি করুন।");
     }
   };
 
-  const handleUddoktaPayCheckout = async () => {
-    if (
-      isUddoktaPayProcessing ||
-      isPipraPayProcessing ||
-      isProcessing ||
-      plansLoading ||
-      !isUddoktaPayEnabled
-    )
-      return;
-    setIsUddoktaPayProcessing(true);
+  const handleManualSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting || !activeWallet) return;
+    setSubmitting(true);
+    setManualError("");
+    setManualNotice("");
+    try {
+      const response = await fetch("/api/payment/manual-submit", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          planId: selected.id,
+          paymentMethod: activeWallet,
+          senderNumber,
+          transactionId,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data?.success)
+        throw new Error(data?.message || "পেমেন্ট জমা দেওয়া যায়নি।");
+      setManualNotice(
+        data.message || "আপনার পেমেন্টের তথ্য জমা হয়েছে।",
+      );
+      setTransactionId("");
+      setSenderNumber("");
+      await loadCurrentSubscription();
+    } catch (error) {
+      setManualError(
+        error instanceof Error ? error.message : "পেমেন্ট জমা দেওয়া যায়নি।",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /* ---------------- Auto payment (gateway) ---------------- */
+  const startGateway = async (gateway: GatewayKey) => {
+    if (gatewayBusy || plansLoading) return;
+    const cfg =
+      gateway === "uddokta"
+        ? { url: "/api/uddoktapay/checkout", name: "UddoktaPay" }
+        : { url: "/api/checkout", name: "PipraPay" };
+    setGatewayBusy(gateway);
     setPaymentError("");
     try {
-      const response = await fetch("/api/uddoktapay/checkout", {
+      const response = await fetch(cfg.url, {
         method: "POST",
         credentials: "include",
         cache: "no-store",
@@ -950,32 +535,40 @@ export default function SubscriptionPage() {
       ) {
         throw new Error(
           data?.message ||
-            "UddoktaPay payment could not be started. Please try again.",
+            `${cfg.name} payment could not be started. Please try again.`,
         );
       }
       const checkoutUrl = new URL(data.payment_url);
       if (checkoutUrl.protocol !== "https:")
         throw new Error(
-          "UddoktaPay returned an unsafe checkout URL. Please contact support.",
+          `${cfg.name} returned an unsafe checkout URL. Please contact support.`,
         );
       window.location.assign(checkoutUrl.toString());
     } catch (error) {
       setPaymentError(
         error instanceof Error
           ? error.message
-          : "UddoktaPay payment could not be started. Please try again.",
+          : `${cfg.name} payment could not be started. Please try again.`,
       );
-      setIsUddoktaPayProcessing(false);
+      setGatewayBusy(null);
     }
   };
 
-  const handleContinue = () => {
-    if (isProcessing || plansLoading) return;
-    setIsProcessing(true);
+  const gateways: { key: GatewayKey; label: string }[] = [];
+  if (isUddoktaPayEnabled)
+    gateways.push({ key: "uddokta", label: "UddoktaPay" });
+  if (isPipraPayEnabled) gateways.push({ key: "pipra", label: "PipraPay" });
+
+  const handleSelectPlan = (id: string) => {
+    setSelectedId(id);
     setPaymentError("");
-    window.location.href = `/payment/manual?plan=${encodeURIComponent(selected.id)}`;
   };
 
+  const reviewPending = Boolean(pendingSubscription);
+
+  /* ------------------------------------------------------------------ */
+  /* Render                                                              */
+  /* ------------------------------------------------------------------ */
   return (
     <div className="page-font flex min-h-screen flex-col bg-[#F0E6CF] font-sans text-[#2B2116] lg:h-dvh lg:overflow-hidden">
       <style>{`
@@ -993,32 +586,22 @@ export default function SubscriptionPage() {
         .scroll::-webkit-scrollbar-track { background: rgba(148,163,184,0.18); border-radius: 999px; margin: 10px 0; }
         .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F0E6CF; min-height: 48px; }
         .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
-        @keyframes sub-feed-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes sub-open { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
       <DashboardNavbar />
       <main className="font-bengali-ui scroll flex min-h-0 flex-1 flex-col overflow-y-auto">
         <div
           data-nav-content
-          className="flex w-full max-w-none flex-1 flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8"
+          className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8"
         >
-          {/* ---------- Page header ---------- */}
+          {/* ---------- Header ---------- */}
           <header className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-xl font-extrabold tracking-tight text-[#2B2116] sm:text-2xl lg:text-3xl">
-                  <T>{"Choose your subscription plan"}</T>
-                </h1>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FEF2F2] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#B91C1C] ring-1 ring-inset ring-[#FECACA]">
-                  <Sparkles size={13} />
-                  <T>{"Limited-time launch offer"}</T>
-                </span>
-              </div>
-              <p className="mt-1 text-sm leading-6 text-[#5A4A32] sm:text-[15px]">
-                <T>
-                  {
-                    "Choose the access duration that works for you. Pay once; renew only when you want."
-                  }
-                </T>
+              <h1 className="text-2xl font-extrabold tracking-tight text-[#2B2116] sm:text-3xl">
+                আপনার সাবস্ক্রিপশন প্ল্যান বেছে নিন
+              </h1>
+              <p className="mt-1 text-sm font-medium text-[#5A4A32] sm:text-[15px]">
+                একবার পেমেন্ট করুন, মেয়াদ শেষে চাইলে নিজে নবায়ন করুন।
               </p>
             </div>
             <Link
@@ -1026,285 +609,128 @@ export default function SubscriptionPage() {
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#E8DFCC] bg-white px-3.5 py-2 text-sm font-semibold text-[#5A4A32] shadow-sm transition hover:border-[#DC2626]/40 hover:text-[#DC2626]"
             >
               <ArrowLeft size={15} />
-              <T>{"Back to Tools"}</T>
+              টুলসে ফিরে যান
             </Link>
           </header>
 
-          {/* ---------- Current subscription ---------- */}
-          {(subscriptionLoading || currentSubscription) && (
-            <section aria-label={t("Current subscription")}>
-              {subscriptionLoading ? (
-                <div
-                  aria-busy="true"
-                  className="rounded-2xl border border-[#E8DFCC] bg-white p-6 shadow-sm"
+          {/* ---------- Current subscription (compact) ---------- */}
+          {subscriptionLoading ? (
+            <div
+              aria-busy="true"
+              className="h-16 animate-pulse rounded-xl border border-[#E8DFCC] bg-white"
+            />
+          ) : currentSubscription ? (
+            (() => {
+              const { expired, daysLeft } = getTiming(currentSubscription);
+              const statusLabel = expired
+                ? "Expired"
+                : capitalize(currentSubscription.accessStatus) || "Active";
+              const isActive = statusLabel === "Active";
+              return (
+                <section
+                  aria-label="বর্তমান সাবস্ক্রিপশন"
+                  className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-[#E8DFCC] bg-white px-4 py-3 shadow-sm"
                 >
-                  <div className="h-4 w-24 animate-pulse rounded bg-[#F3E9D2]" />
-                  <div className="mt-4 h-6 w-36 animate-pulse rounded bg-[#F3E9D2]" />
-                  <div className="mt-6 h-2 w-full animate-pulse rounded-full bg-[#F3E9D2]" />
-                </div>
-              ) : currentSubscription ? (
-                (() => {
-                  const { expired, daysLeft, progress } =
-                    getTiming(currentSubscription);
-                  const statusLabel = expired
-                    ? "Expired"
-                    : capitalize(currentSubscription.accessStatus) || "Active";
-                  const isActive = statusLabel === "Active";
-                  const RING_R = 52;
-                  const RING_C = 2 * Math.PI * RING_R;
-                  const remainingPct = expired
-                    ? 0
-                    : progress === null
-                      ? null
-                      : 100 - progress;
-                  const ringStroke = expired
-                    ? "stroke-[#D8C9A6]"
-                    : remainingPct !== null && remainingPct < 10
-                      ? "stroke-[#B91C1C]"
-                      : "stroke-[#DC2626]";
-                  const ringMain = expired
-                    ? "0"
-                    : daysLeft === null
-                      ? "—"
-                      : daysLeft === 0
-                        ? "<1"
-                        : String(daysLeft);
-                  const ringLabel =
-                    daysLeft === 1 || (daysLeft === 0 && !expired)
-                      ? "day left"
-                      : "days left";
-
-                  return (
-                    <div className="overflow-hidden rounded-2xl border border-[#E8DFCC] bg-white shadow-sm">
-                      <div className="flex flex-col items-center gap-4 p-5 sm:flex-row sm:gap-6">
-                        <div className="relative h-24 w-24 shrink-0">
-                          <svg
-                            viewBox="0 0 120 120"
-                            className="h-full w-full -rotate-90"
-                            aria-hidden="true"
-                          >
-                            <circle
-                              cx="60"
-                              cy="60"
-                              r={RING_R}
-                              fill="none"
-                              strokeWidth="9"
-                              className="stroke-[#EEE6D3]"
-                            />
-                            {remainingPct !== null && remainingPct > 0 && (
-                              <circle
-                                cx="60"
-                                cy="60"
-                                r={RING_R}
-                                fill="none"
-                                strokeWidth="9"
-                                strokeLinecap="round"
-                                strokeDasharray={`${(RING_C * remainingPct) / 100} ${RING_C}`}
-                                className={`${ringStroke} transition-[stroke-dasharray] duration-700`}
-                              />
-                            )}
-                          </svg>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-2xl font-bold leading-none tabular-nums text-[#2B2116]">
-                              {ringMain}
-                            </span>
-                            <span className="mt-1 text-xs text-[#6B5A40]">
-                              <T>{ringLabel}</T>
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="min-w-0 flex-1 text-center sm:text-left">
-                          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:justify-start">
-                            <h2 className="text-xl font-bold tracking-tight text-[#2B2116]">
-                              <T>{currentSubscription.planName}</T>
-                            </h2>
-                            <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold ring-1 ring-inset ${isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-[#F3E9D2] text-[#5A4A32] ring-[#E3D6B8]"}`}
-                            >
-                              <span
-                                className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-[#B0A080]"}`}
-                              />
-                              <T>{statusLabel}</T>
-                            </span>
-                          </div>
-                          <p className="mt-2 rounded-lg border-l-4 border-red-500 bg-[#FEF2F2] px-3 py-2 text-left text-sm font-medium leading-6 text-red-700">
-                            {expired ? (
-                              <>
-                                <T>{"This plan ended on"}</T>{" "}
-                                <strong className="font-bold text-red-800">
-                                  {formatDate(currentSubscription.expiresAt)}
-                                </strong>
-                                <T>{". Choose a plan below to renew."}</T>
-                              </>
-                            ) : (
-                              <>
-                                <T>{"Your access is active until"}</T>{" "}
-                                <strong className="font-bold text-red-800">
-                                  {formatDate(currentSubscription.expiresAt)}
-                                </strong>
-                                <T>
-                                  {
-                                    ". You can choose any plan whenever you want."
-                                  }
-                                </T>
-                              </>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      <dl className="grid grid-cols-1 divide-y divide-[#EEE6D3] border-t border-[#EEE6D3] bg-[#FCFAF5] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-                        <div className="flex items-center gap-3 px-5 py-3">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#DC2626] ring-1 ring-[#E8DFCC]">
-                            <Wallet size={16} />
-                          </span>
-                          <div>
-                            <dt className="text-sm text-[#6B5A40]">
-                              {currentSubscription.source === "admin" ? (
-                                <T>{"Access type"}</T>
-                              ) : (
-                                <T>{"Amount paid"}</T>
-                              )}
-                            </dt>
-                            <dd className="text-base font-semibold text-[#2B2116]">
-                              {currentSubscription.source === "admin" ? (
-                                <T>{"Granted by admin"}</T>
-                              ) : (
-                                formatPrice(currentSubscription.amount)
-                              )}
-                            </dd>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 px-5 py-3">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#DC2626] ring-1 ring-[#E8DFCC]">
-                            <CalendarCheck size={16} />
-                          </span>
-                          <div>
-                            <dt className="text-sm text-[#6B5A40]">
-                              <T>{"Started"}</T>
-                            </dt>
-                            <dd className="text-base font-semibold text-[#2B2116]">
-                              {formatDate(currentSubscription.startedAt)}
-                            </dd>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 px-5 py-3">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-[#DC2626] ring-1 ring-[#E8DFCC]">
-                            <CalendarClock size={16} />
-                          </span>
-                          <div>
-                            <dt className="text-sm text-[#6B5A40]">
-                              {expired ? <T>{"Ended"}</T> : <T>{"Expires"}</T>}
-                            </dt>
-                            <dd className="text-base font-semibold text-[#2B2116]">
-                              {formatDate(currentSubscription.expiresAt)}
-                            </dd>
-                          </div>
-                        </div>
-                      </dl>
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#FEF2F2] text-[#DC2626] ring-1 ring-inset ring-[#FECACA]">
+                      <BadgeCheck size={18} />
+                    </span>
+                    <div>
+                      <p className="text-xs font-semibold text-[#7A6A50]">
+                        বর্তমান সাবস্ক্রিপশন
+                      </p>
+                      <p className="text-base font-bold text-[#2B2116]">
+                        <T>{currentSubscription.planName}</T>
+                      </p>
                     </div>
-                  );
-                })()
-              ) : null}
-            </section>
-          )}
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold ring-1 ring-inset ${isActive ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-[#F3E9D2] text-[#5A4A32] ring-[#E3D6B8]"}`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-[#B0A080]"}`}
+                    />
+                    <T>{statusLabel}</T>
+                  </span>
+                  <div className="flex items-center gap-2 text-sm font-medium text-[#5A4A32]">
+                    <CalendarClock size={16} className="text-[#DC2626]" />
+                    {expired ? "মেয়াদ শেষ হয়েছে " : "মেয়াদ শেষ হবে "}
+                    <strong className="font-bold text-[#2B2116]">
+                      {formatDate(currentSubscription.expiresAt)}
+                    </strong>
+                    {!expired && daysLeft !== null && (
+                      <span className="rounded bg-[#FEF2F2] px-1.5 py-0.5 text-xs font-bold text-[#B91C1C] ring-1 ring-inset ring-[#FECACA]">
+                        {isBn ? toBnDigits(daysLeft) : daysLeft} দিন বাকি
+                      </span>
+                    )}
+                  </div>
+                </section>
+              );
+            })()
+          ) : null}
 
-          {/* ---------- Pending payment review ---------- */}
+          {/* ---------- Pending review (compact) ---------- */}
           {pendingSubscription && (
             <section
-              aria-label={t("Payment review in progress")}
               aria-live="polite"
-              className="rounded-2xl border border-amber-200 bg-gradient-to-br from-[#FFFBEB] to-white p-5 shadow-sm sm:p-6"
+              className="flex flex-wrap items-start gap-3 rounded-xl border border-amber-200 bg-[#FFFBEB] px-4 py-3 shadow-sm"
             >
-              <div className="flex items-start gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#DC2626] text-white shadow-sm">
-                  <Clock3 size={22} strokeWidth={2.3} />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <h2 className="text-lg font-bold tracking-tight text-[#2B2116] sm:text-xl">
-                      <T>{"Payment review in progress"}</T>
-                    </h2>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#B91C1C] ring-1 ring-inset ring-[#FECACA]">
-                      <span className="h-2 w-2 rounded-full bg-[#DC2626] shadow-[0_0_0_3px_rgba(220,38,38,0.15)]" />
-                      <T>{"Waiting for review"}</T>
-                    </span>
-                  </div>
-                  <p className="mt-2 max-w-2xl text-base leading-7 text-[#3B2F1E]/90">
-                    <T>
-                      {
-                        "Your payment details have been submitted. Paid access starts after admin approval."
-                      }
-                    </T>
-                  </p>
-                  <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="min-w-0 rounded-xl border border-[#EEE6D3] bg-white px-4 py-3">
-                      <dt className="text-sm font-medium text-[#6B5A40]">
-                        প্ল্যান ও মূল্য
-                      </dt>
-                      <dd className="mt-1 text-base font-bold text-[#2B2116]">
-                        {pendingSubscription.planName} ·{" "}
-                        {formatPrice(pendingSubscription.amount)}
-                      </dd>
-                    </div>
-                    {pendingSubscription.paymentMethod && (
-                      <div className="rounded-xl border border-[#EEE6D3] bg-white px-4 py-3">
-                        <dt className="text-sm font-medium text-[#6B5A40]">
-                          পেমেন্ট মাধ্যম
-                        </dt>
-                        <dd className="mt-1 text-base font-bold text-[#2B2116]">
-                          {pendingSubscription.paymentMethod}
-                        </dd>
-                      </div>
-                    )}
-                    {pendingSubscription.transactionId && (
-                      <div className="min-w-0 rounded-xl border border-[#EEE6D3] bg-white px-4 py-3">
-                        <dt className="text-sm font-medium text-[#6B5A40]">
-                          <T>{"Transaction ID"}</T>
-                        </dt>
-                        <dd className="mt-1 break-all font-mono text-base font-bold tracking-wide text-[#2B2116]">
-                          {pendingSubscription.transactionId}
-                        </dd>
-                      </div>
-                    )}
-                    {pendingSubscription.submittedAt && (
-                      <div className="rounded-xl border border-[#EEE6D3] bg-white px-4 py-3">
-                        <dt className="text-sm font-medium text-[#6B5A40]">
-                          জমা দেওয়ার তারিখ
-                        </dt>
-                        <dd className="mt-1 text-base font-bold text-[#2B2116]">
-                          {formatDate(pendingSubscription.submittedAt)}
-                        </dd>
-                      </div>
-                    )}
-                  </dl>
-                  <p className="mt-4 flex items-start gap-2 rounded-xl border border-[#E8DFCC] bg-[#FCFAF5] px-3.5 py-3 text-[15px] font-medium leading-6 text-[#3B2F1E]">
-                    <ShieldCheck
-                      size={19}
-                      className="mt-0.5 shrink-0 text-[#DC2626]"
-                    />
-                    অ্যাডমিন পেমেন্টের তথ্য যাচাই করে Approve করলেই আপনার পেইড
-                    অ্যাক্সেস চালু হবে।
-                  </p>
-                </div>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#DC2626] text-white">
+                <Clock3 size={18} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-bold text-[#2B2116]">
+                  পেমেন্ট যাচাই চলছে
+                </p>
+                <p className="mt-0.5 text-sm font-medium leading-6 text-[#5A4A32]">
+                  {pendingSubscription.planName} ·{" "}
+                  {formatPrice(pendingSubscription.amount)}
+                  {pendingSubscription.paymentMethod
+                    ? ` · ${pendingSubscription.paymentMethod}`
+                    : ""}
+                  {pendingSubscription.transactionId ? (
+                    <>
+                      {" · TrxID: "}
+                      <span className="font-mono font-bold">
+                        {pendingSubscription.transactionId}
+                      </span>
+                    </>
+                  ) : null}
+                  <br />
+                  অ্যাডমিন Approve করলেই আপনার পেইড অ্যাক্সেস চালু হবে।
+                </p>
               </div>
             </section>
           )}
 
-          {/* ---------- Main grid: everything on one screen (desktop) ---------- */}
-          <div className="grid gap-4 lg:flex-1 lg:grid-cols-2 xl:grid-cols-3">
-            {/* Column A: plans + checkout */}
-            <div className="flex min-w-0 flex-col gap-3">
-              <section
+          {/* ---------- Main: features (left) + payment (right) ---------- */}
+          <div className="grid items-start gap-5 lg:grid-cols-[1fr_1.08fr]">
+            {/* LEFT: premium features */}
+            <FeaturesPanel />
+
+            {/* RIGHT: payment panel */}
+            <section
+              aria-label="পেমেন্ট প্যানেল"
+              className="rounded-2xl border border-[#E8DFCC] bg-white p-5 shadow-sm sm:p-6"
+            >
+              {/* Step 1: plan */}
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#DC2626] text-sm font-bold text-white">
+                  ১
+                </span>
+                <h2 className="text-lg font-bold text-[#2B2116]">
+                  প্ল্যান বেছে নিন
+                </h2>
+              </div>
+
+              <div
                 role="radiogroup"
-                aria-label={t("Subscription plans")}
-                className="flex flex-col gap-2.5"
+                aria-label="Subscription plans"
+                className="mt-3 flex flex-col gap-2.5"
               >
                 {plans.map((plan) => {
                   const isSelected = plan.id === selectedId;
                   const savings = getDiscount(plan.price, plan.regularPrice);
-                  const savingsAmount = plan.regularPrice - plan.price;
                   return (
                     <button
                       key={plan.id}
@@ -1312,25 +738,24 @@ export default function SubscriptionPage() {
                       disabled={plansLoading}
                       role="radio"
                       aria-checked={isSelected}
-                      onClick={() => handleSelect(plan.id)}
-                      className={`group flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3 text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#DC2626]/30 ${isSelected ? "border-[#DC2626] bg-[#FFF8F6] shadow-md ring-4 ring-[#DC2626]/10" : "border-[#E8DFCC] bg-white hover:border-[#D6C7A5] hover:shadow-sm"}`}
+                      onClick={() => handleSelectPlan(plan.id)}
+                      className={`flex w-full items-center gap-3 rounded-xl border-2 px-4 py-3 text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#DC2626]/30 ${isSelected ? "border-[#DC2626] bg-[#FFF8F6] shadow-sm ring-4 ring-[#DC2626]/10" : "border-[#E8DFCC] bg-white hover:border-[#D6C7A5]"}`}
                     >
                       <span
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${isSelected ? "border-[#DC2626] bg-[#DC2626]" : "border-[#D8C9A6] bg-white"}`}
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${isSelected ? "border-[#DC2626] bg-[#DC2626]" : "border-[#D8C9A6] bg-white"}`}
                       >
                         <Check
-                          size={14}
+                          size={12}
                           strokeWidth={3.5}
                           className={`text-white transition-all ${isSelected ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}
                         />
                       </span>
-
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <h3 className="text-lg font-bold tracking-tight text-[#2B2116]">
+                          <h3 className="text-base font-bold text-[#2B2116]">
                             <T>{plan.name}</T>
                           </h3>
-                          <span className="text-sm font-medium text-[#7A6A50]">
+                          <span className="text-xs font-medium text-[#7A6A50]">
                             <T>{plan.duration}</T>
                           </span>
                           {plan.badge ? (
@@ -1339,273 +764,410 @@ export default function SubscriptionPage() {
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-0.5 truncate text-[13px] text-[#5A4A32]">
-                          <T>{plan.note}</T>
-                        </p>
                         {plan.regularPrice > plan.price ? (
-                          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#7A6A50]">
-                            <span>
-                              <T>{"Regular price"}{" "}</T>
-                              <span className="line-through decoration-[#9A8A6C]">
-                                {formatPrice(plan.regularPrice)}
-                              </span>
+                          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-[#7A6A50]">
+                            <span className="line-through decoration-[#9A8A6C]">
+                              {formatPrice(plan.regularPrice)}
                             </span>
-                            <span className="rounded bg-[#FEF2F2] px-1.5 py-0.5 text-[11px] font-bold text-[#B91C1C] ring-1 ring-inset ring-[#FECACA]">
-                              <T>{`Save ${formatPrice(savingsAmount)} · ${savings}% OFF`}</T>
+                            <span className="font-bold text-[#B91C1C]">
+                              {isBn
+                                ? `${toBnDigits(savings)}% ছাড়`
+                                : `${savings}% OFF`}
                             </span>
                           </p>
                         ) : null}
                       </div>
-
-                      <div className="shrink-0 text-right">
-                        <p className="text-3xl font-extrabold leading-none tracking-tight text-[#DC2626]">
-                          {formatPrice(plan.price)}
-                        </p>
-                        <p className="mt-1 text-xs font-medium text-[#6B5A40]">
-                          <T>{`/ ${plan.name}`}</T>
-                        </p>
-                      </div>
+                      <p className="shrink-0 text-2xl font-extrabold leading-none tracking-tight text-[#DC2626]">
+                        {formatPrice(plan.price)}
+                      </p>
                     </button>
                   );
                 })}
-              </section>
+              </div>
 
-              {/* Checkout */}
-              <section
-                aria-label={t("Continue to payment")}
-                className="flex flex-1 flex-col rounded-xl border border-[#E8DFCC] bg-white p-4 shadow-sm"
-              >
-                <div className="flex items-center justify-between gap-3 rounded-lg bg-[#FCFAF5] px-3.5 py-2.5 ring-1 ring-inset ring-[#EEE6D3]">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#7A6A50]">
-                      <T>{"Your selection"}</T>
-                    </p>
-                    <p className="text-base font-bold text-[#2B2116]">
-                      <T>{selected.name}</T>{" "}
-                      <span className="text-sm font-medium text-[#7A6A50]">
-                        · <T>{selected.duration}</T>
-                      </span>
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#7A6A50]">
-                      <T>{"Total"}</T>
-                    </p>
-                    <p className="text-2xl font-extrabold leading-none text-[#DC2626]">
-                      {formatPrice(selected.price)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-2.5 flex flex-wrap gap-1.5">
-                  {[
-                    "AI Editor, AI Template, and Bulk Photo Edit are included",
-                    "One-time payment",
-                    "No auto-renewal",
-                  ].map((item) => (
-                    <span
-                      key={item}
-                      className="inline-flex items-center gap-1 rounded-full bg-[#FEF2F2] px-2 py-0.5 text-xs font-semibold text-[#B91C1C] ring-1 ring-inset ring-[#FECACA]"
-                    >
-                      <Check size={12} strokeWidth={3} />
-                      <T>{item}</T>
-                    </span>
-                  ))}
-                </div>
-
-                <div className="mt-3 flex flex-1 flex-col justify-end gap-2.5">
-                  {isUddoktaPayEnabled && (
-                    <>
-                      <div
-                        role="note"
-                        className="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-left"
-                      >
-                        <p className="text-[15px] font-bold text-emerald-900">
-                          প্রথমে UddoktaPay দিয়ে পেমেন্ট করুন
-                        </p>
-                        <p className="mt-0.5 text-[13px] font-medium leading-5 text-emerald-800">
-                          পেমেন্ট সফলভাবে সার্ভারে যাচাই হলেই আপনার সাবস্ক্রিপশন
-                          স্বয়ংক্রিয়ভাবে চালু হবে।
-                        </p>
-                        <p className="mt-0.5 text-[13px] font-semibold leading-5 text-amber-800">
-                          UddoktaPay-তে সমস্যা হলে নিচের Manual bKash / Nagad
-                          Payment ব্যবহার করুন।
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void handleUddoktaPayCheckout()}
-                        disabled={
-                          isUddoktaPayProcessing ||
-                          isPipraPayProcessing ||
-                          isProcessing ||
-                          plansLoading
-                        }
-                        className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-lg bg-[#0F766E] px-5 py-2.5 text-center text-base font-bold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#115E59] hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-600/40 disabled:cursor-not-allowed disabled:opacity-70"
-                      >
-                        <Wallet size={20} />
-                        {isUddoktaPayProcessing
-                          ? "UddoktaPay checkout খুলছে…"
-                          : `UddoktaPay দিয়ে পেমেন্ট করুন · ${formatPrice(selected.price)}`}
-                      </button>
-                    </>
-                  )}
-
-                  {isPipraPayEnabled && (
-                    <button
-                      type="button"
-                      onClick={() => void handlePipraPayCheckout()}
-                      disabled={
-                        isPipraPayProcessing ||
-                        isUddoktaPayProcessing ||
-                        isProcessing ||
-                        plansLoading
-                      }
-                      className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#166534] px-5 py-2.5 text-center text-[15px] font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#14532D] hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/40 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      <Wallet size={18} />
-                      {isPipraPayProcessing
-                        ? "PipraPay checkout খুলছে…"
-                        : `অনলাইনে পেমেন্ট করুন · ${formatPrice(selected.price)}`}
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleContinue}
-                    disabled={
-                      isProcessing ||
-                      isPipraPayProcessing ||
-                      isUddoktaPayProcessing ||
-                      plansLoading
-                    }
-                    className={`inline-flex min-h-11 w-full items-center justify-center rounded-lg px-5 py-2.5 text-center text-[15px] font-bold shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#DC2626]/30 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 ${isPipraPayEnabled || isUddoktaPayEnabled ? "border border-[#E8DFCC] bg-white text-[#B91C1C] hover:border-[#DC2626]/40 hover:bg-[#FEF2F2]" : "bg-[#DC2626] text-white hover:bg-[#B91C1C]"}`}
-                  >
-                    {isProcessing ? (
-                      <T>{"Opening payment page..."}</T>
-                    ) : isUddoktaPayEnabled ? (
-                      "UddoktaPay-তে সমস্যা হলে bKash / Nagad দিয়ে Manual Payment করুন"
-                    ) : (
-                      "bKash / Nagad দিয়ে Manual Payment করুন"
-                    )}
-                  </button>
-
-                  {!isPipraPayEnabled && !isUddoktaPayEnabled && (
-                    <p className="text-sm font-medium text-[#7A6A50]">
-                      অনলাইন পেমেন্ট বর্তমানে চালু নেই। আপাতত Manual bKash /
-                      Nagad Payment ব্যবহার করতে পারবেন।
-                    </p>
-                  )}
-                  {paymentError && (
-                    <p
-                      role="alert"
-                      className="w-full rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-sm font-semibold text-red-700"
-                    >
-                      <T>{paymentError}</T>
-                    </p>
-                  )}
-                  <p className="flex items-center justify-center gap-1.5 text-center text-xs text-[#7A6A50]">
-                    <Lock size={13} className="shrink-0" />
-                    <T>
-                      {
-                        "Payment is verified before subscription access is activated"
-                      }
-                    </T>
-                  </p>
-                </div>
-              </section>
-            </div>
-
-            {/* Column B: video + activity + features */}
-            <div className="flex min-w-0 flex-col gap-3">
-              <section
-                aria-label={t("Subscription offer video")}
-                className="overflow-hidden rounded-xl border border-[#E8DFCC] bg-white p-2 shadow-sm"
-              >
-                <OfferVideoFrame
-                  src="/intro/subscrioptionvideointro.mp4"
-                  playLabel={t("Watch video")}
-                  replayLabel={t("Replay video")}
-                  maxHeightDvh={24}
-                  hideControls
-                />
-              </section>
-              <RecentSubscriptionActivity plans={plans} />
-              <section className="flex-1 rounded-xl border border-[#E8DFCC] bg-white px-4 py-3 shadow-sm">
-                <h2 className="text-base font-bold text-[#2B2116]">
-                  <T>{"Included with your subscription"}</T>
-                </h2>
-                <div className="mt-3 grid content-evenly gap-x-4 gap-y-2.5 sm:grid-cols-2">
-                  {features.map((feature) => (
-                    <div
-                      key={feature}
-                      className="flex items-start gap-2 text-[13px] font-medium leading-5 text-[#4A3B26]"
-                    >
-                      <Check
-                        size={14}
-                        strokeWidth={3.5}
-                        className="mt-0.5 shrink-0 text-[#DC2626]"
-                      />
-                      <span>
-                        <T>{feature}</T>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
-
-            {/* Column C: payment guide */}
-            <div className="flex min-w-0 flex-col lg:col-span-2 xl:col-span-1">
-              <ManualPaymentGuide amount={selected.price} />
-            </div>
-          </div>
-
-          {/* ---------- Trust strip ---------- */}
-          <section
-            aria-label="সাবস্ক্রিপশনের সুবিধা"
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
-          >
-            {[
-              {
-                icon: Wallet,
-                title: "একবারের পেমেন্ট",
-                body: "স্বয়ংক্রিয় নবায়ন নেই। মেয়াদ শেষে চাইলে নিজে নবায়ন করুন।",
-              },
-              {
-                icon: ShieldCheck,
-                title: "যাচাই করা পেমেন্ট",
-                body: "পেমেন্ট যাচাই হওয়ার পরই আপনার সাবস্ক্রিপশন চালু হয়।",
-              },
-              {
-                icon: Sparkles,
-                title: "সব পেইড টুলে অ্যাক্সেস",
-                body: "AI Editor, AI Template ও Bulk Photo Edit সহ সব টুল ব্যবহার করুন।",
-              },
-              {
-                icon: Users,
-                title: "অ্যাডমিন সাপোর্ট",
-                body: "কোনো সমস্যা হলে ডান পাশের নিচের সাপোর্ট বাটনে মেসেজ করুন।",
-              },
-            ].map(({ icon: Icon, title, body }) => (
-              <div
-                key={title}
-                className="flex items-start gap-3 rounded-xl border border-[#E8DFCC] bg-white px-4 py-3 shadow-sm"
-              >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#FEF2F2] text-[#DC2626] ring-1 ring-inset ring-[#FECACA]">
-                  <Icon size={19} />
+              {/* Step 2: payment method */}
+              <div className="mt-6 flex items-center gap-2.5">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#DC2626] text-sm font-bold text-white">
+                  ২
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[15px] font-bold leading-5 text-[#2B2116]">
-                    {title}
+                <h2 className="text-lg font-bold text-[#2B2116]">
+                  পেমেন্টের ধরন বেছে নিন
+                </h2>
+              </div>
+
+              <div
+                role="radiogroup"
+                aria-label="Payment type"
+                className="mt-3 grid gap-2.5 sm:grid-cols-2"
+              >
+                {/* Auto */}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={mode === "auto"}
+                  disabled={!autoAvailable}
+                  onClick={() => {
+                    setMode("auto");
+                    setPaymentError("");
+                  }}
+                  className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#DC2626]/30 disabled:cursor-not-allowed disabled:opacity-55 ${mode === "auto" ? "border-[#0F766E] bg-[#F0FDFA] ring-4 ring-[#0F766E]/10" : "border-[#E8DFCC] bg-white hover:border-[#D6C7A5]"}`}
+                >
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0F766E] text-white">
+                    <CreditCard size={18} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-bold text-[#2B2116]">
+                      অটো পেমেন্ট
+                    </span>
+                    <span className="mt-0.5 block text-[12.5px] leading-5 text-[#5A4A32]">
+                      {!gatewayStatusChecked
+                        ? "লোড হচ্ছে…"
+                        : autoAvailable
+                          ? "অনলাইনে পেমেন্ট, সাথে সাথে অ্যাক্সেস চালু"
+                          : "বর্তমানে চালু নেই"}
+                    </span>
+                  </span>
+                </button>
+
+                {/* Manual */}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={mode === "manual"}
+                  onClick={() => {
+                    setMode("manual");
+                    setPaymentError("");
+                  }}
+                  className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 text-left outline-none transition-all duration-200 focus-visible:ring-4 focus-visible:ring-[#DC2626]/30 ${mode === "manual" ? "border-[#DC2626] bg-[#FFF8F6] ring-4 ring-[#DC2626]/10" : "border-[#E8DFCC] bg-white hover:border-[#D6C7A5]"}`}
+                >
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#DC2626] text-white">
+                    <Wallet size={18} />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-bold text-[#2B2116]">
+                      ম্যানুয়াল পেমেন্ট
+                    </span>
+                    <span className="mt-0.5 block text-[12.5px] leading-5 text-[#5A4A32]">
+                      Send Money করে TrxID জমা দিন
+                    </span>
+                  </span>
+                </button>
+              </div>
+
+              {/* Total */}
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[#FCFAF5] px-4 py-3 ring-1 ring-inset ring-[#EEE6D3]">
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7A6A50]">
+                    আপনার নির্বাচন
                   </p>
-                  <p className="mt-0.5 text-[13px] leading-5 text-[#5A4A32]">
-                    {body}
+                  <p className="text-[15px] font-bold text-[#2B2116]">
+                    <T>{selected.name}</T>
+                    <span className="ml-1.5 text-sm font-medium text-[#7A6A50]">
+                      · <T>{selected.duration}</T>
+                    </span>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-[#7A6A50]">
+                    সর্বমোট
+                  </p>
+                  <p className="text-2xl font-extrabold leading-none text-[#DC2626]">
+                    {formatPrice(selected.price)}
                   </p>
                 </div>
               </div>
-            ))}
-          </section>
+
+              {/* ---------- AUTO: go to gateway ---------- */}
+              {mode === "auto" && autoAvailable && (
+                <div
+                  className="mt-4 flex flex-col gap-2.5"
+                  style={{ animation: "sub-open 220ms ease-out" }}
+                >
+                  <p className="text-[13px] font-medium leading-5 text-[#3F6B5E]">
+                    নিচের বাটনে ক্লিক করলে সুরক্ষিত পেমেন্ট গেটওয়েতে নিয়ে
+                    যাওয়া হবে। পেমেন্ট সফল হলে সাবস্ক্রিপশন নিজে থেকেই চালু
+                    হবে।
+                  </p>
+                  {gateways.map((gateway, index) => (
+                    <button
+                      key={gateway.key}
+                      type="button"
+                      onClick={() => void startGateway(gateway.key)}
+                      disabled={gatewayBusy !== null || plansLoading}
+                      className={`inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-lg px-5 py-2.5 text-center text-base font-bold shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-70 ${index === 0 ? "bg-[#0F766E] text-white hover:bg-[#115E59] focus-visible:ring-teal-600/40" : "border border-[#0F766E]/40 bg-white text-[#0F766E] hover:bg-[#F0FDFA] focus-visible:ring-teal-600/30"}`}
+                    >
+                      {gatewayBusy === gateway.key ? (
+                        <LoaderCircle size={19} className="animate-spin" />
+                      ) : (
+                        <CreditCard size={19} />
+                      )}
+                      {gatewayBusy === gateway.key
+                        ? "পেমেন্ট পেজ খুলছে…"
+                        : `${gateway.label} দিয়ে পেমেন্ট করুন · ${formatPrice(selected.price)}`}
+                    </button>
+                  ))}
+                  {paymentError && (
+                    <p
+                      role="alert"
+                      className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-sm font-semibold text-red-700"
+                    >
+                      {paymentError}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* ---------- MANUAL: box opens below ---------- */}
+              {mode === "manual" && (
+                <div
+                  className="mt-4 rounded-xl border-2 border-[#FECACA] bg-[#FFF8F6] p-4"
+                  style={{ animation: "sub-open 220ms ease-out" }}
+                >
+                  <h3 className="text-base font-bold text-[#B91C1C]">
+                    ম্যানুয়াল পেমেন্টের নিয়ম
+                  </h3>
+                  <ol className="mt-2.5 space-y-2">
+                    {[
+                      <>নিচের যেকোনো একটি নম্বর কপি করুন।</>,
+                      <>
+                        bKash / Nagad অ্যাপে গিয়ে ওই নম্বরে ঠিক{" "}
+                        <strong className="text-[#B91C1C]">
+                          {formatPrice(selected.price)}
+                        </strong>{" "}
+                        <strong>Send Money</strong> করুন।
+                      </>,
+                      <>
+                        পেমেন্ট শেষে SMS-এ পাওয়া <strong>TrxID</strong> এবং যে
+                        নম্বর থেকে টাকা পাঠিয়েছেন সেটি নিচের ফর্মে লিখে জমা
+                        দিন।
+                      </>,
+                      <>
+                        অ্যাডমিন যাচাই করে Approve করলে আপনার সাবস্ক্রিপশন চালু
+                        হবে।
+                      </>,
+                    ].map((text, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-2.5 text-[13.5px] font-medium leading-5 text-[#3B2F1E]"
+                      >
+                        <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-[11px] font-bold text-white">
+                          {toBnDigits(index + 1)}
+                        </span>
+                        <span>{text}</span>
+                      </li>
+                    ))}
+                  </ol>
+
+                  {reviewPending ? (
+                    <p className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-[#FFFBEB] px-3 py-2.5 text-[13.5px] font-semibold leading-5 text-amber-900">
+                      <Clock3 size={17} className="mt-0.5 shrink-0" />
+                      আপনার একটি পেমেন্ট ইতিমধ্যে রিভিউতে আছে। যাচাই শেষ না
+                      হওয়া পর্যন্ত নতুন পেমেন্ট জমা দেওয়া যাবে না।
+                    </p>
+                  ) : manualState === "loading" || manualState === "idle" ? (
+                    <div
+                      aria-busy="true"
+                      className="mt-4 flex items-center gap-2.5 rounded-lg bg-white px-3 py-3 text-sm font-medium text-[#5A4A32] ring-1 ring-inset ring-[#EEE6D3]"
+                    >
+                      <LoaderCircle size={16} className="animate-spin" />{" "}
+                      পেমেন্টের তথ্য লোড হচ্ছে…
+                    </div>
+                  ) : manualState === "error" ? (
+                    <div
+                      role="alert"
+                      className="mt-4 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2.5 text-sm font-semibold text-red-700"
+                    >
+                      {manualLoadError}
+                      <button
+                        type="button"
+                        onClick={() => void loadManualInfo(selected.id)}
+                        className="ml-2 underline"
+                      >
+                        আবার চেষ্টা করুন
+                      </button>
+                    </div>
+                  ) : wallets.length === 0 ? (
+                    <p
+                      role="alert"
+                      className="mt-4 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2.5 text-sm font-semibold text-red-700"
+                    >
+                      এই মুহূর্তে কোনো পেমেন্ট নম্বর সেট করা নেই। সাপোর্টে
+                      যোগাযোগ করুন।
+                    </p>
+                  ) : (
+                    <>
+                      {/* Payment numbers */}
+                      <div className="mt-4 space-y-2">
+                        {wallets.map(({ name, number }) => (
+                          <div
+                            key={name}
+                            className="flex items-center gap-3 rounded-lg bg-white px-3 py-2.5 ring-1 ring-inset ring-[#EEE6D3]"
+                          >
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#FBF6E8] ring-1 ring-[#E3D6B8]">
+                              {name === "bKash" || name === "Nagad" ? (
+                                <WalletLogo wallet={name} size={28} />
+                              ) : (
+                                <Wallet size={20} className="text-[#DC2626]" />
+                              )}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-[#7A6A50]">
+                                {name} · Send Money
+                              </p>
+                              <p className="font-mono text-lg font-extrabold tracking-wide text-[#2B2116]">
+                                {number}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => void copyNumber(name, number)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-1.5 text-sm font-bold text-[#B91C1C] transition hover:bg-[#FEE2E2] active:scale-[0.97]"
+                            >
+                              {copiedWallet === name ? (
+                                <Check size={14} />
+                              ) : (
+                                <Copy size={14} />
+                              )}
+                              {copiedWallet === name ? "কপি হয়েছে" : "Copy"}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Submit form */}
+                      <form
+                        onSubmit={handleManualSubmit}
+                        className="mt-4 space-y-3 border-t border-[#FECACA] pt-4"
+                      >
+                        <p className="text-sm font-bold text-[#2B2116]">
+                          টাকা পাঠানোর পর তথ্য জমা দিন
+                        </p>
+
+                        {wallets.length > 1 && (
+                          <div>
+                            <label className="mb-1.5 block text-[13px] font-bold text-[#3B2F1E]">
+                              কোন মাধ্যমে পাঠিয়েছেন?
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                              {wallets.map(({ name }) => (
+                                <button
+                                  key={name}
+                                  type="button"
+                                  onClick={() => setManualWallet(name)}
+                                  aria-pressed={activeWallet === name}
+                                  className={`rounded-lg border-2 px-4 py-1.5 text-sm font-bold transition ${activeWallet === name ? "border-[#DC2626] bg-[#FEF2F2] text-[#B91C1C]" : "border-[#E8DFCC] bg-white text-[#5A4A32] hover:border-[#D6C7A5]"}`}
+                                >
+                                  {name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <label
+                            htmlFor="senderNumber"
+                            className="mb-1.5 block text-[13px] font-bold text-[#3B2F1E]"
+                          >
+                            যে নম্বর থেকে টাকা পাঠিয়েছেন
+                          </label>
+                          <input
+                            id="senderNumber"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            value={senderNumber}
+                            onChange={(event) =>
+                              setSenderNumber(event.target.value)
+                            }
+                            placeholder="01XXXXXXXXX"
+                            required
+                            maxLength={20}
+                            className="w-full rounded-lg border border-[#E3D6B8] bg-white px-3.5 py-2.5 text-base outline-none transition placeholder:text-[#B0A080] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="transactionId"
+                            className="mb-1.5 block text-[13px] font-bold text-[#3B2F1E]"
+                          >
+                            Transaction ID (TrxID)
+                          </label>
+                          <input
+                            id="transactionId"
+                            autoComplete="off"
+                            autoCapitalize="characters"
+                            spellCheck={false}
+                            value={transactionId}
+                            onChange={(event) =>
+                              setTransactionId(event.target.value.slice(0, 10))
+                            }
+                            placeholder="যেমন: BIK7A8G9XZ"
+                            required
+                            minLength={8}
+                            maxLength={10}
+                            pattern="[A-Za-z0-9]{8,10}"
+                            title="TrxID অবশ্যই ৮–১০টি ইংরেজি অক্ষর/সংখ্যার হতে হবে।"
+                            className="w-full rounded-lg border border-[#E3D6B8] bg-white px-3.5 py-2.5 font-mono text-base uppercase tracking-wider outline-none transition placeholder:font-sans placeholder:normal-case placeholder:tracking-normal placeholder:text-[#B0A080] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/20"
+                          />
+                          <p className="mt-1 text-xs leading-5 text-[#7A6A50]">
+                            TrxID ৮–১০টি ইংরেজি অক্ষর/সংখ্যার হয়। SMS-এ যেভাবে
+                            আছে সেভাবেই লিখুন।
+                          </p>
+                        </div>
+
+                        {manualError && (
+                          <p
+                            role="alert"
+                            className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-3 py-2 text-sm font-semibold text-red-700"
+                          >
+                            {manualError}
+                          </p>
+                        )}
+                        {manualNotice && (
+                          <p
+                            role="status"
+                            className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"
+                          >
+                            {manualNotice}
+                          </p>
+                        )}
+
+                        <button
+                          type="submit"
+                          disabled={submitting || !activeWallet}
+                          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#DC2626] px-5 py-2.5 text-base font-bold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#B91C1C] hover:shadow-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#DC2626]/30 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          {submitting ? (
+                            <LoaderCircle size={18} className="animate-spin" />
+                          ) : (
+                            <Send size={18} />
+                          )}
+                          {submitting
+                            ? "জমা হচ্ছে…"
+                            : "পেমেন্টের তথ্য জমা দিন"}
+                        </button>
+                      </form>
+                    </>
+                  )}
+
+                  {reviewPending && manualNotice && (
+                    <p
+                      role="status"
+                      className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800"
+                    >
+                      {manualNotice}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-[#7A6A50]">
+                <Lock size={13} className="shrink-0" />
+                পেমেন্ট যাচাই হওয়ার পরই সাবস্ক্রিপশন অ্যাক্সেস চালু হয়
+              </p>
+            </section>
+          </div>
         </div>
       </main>
     </div>
