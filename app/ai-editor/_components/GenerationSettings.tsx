@@ -509,6 +509,17 @@ export default function GenerationSettings({
   onResetSettings,
 }: GenerationSettingsProps) {
   const { t } = useAiEditorText();
+  // Size popups (Visa / Admission) open right under the button that was clicked.
+  const sizeBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const getSizePopupPos = (id: string, maxWidth: number) => {
+    const btn = sizeBtnRefs.current[id];
+    const parent = btn?.offsetParent as HTMLElement | null;
+    if (!btn || !parent) return { left: 0, top: 85, width: maxWidth, arrow: 40 };
+    const width = Math.min(maxWidth, parent.clientWidth);
+    const center = btn.offsetLeft + btn.offsetWidth / 2;
+    const left = Math.max(0, Math.min(parent.clientWidth - width, center - width / 2));
+    return { left, top: btn.offsetTop + btn.offsetHeight + 8, width, arrow: center - left };
+  };
   const [showClothingColorPicker, setShowClothingColorPicker] = useState(false);
   useEffect(() => {
     const clearEditorPreviewCache = () => {
@@ -955,6 +966,9 @@ export default function GenerationSettings({
               return (
                 <button
                   key={size.id}
+                  ref={(el) => {
+                    sizeBtnRefs.current[size.id] = el;
+                  }}
                   onClick={() => handleSizeClick(size.id)}
                   title={size.tooltip ? t(size.tooltip) : undefined}
                   type="button"
@@ -989,7 +1003,18 @@ export default function GenerationSettings({
           </div>
 
           {showVisaPopup && (
-            <div className="gs-pop absolute left-0 top-[85px] w-full max-w-[300px] bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
+            <div
+              className="gs-pop absolute bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50"
+              style={(() => {
+                const pos = getSizePopupPos("Visa", 300);
+                return { left: pos.left, top: pos.top, width: pos.width };
+              })()}
+            >
+              <span
+                aria-hidden
+                className="absolute -top-[9px] h-4 w-4 rotate-45 border-l-2 border-t-2 border-[#DC2626] bg-[#FBF6E8]"
+                style={{ left: getSizePopupPos("Visa", 300).arrow - 8 }}
+              />
               <h4 className="text-sm font-semibold text-[#3B2F1E] mb-3">
                 <AiT>{"Visa Photo Size\n              "}</AiT>
               </h4>
@@ -1021,7 +1046,19 @@ export default function GenerationSettings({
             </div>
           )}
           {showAdmissionPopup && (
-            <div className="gs-pop absolute left-0 top-[85px] w-full max-w-[340px] max-h-[70vh] overflow-y-auto bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
+            <div
+              className="gs-pop absolute z-50"
+              style={(() => {
+                const pos = getSizePopupPos("Admission", 340);
+                return { left: pos.left, top: pos.top, width: pos.width };
+              })()}
+            >
+              <span
+                aria-hidden
+                className="absolute -top-[9px] z-10 h-4 w-4 rotate-45 border-l-2 border-t-2 border-[#DC2626] bg-[#FBF6E8]"
+                style={{ left: getSizePopupPos("Admission", 340).arrow - 8 }}
+              />
+              <div className="relative max-h-[70vh] overflow-y-auto bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4">
               <h4 className="text-sm font-semibold text-[#3B2F1E] mb-3">
                 <AiT>{"Admission Photo Size"}</AiT>
               </h4>
@@ -1036,6 +1073,7 @@ export default function GenerationSettings({
                   }
                 }}
               />
+              </div>
             </div>
           )}
         </div>

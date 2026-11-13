@@ -39,7 +39,7 @@ function filterString(filters: FilterState) {
         `sepia(${filters.sepia}%)`,
     ].join(" ");
 }
-import { EXPORT_DPI, addDpiMetadata, canvasToBlob, downloadBlob, getExportPhysicalSize, isOriginalSizeLabel, physicalToPixels, printSinglePhoto, } from "./photoExport";
+import { EXPORT_DPI, addDpiMetadata, canvasToBlob, downloadBlob, admissionMasterScale, resizeCanvasSmooth, sharpenCanvasDetail, getExportPhysicalSize, isOriginalSizeLabel, physicalToPixels, printSinglePhoto, } from "./photoExport";
 import { parseAdmissionLabel, resolveExportFormat } from "./admissionSizes";
 const TRANSPARENT_BACKGROUND_STYLE: React.CSSProperties = {
     backgroundImage: "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
@@ -192,7 +192,7 @@ export default function ImagePreviewModal({
             ...physicalToPixels(physical, parseAdmissionLabel(photoSizeLabel) ? 300 : (image.dpi || EXPORT_DPI)),
         };
     };
-    const renderCanvasToExactExportSize = async () => {
+    const renderCanvasToExactExportSize = async (master = false) => {
         const sourceCanvas = await generateEditedCanvas();
         // "Original Size" means the user generated without choosing a photo size.
         // Export exactly what they generated (its own pixels and ratio) instead of
@@ -212,7 +212,13 @@ export default function ImagePreviewModal({
                 },
             };
         }
-        const target = getCurrentExportSize();
+        const isAdmission = !!parseAdmissionLabel(photoSizeLabel);
+        const baseTarget = getCurrentExportSize();
+        // Admission photos: keep a large master copy when saving/regenerating, shrink to exact pixels only for downloads.
+        const masterScale = isAdmission && master ? admissionMasterScale(baseTarget.widthPx, baseTarget.heightPx) : 1;
+        const target = masterScale > 1
+            ? { ...baseTarget, widthPx: baseTarget.widthPx * masterScale, heightPx: baseTarget.heightPx * masterScale }
+            : baseTarget;
         const scale = Math.min(target.widthPx / sourceCanvas.width, target.heightPx / sourceCanvas.height);
         const drawWidth = Math.max(1, Math.round(sourceCanvas.width * scale));
         const drawHeight = Math.max(1, Math.round(sourceCanvas.height * scale));
@@ -235,7 +241,17 @@ export default function ImagePreviewModal({
         }
         context.imageSmoothingEnabled = true;
         context.imageSmoothingQuality = "high";
-        context.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, drawX, drawY, drawWidth, drawHeight);
+        if (isAdmission && drawWidth < sourceCanvas.width) {
+            const shrunk = resizeCanvasSmooth(sourceCanvas, drawWidth, drawHeight);
+            context.drawImage(shrunk, 0, 0, drawWidth, drawHeight, drawX, drawY, drawWidth, drawHeight);
+            shrunk.width = 0;
+            shrunk.height = 0;
+            if (!master)
+                sharpenCanvasDetail(context, target.widthPx, target.heightPx, 0.35);
+        }
+        else {
+            context.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, drawX, drawY, drawWidth, drawHeight);
+        }
         return {
             canvas: outputCanvas,
             widthPx: target.widthPx,
@@ -245,7 +261,7 @@ export default function ImagePreviewModal({
         };
     };
     const generateExactEditedImageDataUrl = async (format: "jpeg" | "png" = "jpeg") => {
-        const result = await renderCanvasToExactExportSize();
+        const result = await renderCanvasToExactExportSize(true);
         return format === "png"
             ? result.canvas.toDataURL("image/png")
             : result.canvas.toDataURL("image/jpeg", 0.95);

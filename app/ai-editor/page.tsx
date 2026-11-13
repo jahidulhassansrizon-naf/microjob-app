@@ -15,7 +15,7 @@ import QrCodeSidebar from "./_components/QrCodeSidebar";
 import PhotoSetupWizard, { type WizardResult } from "./_components/PhotoSetupWizard";
 import RecentGenerations from "./_components/RecentGenerations";
 import GeneratedResultPanel, { GeneratedResultItem, PrintSession } from "./_components/GeneratedResultPanel";
-import { applyFiltersToExportable, buildPrintStudioPayload, printSinglePhoto } from "./_components/photoExport";
+import { admissionMasterScale, applyFiltersToExportable, buildPrintStudioPayload, printSinglePhoto } from "./_components/photoExport";
 import { DEFAULT_FILTERS, RESULT_DEFAULT_FILTERS, filterString, isNeutralFilters, type FilterState } from "./_components/ImageEditSidebar";
 import { deletePrintSession, getPrintSession, listPrintSessions, savePrintSession, type PrintSessionMeta, type PrintSessionSnapshot } from "./_components/printSessionStore";
 import { centerCrop, makeAspectCrop } from "react-image-crop";
@@ -1595,6 +1595,14 @@ export default function PhotoEditorPage() {
             const currentBgHex = getSelectedBgColorValue();
             const transparentBackground = isTransparentBackground();
             const exactExport = selectedSize ? getExactExportDimensions(currentSizeLabel) : null;
+            // Admission photos (e.g. 300x300 px) are generated big and sharp, then shrunk to the exact
+            // portal pixels when exporting. Asking the generator for 300 px directly would look soft.
+            const generationExport = exactExport && parseAdmissionLabel(currentSizeLabel)
+                ? (() => {
+                    const k = admissionMasterScale(exactExport.widthPx, exactExport.heightPx);
+                    return { ...exactExport, widthPx: exactExport.widthPx * k, heightPx: exactExport.heightPx * k, dpi: 300 * k };
+                })()
+                : exactExport;
             const basePayload = {
                 size: currentSizeLabel,
                 sizeType: selectedSize,
@@ -1604,9 +1612,9 @@ export default function PhotoEditorPage() {
                 clothing: selectedClothing,
                 clothingColor: selectedClothingColor,
                 editingGuides,
-                widthPx: exactExport?.widthPx ?? 0,
-                heightPx: exactExport?.heightPx ?? 0,
-                dpi: exactExport?.dpi ?? EXPORT_DPI,
+                widthPx: generationExport?.widthPx ?? 0,
+                heightPx: generationExport?.heightPx ?? 0,
+                dpi: generationExport?.dpi ?? EXPORT_DPI,
             };
             if (isDualMode) {
                 const leftSource = originalLeftImage || leftImage!;
@@ -1706,7 +1714,7 @@ export default function PhotoEditorPage() {
                 image: rawImage,
             });
             console.info(`[ai-editor timing] bot + resize + upload done after ${((Date.now() - timingStartedAt) / 1000).toFixed(1)}s`);
-            let outputDimensions: { widthPx: number; heightPx: number; dpi?: number } | null = exactExport;
+            let outputDimensions: { widthPx: number; heightPx: number; dpi?: number } | null = generationExport;
             if (!outputDimensions) {
                 outputDimensions = await getImageRasterDimensions(generatedUrl);
                 if (!outputDimensions.widthPx || !outputDimensions.heightPx) {
@@ -1726,7 +1734,7 @@ export default function PhotoEditorPage() {
                 sizeType: selectedSize,
                 widthPx: outputDimensions?.widthPx ?? 0,
                 heightPx: outputDimensions?.heightPx ?? 0,
-                dpi: exactExport?.dpi ?? EXPORT_DPI,
+                dpi: generationExport?.dpi ?? EXPORT_DPI,
                 bgColor: currentBgHex,
                 clothingStyle: `Style ${selectedClothing}`,
                 clothingColor: selectedClothingColor,

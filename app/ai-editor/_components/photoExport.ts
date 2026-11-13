@@ -41,6 +41,80 @@ export function parsePhysicalSizeLabel(label: string): PhysicalSize {
         unit: "mm",
     };
 }
+/** Admission photos are generated at a high "master" size and only shrunk to the exact portal pixels at export. */
+export const ADMISSION_MASTER_LONG_SIDE_PX = 1500;
+export function admissionMasterScale(widthPx: number, heightPx: number): number {
+    return Math.max(2, Math.ceil(ADMISSION_MASTER_LONG_SIDE_PX / Math.max(1, widthPx, heightPx)));
+}
+/**
+ * Shrinks a canvas in gentle steps (never more than 2x at a time) so fine detail such as
+ * hair, eyebrows and beard stays crisp instead of turning soft or blotchy.
+ */
+export function resizeCanvasSmooth(source: HTMLCanvasElement, width: number, height: number): HTMLCanvasElement {
+    let current = source;
+    let curW = source.width;
+    let curH = source.height;
+    const made: HTMLCanvasElement[] = [];
+    while (curW / 2 >= width && curH / 2 >= height) {
+        const nextW = Math.max(width, Math.floor(curW / 2));
+        const nextH = Math.max(height, Math.floor(curH / 2));
+        const step = document.createElement("canvas");
+        step.width = nextW;
+        step.height = nextH;
+        const ctx = step.getContext("2d");
+        if (!ctx)
+            break;
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(current, 0, 0, curW, curH, 0, 0, nextW, nextH);
+        made.push(step);
+        current = step;
+        curW = nextW;
+        curH = nextH;
+    }
+    const out = document.createElement("canvas");
+    out.width = width;
+    out.height = height;
+    const outCtx = out.getContext("2d");
+    if (!outCtx)
+        return current;
+    outCtx.imageSmoothingEnabled = true;
+    outCtx.imageSmoothingQuality = "high";
+    outCtx.drawImage(current, 0, 0, curW, curH, 0, 0, width, height);
+    made.forEach((c) => {
+        c.width = 0;
+        c.height = 0;
+    });
+    return out;
+}
+/** Gentle unsharp mask (RGB only, transparent pixels untouched) to restore crispness after shrinking. */
+export function sharpenCanvasDetail(context: CanvasRenderingContext2D, width: number, height: number, amount = 0.35) {
+    try {
+        const imageData = context.getImageData(0, 0, width, height);
+        const src = imageData.data;
+        const copy = new Uint8ClampedArray(src);
+        const stride = width * 4;
+        for (let y = 1; y < height - 1; y += 1) {
+            for (let x = 1; x < width - 1; x += 1) {
+                const i = y * stride + x * 4;
+                if (copy[i + 3] === 0)
+                    continue;
+                for (let c = 0; c < 3; c += 1) {
+                    const center = copy[i + c];
+                    const blur = (copy[i + c - 4] + copy[i + c + 4] + copy[i + c - stride] + copy[i + c + stride]) / 4;
+                    const diff = center - blur;
+                    if (diff > 2 || diff < -2) {
+                        src[i + c] = center + diff * amount;
+                    }
+                }
+            }
+        }
+        context.putImageData(imageData, 0, 0);
+    }
+    catch {
+        // Pixel access blocked: keep the unsharpened image.
+    }
+}
 export function isOriginalSizeLabel(label: string) {
     return /^original size$/i.test(String(label || "").trim());
 }
@@ -398,7 +472,9 @@ export async function renderPhotoToExportCanvas(image: ExportableImage) {
     img.onerror = null;
     img.src = "";
     const photoSizeLabel = image.size || "35×45 mm";
-    const dpi = Number(image.dpi) || EXPORT_DPI;
+    const isAdmission = !!parseAdmissionLabel(photoSizeLabel);
+    // Admission labels are exact pixels at 300 dpi; the stored dpi belongs to the large master image.
+    const dpi = isAdmission ? 300 : Number(image.dpi) || EXPORT_DPI;
     if (isOriginalSizeLabel(photoSizeLabel)) {
         return {
             canvas: sourceCanvas,
@@ -435,7 +511,16 @@ export async function renderPhotoToExportCanvas(image: ExportableImage) {
     }
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
-    context.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, drawX, drawY, drawWidth, drawHeight);
+    if (isAdmission && drawWidth < sourceCanvas.width) {
+        const shrunk = resizeCanvasSmooth(sourceCanvas, drawWidth, drawHeight);
+        context.drawImage(shrunk, 0, 0, drawWidth, drawHeight, drawX, drawY, drawWidth, drawHeight);
+        shrunk.width = 0;
+        shrunk.height = 0;
+        sharpenCanvasDetail(context, target.widthPx, target.heightPx, 0.35);
+    }
+    else {
+        context.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, drawX, drawY, drawWidth, drawHeight);
+    }
     // The output canvas now owns the finished pixels; discard the full-source backing store.
     sourceCanvas.width = 0;
     sourceCanvas.height = 0;
