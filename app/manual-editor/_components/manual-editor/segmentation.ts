@@ -18,6 +18,7 @@
  */
 
 import type { ObjectTab } from "./types";
+import { refineAlpha } from "./maskRefine";
 import {
   canvasToBlob,
   createCanvas,
@@ -736,6 +737,39 @@ async function getForegroundMask(
   return promise;
 }
 
+/*
+ * Reads the model's mask, removes faint haze / floating specks / the thin
+ * halo on the edge (see maskRefine.ts) and returns it as a canvas that is
+ * used as the final alpha for the original photo.
+ */
+function buildCleanMask(mask: ImageBitmap): HTMLCanvasElement {
+  const canvas = createCanvas(mask.width, mask.height);
+  const ctx = get2d(canvas);
+
+  ctx.drawImage(mask, 0, 0);
+
+  const image = ctx.getImageData(0, 0, mask.width, mask.height);
+  const { data } = image;
+  const plane = new Uint8ClampedArray(mask.width * mask.height);
+
+  for (let index = 0; index < plane.length; index += 1) {
+    plane[index] = data[index * 4 + 3];
+  }
+
+  const refined = refineAlpha(plane, mask.width, mask.height);
+
+  for (let index = 0; index < refined.length; index += 1) {
+    data[index * 4] = 255;
+    data[index * 4 + 1] = 255;
+    data[index * 4 + 2] = 255;
+    data[index * 4 + 3] = refined[index];
+  }
+
+  ctx.putImageData(image, 0, 0);
+
+  return canvas;
+}
+
 /**
  * Cuts the person out of the photo and returns a transparent PNG at the
  * photo's own resolution (longest side capped at CUTOUT_MAX_SIDE).
@@ -755,19 +789,25 @@ export async function removeBackgroundFromImage(
 
     const size = fitSize(decoded.width, decoded.height, CUTOUT_MAX_SIDE);
     const output = createCanvas(size.width, size.height);
+    let cleanMask: HTMLCanvasElement | null = null;
 
     try {
       const ctx = get2d(output);
 
-      // Original pixels first, then keep only where the soft mask is opaque.
+      cleanMask = buildCleanMask(mask);
+
+      // Original pixels first, then keep only where the cleaned mask is opaque.
       ctx.drawImage(decoded, 0, 0, size.width, size.height);
       ctx.globalCompositeOperation = "destination-in";
-      ctx.drawImage(mask, 0, 0, size.width, size.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(cleanMask, 0, 0, size.width, size.height);
       ctx.globalCompositeOperation = "source-over";
 
       return await canvasToBlob(output, "image/png");
     } finally {
       mask.close();
+      if (cleanMask) releaseCanvas(cleanMask);
       releaseCanvas(output);
     }
   } finally {
