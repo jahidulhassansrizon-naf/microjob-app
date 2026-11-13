@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Noto_Sans_Bengali } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import PageBackgroundInitializer from "@/app/_components/PageBackgroundInitializer";
 import ActivityTracker from "@/app/_components/ActivityTracker";
@@ -19,17 +18,6 @@ import { getServerSiteSettings } from "@/lib/serverSiteSettings";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { DEFAULT_LOCALE } from "@/lib/i18n";
 import "./globals.css";
-
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-const banglaSans = Noto_Sans_Bengali({
-  variable: "--font-bangla",
-  subsets: ["bengali", "latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
 
 // The root layout no longer reads cookies, so pages without their own dynamic code are
 // pre-rendered once and served from the CDN (no function invocation per page view).
@@ -91,7 +79,7 @@ export default async function RootLayout({
         <PrePaintScript />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${banglaSans.variable} min-h-screen text-gray-900 antialiased`}
+        className="min-h-screen text-gray-900 antialiased"
         suppressHydrationWarning
       >
         <SiteSettingsProvider initialSettings={initialSiteSettings}>
