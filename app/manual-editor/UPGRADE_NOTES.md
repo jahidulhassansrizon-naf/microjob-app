@@ -102,3 +102,34 @@ None. Uses `react` and `lucide-react` only.
 
 ## New npm packages
 None.
+
+---
+
+# Pass 4: Pose Fix (manual head / neck / shoulder straightening)
+
+## Added
+- `PoseFixModal.tsx` (+ `PoseFixLauncher` button) and `poseWarp.ts` (pure TS engine, no new packages).
+- Four mouse tools: **Pin pull** (rigid Moving-Least-Squares pins), **Head & neck** (rotate head around a neck pivot with smooth falloff), **Push brush** (liquify), **Straighten** (draw a line across the eyes to level the whole photo).
+- Preview runs on a <=1000px copy; Save replays the same steps on the full-resolution photo and commits through `applyRetouchedFile` (pixel size unchanged, so crop/size/background keep working).
+- Entry points: button in step 2 (Crop) and in AI tools > Cutout & retouch.
+- `AiTool` gained `"pose"`; `TOOL_GUIDE` has a `pose` entry.
+
+## Verified / not verified
+- `poseWarp.ts` compiled with `tsc --strict` and checked in Node: head tilt, rotate, pins and push brush all move pixels in the expected direction.
+- The React modal was only syntax-checked. Not run in a browser.
+- It bends existing pixels (not generative AI): keep head moves modest.
+
+## Pass 4b: Auto straighten (one click)
+- `faceAlign.ts`: loads MediaPipe Face Landmarker from a CDN at first use (no npm install; URLs are constants at the top of the file, copy to /public to self-host). Roll = eye-line angle blended with the forehead-chin axis; pivot/head/radius derived from the landmarks.
+- `PoseFixModal.tsx`: green "Auto straighten" button builds a head-tilt step from the measurement, then measures again and refines once. Fully undoable.
+- Geometry (roll sign, pivot) checked in Node with synthetic landmarks. The MediaPipe call itself was not run here (needs a browser + network).
+- Limits: sideways tilt only (no yaw/pitch fix), whole face must be visible.
+
+## Pass 4c: full-body auto straighten + console fix
+- Auto straighten now runs 3 measured steps: (1) shoulders levelled with a new `body` warp (everything below the neck rotates around the neck base, fading in over the neck), (2) head roll via the tilt warp (eyes/nose/chin, re-measured once), (3) head centred over the shoulders with rigid pins. Steps 1 and 3 need both shoulders visible (MediaPipe Pose Landmarker, loaded from CDN like the face model); otherwise only the head is corrected and the user is told.
+- The "INFO: Created TensorFlow Lite XNNPACK delegate" red overlay: MediaPipe caches console.error when it starts, so the filter is now installed before the library is imported.
+- `body` warp checked in Node (5° shoulder slope -> 0.00°). MediaPipe calls not run here.
+- Cannot fix: body/face turned left-right (yaw) or up-down (pitch).
+
+## Pass 4d: manual Body & shoulders tool
+- New "Body & shoulders" tab in Pose Fix: blue dot = neck base (pivot), red handle at the end of the shoulder line rotates everything below the neck (reuses the tested `body` warp). Sliders: turn (±20°) and neck softness. The blue band shows where the turn fades in.

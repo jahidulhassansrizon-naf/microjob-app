@@ -1,23 +1,25 @@
 "use client";
 import { ManualT as T, useManualEditorText } from "./manualEditorI18n";
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { createPortal } from "react-dom";
 import ReactCrop, { type Crop, type PixelCrop, centerCrop, } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Check, Crop as CropIcon, FlipHorizontal2, Minus, Plus, RotateCcw, ScanLine, X, } from "lucide-react";
 import { useManualEditor } from "./EditorProvider";
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 function centerFreeCrop(mediaWidth: number, mediaHeight: number) {
+    // Whole photo selected from the start: nothing is dimmed or cut until the person drags a handle.
     return centerCrop({
         unit: "%",
         x: 0,
         y: 0,
-        width: 80,
-        height: 80,
+        width: 100,
+        height: 100,
     }, mediaWidth, mediaHeight);
 }
 export default function CropEditor() {
     const { t } = useManualEditorText();
-    const { activePhoto, rotation, flipX, applyCroppedDataUrl, cropAvailable, consumeCrop, } = useManualEditor();
+    const { activePhoto, rotation, flipX, applyCroppedDataUrl, cropAvailable, consumeCrop, cropRequestId, } = useManualEditor();
     const [open, setOpen] = useState(false);
     const [zoom, setZoom] = useState(100);
     const [crop, setCrop] = useState<Crop>();
@@ -55,6 +57,24 @@ export default function CropEditor() {
             setCrop(undefined);
         }
     }, [activePhoto?.url, cropAvailable, flipX, rotation, activePhoto]);
+    // "Crop again" from the wizard.
+    const lastRequestRef = useRef(cropRequestId);
+    useEffect(() => {
+        if (cropRequestId === lastRequestRef.current)
+            return;
+        lastRequestRef.current = cropRequestId;
+        if (!activePhoto)
+            return;
+        sourceUrlRef.current = activePhoto.url;
+        setOpen(true);
+        setZoom(100);
+        setEditorRotation(rotation);
+        setEditorFlipX(flipX);
+        setProcessedSrc(null);
+        setCompletedCrop(null);
+        setCrop(undefined);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cropRequestId]);
     // Rebuild the temporary crop source only when the user changes rotate/mirror
     // inside the editor. This does not affect the one-time crop availability.
     useEffect(() => {
@@ -158,7 +178,10 @@ export default function CropEditor() {
     if (!open || !activePhoto) {
         return null;
     }
-    return (<div className="fixed inset-0 z-[200] flex flex-col bg-black text-white">
+    // Rendered on <body>: inside the page it sat under the side panels (they are sticky and paint over it).
+    if (typeof document === "undefined")
+        return null;
+    return createPortal(<div className="fixed inset-0 z-[1000] flex flex-col bg-black text-white">
       <style>{`
         .sebalagbe-crop-canvas .ReactCrop__crop-selection {
           border: 2px solid #ffffff !important;
@@ -244,5 +267,5 @@ export default function CropEditor() {
           </button>
         </div>
       </div>
-    </div>);
+    </div>, document.body);
 }

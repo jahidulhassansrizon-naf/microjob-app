@@ -1,3 +1,4 @@
+import { ADMISSION_PRESETS, type AdmissionFormat } from "@/app/ai-editor/_components/admissionSizes";
 import type { EditorFilters, SizePreset } from "./types";
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -93,92 +94,89 @@ export const VISA_PRESETS: SizePreset[] = [
   },
 ];
 
+/**
+ * Exact photo-lab sizes (defined in inches). Using rounded millimetres here made
+ * 4R come out as 1205×1795 px instead of the real 1200×1800 px at 300 DPI.
+ */
 export const R_SIZE_PRESETS: SizePreset[] = [
-  {
-    id: "2r",
-    label: "2R — 60×89 mm",
-    widthMm: 60,
-    heightMm: 89,
-  },
-  {
-    id: "3r",
-    label: "3R — 89×127 mm",
-    widthMm: 89,
-    heightMm: 127,
-  },
-  {
-    id: "4r",
-    label: "4R — 102×152 mm",
-    widthMm: 102,
-    heightMm: 152,
-  },
-  {
-    id: "5r",
-    label: "5R — 127×178 mm",
-    widthMm: 127,
-    heightMm: 178,
-  },
-  {
-    id: "6r",
-    label: "6R — 152×203 mm",
-    widthMm: 152,
-    heightMm: 203,
-  },
-  {
-    id: "8r",
-    label: "8R — 203×254 mm",
-    widthMm: 203,
-    heightMm: 254,
-  },
-  {
-    id: "a4",
-    label: "A4 — 210×297 mm",
-    widthMm: 210,
-    heightMm: 297,
-  },
-  {
-    id: "a4-landscape",
-    label: "A4 ↔ — 297×210 mm",
-    widthMm: 297,
-    heightMm: 210,
-  },
-  {
-    id: "letter",
-    label: "Letter — 216×279 mm",
-    widthMm: 216,
-    heightMm: 279,
-  },
+  { id: "2r", label: "2R — 2.5×3.5 inch", widthMm: 63.5, heightMm: 88.9 },
+  { id: "3r", label: "3R — 3.5×5 inch", widthMm: 88.9, heightMm: 127 },
+  { id: "4r", label: "4R — 4×6 inch", widthMm: 101.6, heightMm: 152.4 },
+  { id: "5r", label: "5R — 5×7 inch", widthMm: 127, heightMm: 177.8 },
+  { id: "6r", label: "6R — 6×8 inch", widthMm: 152.4, heightMm: 203.2 },
+  { id: "8r", label: "8R — 8×10 inch", widthMm: 203.2, heightMm: 254 },
+  { id: "a4", label: "A4 — 210×297 mm", widthMm: 210, heightMm: 297 },
+  { id: "a4-landscape", label: "A4 ↔ — 297×210 mm", widthMm: 297, heightMm: 210 },
+  { id: "letter", label: "Letter — 8.5×11 inch", widthMm: 215.9, heightMm: 279.4 },
 ];
 
+/** Physical size (mm) that `px` pixels cover at DPI. Used only for preview and printing. */
+export function pxToMm(px: number) {
+  return Math.round(((px / DPI) * 25.4) * 100) / 100;
+}
+
+export const ADMISSION_ID_PREFIX = "adm-";
+
+export function buildAdmissionSizePreset(spec: {
+  id: string;
+  label: string;
+  widthPx: number;
+  heightPx: number;
+  minKB?: number;
+  maxKB?: number;
+  format: AdmissionFormat;
+  note?: string;
+}): SizePreset {
+  return {
+    id: `${ADMISSION_ID_PREFIX}${spec.id}`,
+    label: spec.label,
+    widthMm: pxToMm(spec.widthPx),
+    heightMm: pxToMm(spec.heightPx),
+    widthPx: Math.round(spec.widthPx),
+    heightPx: Math.round(spec.heightPx),
+    minKB: spec.minKB,
+    maxKB: spec.maxKB,
+    format: spec.format,
+    note: spec.note,
+  };
+}
+
+/**
+ * Same list the AI Editor uses (app/ai-editor/_components/admissionSizes.ts),
+ * so a new university added there shows up in the Manual Editor automatically.
+ */
+export const ADMISSION_SIZE_PRESETS: SizePreset[] = ADMISSION_PRESETS.map((p) =>
+  buildAdmissionSizePreset({
+    id: p.id,
+    label: p.title,
+    widthPx: p.widthPx,
+    heightPx: p.heightPx,
+    minKB: p.minKB,
+    maxKB: p.maxKB,
+    format: p.format,
+    note: p.note,
+  }),
+);
+
+/**
+ * Real-world photo backgrounds (passport / visa / NID / job / admission forms).
+ * Order matters: the most commonly required background comes first.
+ */
 export const BACKGROUNDS = [
-  {
-    id: "white",
-    color: "#ffffff",
-  },
-  {
-    id: "blue1",
-    color: "#bae6fd",
-  },
-  {
-    id: "blue2",
-    color: "#7dd3fc",
-  },
-  {
-    id: "gray",
-    color: "#d1d5db",
-  },
-  {
-    id: "periwinkle",
-    color: "#c7d2fe",
-  },
-  {
-    id: "mint",
-    color: "#99f6e4",
-  },
-  {
-    id: "cream",
-    color: "#fef9c3",
-  },
+  // Passport, visa, NID, most govt. & admission forms
+  { id: "white", color: "#ffffff" },
+  // UK / Schengen / many online exams (neutral light grey)
+  { id: "lightgray", color: "#e6e6e6" },
+  // UK passport "cream" option, some old-style forms
+  { id: "cream", color: "#f3ead3" },
+  // Studio pale blue - very common for CV, school & college photos
+  { id: "paleblue", color: "#dcebf9" },
+  // Light sky blue - job / board / university application photos
+  { id: "skyblue", color: "#a9cff0" },
+  // Standard ID blue (#438EDB) - China visa/ID, many ID cards
+  { id: "idblue", color: "#438edb" },
+  // Standard red (#D9261C) - China / Vietnam ID, some job & govt. forms
+  { id: "red", color: "#d9261c" },
 ];
 
 export const DEFAULT_FILTERS: EditorFilters = {

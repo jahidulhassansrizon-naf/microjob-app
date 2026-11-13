@@ -1,6 +1,9 @@
-export type PhotoMode = "passport" | "dual" | "visa" | "rsizes" | "freesize";
+export type PhotoMode = "passport" | "dual" | "visa" | "rsizes" | "freesize" | "admission";
 
-export type AiTool = "face" | "object" | "transparent" | "upscale" | "cutout" | "retouch" | "enhance";
+/** Which preset list a size menu / preset belongs to. */
+export type SizeMenuKey = "visa" | "rsizes" | "admission";
+
+export type AiTool = "face" | "object" | "transparent" | "upscale" | "cutout" | "retouch" | "enhance" | "pose";
 
 export type ObjectTab = "face" | "skin" | "hair" | "shadow";
 
@@ -18,6 +21,18 @@ export type SizePreset = {
   label: string;
   widthMm: number;
   heightMm: number;
+  /**
+   * Admission / job-portal presets: the exported image must be EXACTLY this many
+   * pixels, within this KB range, in this format. When set, `widthMm`/`heightMm`
+   * are only the print size (pixels at 300 DPI) used for preview and Print Studio.
+   */
+  widthPx?: number;
+  heightPx?: number;
+  minKB?: number;
+  maxKB?: number;
+  format?: "jpg" | "png" | "any";
+  /** Short Bangla hint shown under the preset button. */
+  note?: string;
 };
 
 export type CropRect = {

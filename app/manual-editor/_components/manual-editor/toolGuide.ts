@@ -18,6 +18,7 @@ export type ToolGuideId =
   | "upscale"
   | "cutout"
   | "retouch"
+  | "pose"
   | "auto"
   | "clean"
   | "relight"
@@ -37,6 +38,7 @@ export const TOOL_GUIDE_ORDER: ToolGuideId[] = [
   "upscale",
   "cutout",
   "retouch",
+  "pose",
   "auto",
   "clean",
   "relight",
@@ -162,6 +164,26 @@ export const TOOL_GUIDE: Record<ToolGuideId, { en: GuideText; bn: GuideText }> =
         "ব্রণ, ধুলো, এলোমেলো একটা চুল, কাপড়ের ছোট দাগ, রেড-আই অথবা ব্যক্তিগত তথ্য ঢাকতে।",
       limits:
         "রিমুভ আশপাশ দেখে জায়গাটা ভরে (এটি জেনারেটিভ এআই নয়), তাই ছোট দাগের জন্য ভালো, বড় বস্তুর জন্য নয়।",
+    },
+  },
+  pose: {
+    en: {
+      name: "Pose Fix",
+      summary:
+        "One-click Auto straighten measures shoulders, neck and head (eyes, nose, chin) and levels them. Or fix it by hand: Pin pull (drop pins and drag the head or neck), Head & neck (turn the head around the neck base), Body & shoulders (turn everything below the neck to level the shoulders), Push brush (nudge shoulders, collar, chin) and Straighten (level the whole photo with a line across the eyes).",
+      useWhen:
+        "The head is tilted, the neck is bent, the shoulders are uneven or the whole photo is crooked, and you want a straight, studio-style pose.",
+      limits:
+        "Auto straighten fixes sideways head tilt only (it cannot turn a face that looks away) and needs the whole face (and for shoulder levelling both shoulders) to be visible; the first use downloads small models. It bends and moves the existing pixels (it is not generative AI), so keep moves modest, around 15° or less for the head. Large moves can stretch hair, ears or clothes. Every step can be undone.",
+    },
+    bn: {
+      name: "ভঙ্গি সোজা করুন",
+      summary:
+        "এক ক্লিকে অটো সোজা: কাঁধ, ঘাড় ও মাথা (চোখ, নাক, থুতনি) মেপে নিজে সোজা করে। অথবা নিজের হাতে করুন: পিন দিয়ে টানুন (পিন বসিয়ে মাথা বা ঘাড় টানুন), মাথা/ঘাড় ঘোরান (ঘাড়ের গোড়া ধরে মাথা ঘোরান), শরীর/কাঁধ ঘোরান (ঘাড়ের নিচের অংশ ঘুরিয়ে কাঁধ লেভেল), ব্রাশে ঠেলুন (কাঁধ, কলার, থুতনি সরান) এবং পুরো ছবি সোজা (দুই চোখের উপর লাইন টেনে ছবি লেভেল করুন)।",
+      useWhen:
+        "মাথা কাত, ঘাড় বাঁকা, কাঁধ উঁচু-নিচু অথবা পুরো ছবিটাই বাঁকা, আর স্টুডিওর মতো সোজা ভঙ্গি চান।",
+      limits:
+        "অটো সোজা শুধু মাথার পাশে কাত হওয়া ঠিক করে (মুখ অন্য দিকে ঘুরে থাকলে সেটা ঘোরাতে পারে না), আর পুরো মুখ (কাঁধ লেভেলের জন্য দুই কাঁধও) দেখা যেতে হবে; প্রথমবার ছোট মডেল নামে। এটি আগের পিক্সেলই বাঁকিয়ে সরায় (জেনারেটিভ এআই নয়), তাই বেশি টানবেন না, মাথার জন্য ১৫° বা তার কাছাকাছি ভালো। বেশি টানলে চুল, কান বা কাপড় লম্বা হয়ে যেতে পারে। প্রতিটি ধাপ আনডু করা যায়।",
     },
   },
   auto: {

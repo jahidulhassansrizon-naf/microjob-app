@@ -16,6 +16,8 @@ import {
 
 import {
   ACCEPTED_FILE_TYPES,
+  ADMISSION_ID_PREFIX,
+  ADMISSION_SIZE_PRESETS,
   BACKGROUNDS,
   DEFAULT_FILTERS,
   DPI,
@@ -45,12 +47,14 @@ import {
   removeBackgroundFromImage,
 } from "./segmentation";
 import { useManualEditorText } from "./manualEditorI18n";
+import { encodeCanvasForPreset, isAdmissionPreset } from "./admissionExport";
 import type {
   AiTool,
   ObjectBrushMode,
   ObjectTab,
   PhotoAsset,
   PhotoMode,
+  SizeMenuKey,
   SizePreset,
 } from "./types";
 
@@ -62,6 +66,17 @@ const MAX_ADJUST_SIDE = 3200;
 
 function mmToPx(mm: number) {
   return Math.round((mm / 25.4) * DPI);
+}
+
+/**
+ * Output pixels of a preset. Admission presets carry an exact pixel size
+ * (e.g. 470×610) which must never be re-derived from millimetres.
+ */
+function presetPixels(preset: SizePreset) {
+  if (isAdmissionPreset(preset)) {
+    return { w: preset.widthPx, h: preset.heightPx };
+  }
+  return { w: mmToPx(preset.widthMm), h: mmToPx(preset.heightMm) };
 }
 
 function revokeAsset(asset: PhotoAsset | null) {
@@ -105,10 +120,16 @@ async function dataUrlToFile(dataUrl: string, name: string) {
 
 function presetBelongsToMode(
   preset: SizePreset | null,
-  mode: "visa" | "rsizes",
+  mode: SizeMenuKey,
 ) {
   if (!preset) {
     return false;
+  }
+
+  // "Own size" (custom) admission presets are created on the fly, so they are
+  // recognised by their id prefix instead of by list membership.
+  if (mode === "admission") {
+    return preset.id.startsWith(ADMISSION_ID_PREFIX);
   }
 
   const collection = mode === "visa" ? VISA_PRESETS : R_SIZE_PRESETS;
@@ -137,9 +158,9 @@ export type ManualEditorContextValue = {
 
   setFreeHeight: (value: number) => void;
 
-  sizeMenu: "visa" | "rsizes" | null;
+  sizeMenu: SizeMenuKey | null;
 
-  setSizeMenu: (value: "visa" | "rsizes" | null) => void;
+  setSizeMenu: (value: SizeMenuKey | null) => void;
 
   freeSizeOpen: boolean;
 
@@ -271,7 +292,7 @@ export type ManualEditorContextValue = {
 
   selectMode: (mode: PhotoMode) => void;
 
-  selectPreset: (preset: SizePreset, source: "visa" | "rsizes") => void;
+  selectPreset: (preset: SizePreset, source: SizeMenuKey) => void;
 
   swapDualPhotos: () => void;
 
@@ -347,17 +368,30 @@ export type ManualEditorContextValue = {
 
   setFlipX: (value: boolean) => void;
 
-  downloadEdited: (format?: "png" | "jpeg" | "webp", quality?: number) => Promise<void>;
+  downloadEdited: (format?: ExportFormatChoice, quality?: number) => Promise<void>;
+  /** File type chosen in the size step (PNG / JPG / WebP / PDF). */
+  exportFormat: ExportFormatChoice;
+  setExportFormat: (format: ExportFormatChoice) => void;
+  /** JPG / WebP quality, 40-100. */
+  exportQuality: number;
+  setExportQuality: (quality: number) => void;
+  /** Bumps every time the person asks to crop again. */
+  cropRequestId: number;
+  requestCrop: () => void;
+  /** Remove all photos and return to the first step. */
+  startOver: () => void;
 
   printEdited: () => Promise<void>;
 
   printStudioOpen: boolean;
 
   printStudioImage: string | null;
+  /** Exact physical size of the image being printed (null = work it out from the pixels). */
+  printStudioPreset: PrintPreset | null;
 
   closePrintStudio: () => void;
 
-  openPrintStudioWithImage: (image: string) => void;
+  openPrintStudioWithImage: (image: string, preset?: PrintPreset | null) => void;
 
   saveEdited: () => Promise<void>;
 
@@ -379,6 +413,10 @@ export type ManualEditorContextValue = {
 
   setScanOpen: (value: boolean) => void;
 };
+
+export type ExportFormatChoice = "png" | "jpeg" | "webp" | "pdf";
+
+export type PrintPreset = { id?: string; label?: string; widthMm: number; heightMm: number };
 
 export type GeneratedPhoto = {
   id: string;
@@ -476,7 +514,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     null,
   );
 
-  const [sizeMenu, setSizeMenu] = useState<"visa" | "rsizes" | null>(null);
+  const [sizeMenu, setSizeMenu] = useState<SizeMenuKey | null>(null);
 
   const [freeSizeOpen, setFreeSizeOpen] = useState(false);
 
@@ -577,6 +615,11 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
   const [printStudioOpen, setPrintStudioOpen] = useState(false);
   const [printStudioImage, setPrintStudioImage] = useState<string | null>(null);
+  const [printStudioPreset, setPrintStudioPreset] = useState<PrintPreset | null>(null);
+  const [exportFormat, setExportFormat] = useState<ExportFormatChoice>("png");
+  const [exportQuality, setExportQuality] = useState(92);
+  const [cropRequestId, setCropRequestId] = useState(0);
+  const requestCrop = useCallback(() => setCropRequestId((value) => value + 1), []);
 
   const [scanOpen, setScanOpen] = useState(false);
 
@@ -684,6 +727,12 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       return presetBelongsToMode(selectedPreset, "rsizes")
         ? (selectedPreset as SizePreset)
         : R_SIZE_PRESETS[0];
+    }
+
+    if (photoMode === "admission") {
+      return presetBelongsToMode(selectedPreset, "admission")
+        ? (selectedPreset as SizePreset)
+        : ADMISSION_SIZE_PRESETS[0];
     }
 
     return {
@@ -1056,6 +1105,17 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (mode === "admission") {
+      setSelectedPresetState((current) =>
+        presetBelongsToMode(current, "admission")
+          ? current
+          : ADMISSION_SIZE_PRESETS[0],
+      );
+
+      setSizeMenu("admission");
+      return;
+    }
+
     setSelectedPresetState(null);
     setSizeMenu(null);
 
@@ -1065,7 +1125,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const selectPreset = useCallback(
-    (preset: SizePreset, source: "visa" | "rsizes") => {
+    (preset: SizePreset, source: SizeMenuKey) => {
       setPhotoMode(source);
 
       setSelectedPresetState(preset);
@@ -1118,6 +1178,35 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setDualPhotos(([a, b]) => [b, a]);
     setDualCompareOriginalFiles(([a, b]) => [b, a]);
   }, []);
+
+  /** Remove every photo (single and dual) and go back to the first step with a clean editor. */
+  const startOver = useCallback(() => {
+    setSinglePhoto((current) => {
+      revokeAsset(current);
+      return null;
+    });
+    setDualPhotos((current) => {
+      current.forEach((asset) => revokeAsset(asset));
+      return [null, null];
+    });
+    setSingleCompareOriginalFile(null);
+    setDualCompareOriginalFiles([null, null]);
+    setActiveDualSlot(0);
+    setPhotoMode("passport");
+    setSelectedPresetState(null);
+    setSizeMenu(null);
+    setFreeSizeOpen(false);
+    setSelectedBgState("white");
+    setCustomBgState("#ffffff");
+    setBackgroundRemoved(false);
+    setActiveAiTool(null);
+    setAiNotice("");
+    setObjectMaskHistory([null]);
+    setObjectMaskHistoryIndex(0);
+    setCropAvailable(false);
+    resetObjectValues();
+    resetTransforms();
+  }, [resetObjectValues, resetTransforms]);
 
   const objectMaskRequest = useCallback(
     async (targetArg?: ObjectTab) => {
@@ -1589,6 +1678,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         cutout: "Cutout Editor",
         retouch: "Retouch",
         enhance: "Enhance & Restore",
+        pose: "Pose Fix",
       };
 
       setAiNotice(`${names[tool]} is not connected yet.`);
@@ -1883,28 +1973,42 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
      * the destination canvas ratio. It does not
      * silently perform a second crop.
      */
+    // "Fill" placement (identical to the on-screen preview): the photo always
+    // covers the whole card, so no empty side strips remain after Background
+    // Remove. Overflow is trimmed left/right evenly and from the bottom only
+    // (top-anchored), keeping the head / headroom intact.
     const scale =
-      Math.min(targetW / rotatedWidth, targetH / rotatedHeight) * (zoom / 100);
+      Math.max(targetW / rotatedWidth, targetH / rotatedHeight) * (zoom / 100);
+
+    const drawW = img.naturalWidth * scale;
+    const drawH = img.naturalHeight * scale;
+    const anchorTop = normalizedRotation === 0 && drawH > targetH;
 
     ctx.drawImage(
       source,
-      (-img.naturalWidth * scale) / 2,
-      (-img.naturalHeight * scale) / 2,
-      img.naturalWidth * scale,
-      img.naturalHeight * scale,
+      -drawW / 2,
+      anchorTop ? -targetH / 2 : -drawH / 2,
+      drawW,
+      drawH,
     );
 
     ctx.restore();
   };
 
-  const renderCurrentCanvas = useCallback(async () => {
+  /*
+   * Every export/print paints the SAME background colour the preview shows
+   * (activeBackground). Previously, after "Remove BG" (backgroundRemoved = true)
+   * the preview still painted the colour behind the cut-out with CSS, but the
+   * exported canvas was left transparent: Print got a see-through PNG, and JPG /
+   * PDF / Save were flattened on plain white. Only an explicit transparent PNG
+   * download opts out via { transparent: true }.
+   */
+  const renderCurrentCanvas = useCallback(async (options?: { transparent?: boolean }) => {
     if (!activePhoto) {
       return null;
     }
 
-    const targetW = mmToPx(currentPreset.widthMm);
-
-    const targetH = mmToPx(currentPreset.heightMm);
+    const { w: targetW, h: targetH } = presetPixels(currentPreset);
 
     const canvas = document.createElement("canvas");
 
@@ -1920,7 +2024,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!backgroundRemoved) {
+    if (!options?.transparent) {
       ctx.fillStyle = activeBackground;
 
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1972,8 +2076,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    const targetW = mmToPx(currentPreset.widthMm);
-    const targetH = mmToPx(currentPreset.heightMm);
+    const { w: targetW, h: targetH } = presetPixels(currentPreset);
 
     const canvas = document.createElement("canvas");
     canvas.width = targetW;
@@ -1986,10 +2089,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!backgroundRemoved) {
-      ctx.fillStyle = activeBackground;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
+    // Print always needs the real background colour (see renderCurrentCanvas).
+    ctx.fillStyle = activeBackground;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     await drawAsset(ctx, activePhoto, targetW, targetH, 0);
     applyCanvasSharpness(ctx, sharp);
@@ -2005,11 +2107,12 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
   ]);
 
   const downloadEdited = useCallback(async (
-    format: "png" | "jpeg" | "webp" = "png",
+    format: ExportFormatChoice = "png",
     quality = 0.92,
   ) => {
     try {
-      const canvas = await renderCurrentCanvas();
+      const keepTransparent = format === "png" && backgroundRemoved;
+      const canvas = await renderCurrentCanvas({ transparent: keepTransparent });
 
       if (!canvas || !activePhoto) {
         setSaveNotice("Upload a photo first.");
@@ -2019,7 +2122,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       // JPEG cannot preserve transparency, so flatten transparent pixels over
       // white rather than allowing browser-dependent black transparent areas.
-      if (format === "jpeg") {
+      if (format === "jpeg" || format === "pdf") {
         const ctx = canvas.getContext("2d");
         if (ctx) {
           ctx.save();
@@ -2030,17 +2133,36 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const mime = format === "jpeg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(
-          (value) => value ? resolve(value) : reject(new Error("The edited image could not be exported.")),
-          mime,
-          Math.max(0.4, Math.min(1, quality)),
-        );
-      });
+      // PDF: one page that is exactly the photo's physical size.
+      if (format === "pdf") {
+        const { default: JsPdf } = await import("jspdf");
+        const widthMm = photoMode === "dual" ? currentPreset.widthMm * 2 : currentPreset.widthMm;
+        const heightMm = currentPreset.heightMm;
+        const pdf = new JsPdf({
+          orientation: widthMm > heightMm ? "landscape" : "portrait",
+          unit: "mm",
+          format: [widthMm, heightMm],
+          compress: true,
+        });
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, widthMm, heightMm);
+        pdf.save(fileName(activePhoto.file.name).replace(/\.[a-z0-9]+$/i, "") + ".pdf");
+        setSaveNotice(`Downloaded PDF · ${Math.round(widthMm * 10) / 10}×${Math.round(heightMm * 10) / 10} mm`);
+        window.setTimeout(() => setSaveNotice(""), 4500);
+        return;
+      }
+
+      // Admission presets: exact KB range + forced format; other sizes: unchanged.
+      const encoded = await encodeCanvasForPreset(
+        canvas,
+        format,
+        quality,
+        photoMode === "admission" ? currentPreset : null,
+      );
+      const blob = encoded.blob;
+      const usedFormat = encoded.format;
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      const extension = format === "jpeg" ? "jpg" : format;
+      const extension = usedFormat === "jpeg" ? "jpg" : usedFormat;
       link.download = fileName(activePhoto.file.name).replace(/\.png$/i, `.${extension}`);
       link.href = url;
       link.click();
@@ -2049,14 +2171,15 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       const sizeLabel = blob.size >= 1024 * 1024
         ? `${(blob.size / (1024 * 1024)).toFixed(2)} MB`
         : `${Math.max(1, Math.round(blob.size / 1024))} KB`;
-      const transparencyNote = format === "png" && backgroundRemoved ? ", transparent" : format === "jpeg" ? ", flattened on white" : "";
-      setSaveNotice(`Downloaded ${extension.toUpperCase()} · ${canvas.width}×${canvas.height}px · ${sizeLabel}${transparencyNote}`);
-      window.setTimeout(() => setSaveNotice(""), 4500);
+      const transparencyNote = usedFormat === "png" && keepTransparent ? ", transparent" : "";
+      const extraNote = [encoded.info, encoded.warning].filter(Boolean).join(" ");
+      setSaveNotice(`Downloaded ${extension.toUpperCase()} · ${canvas.width}×${canvas.height}px · ${sizeLabel}${transparencyNote}${extraNote ? ` — ${extraNote}` : ""}`);
+      window.setTimeout(() => setSaveNotice(""), encoded.warning ? 9000 : 4500);
     } catch (error) {
       setSaveNotice(error instanceof Error ? error.message : "Could not export this image.");
       window.setTimeout(() => setSaveNotice(""), 2600);
     }
-  }, [activePhoto, backgroundRemoved, renderCurrentCanvas]);
+  }, [activePhoto, backgroundRemoved, currentPreset, photoMode, renderCurrentCanvas]);
 
   const closePrintStudio = useCallback(() => {
     setPrintStudioOpen(false);
@@ -2067,7 +2190,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
    * This is intentionally separate from printEdited so saved-history
    * images and the current editor image can use the exact same studio.
    */
-  const openPrintStudioWithImage = useCallback((image: string) => {
+  const openPrintStudioWithImage = useCallback((image: string, preset?: PrintPreset | null) => {
     const source = typeof image === "string" ? image.trim() : "";
 
     if (!source) {
@@ -2077,11 +2200,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     }
 
     setPrintStudioImage(source);
+    setPrintStudioPreset(preset ?? null);
     setPrintStudioOpen(true);
   }, []);
 
   const printEdited = useCallback(async () => {
-    const canvas = await renderCurrentPrintImage();
+    // Dual mode prints both photos side by side, so the printed size is twice as wide.
+    const canvas = photoMode === "dual" ? await renderCurrentCanvas() : await renderCurrentPrintImage();
 
     if (!canvas) {
       setSaveNotice("Upload a photo first.");
@@ -2089,8 +2214,13 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    openPrintStudioWithImage(canvas.toDataURL("image/png"));
-  }, [openPrintStudioWithImage, renderCurrentPrintImage]);
+    openPrintStudioWithImage(canvas.toDataURL("image/png"), {
+      id: currentPreset.id,
+      label: currentPreset.label,
+      widthMm: photoMode === "dual" ? currentPreset.widthMm * 2 : currentPreset.widthMm,
+      heightMm: currentPreset.heightMm,
+    });
+  }, [currentPreset, openPrintStudioWithImage, photoMode, renderCurrentCanvas, renderCurrentPrintImage]);
 
   const saveEdited = useCallback(async () => {
     if (isSavingEdited) return;
@@ -2107,12 +2237,27 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
     setSaveNotice("Saving");
 
     try {
-      const format = backgroundRemoved ? "image/png" : "image/jpeg";
-      const quality = backgroundRemoved ? undefined : 0.92;
+      // The saved copy carries the chosen background colour, so JPEG is enough.
+      const format = "image/jpeg";
+      const quality = 0.92;
+      let savedExtension: "png" | "jpg" = "jpg";
 
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob((value) => resolve(value), format, quality),
-      );
+      let blob: Blob | null;
+      if (photoMode === "admission") {
+        // Keep the saved copy inside the portal's KB limit and format too.
+        const encoded = await encodeCanvasForPreset(
+          canvas,
+          "jpeg",
+          0.92,
+          currentPreset,
+        );
+        blob = encoded.blob;
+        savedExtension = encoded.format === "png" ? "png" : "jpg";
+      } else {
+        blob = await new Promise<Blob | null>((resolve) =>
+          canvas.toBlob((value) => resolve(value), format, quality),
+        );
+      }
 
       if (!blob || blob.size === 0) {
         throw new Error("The edited image could not be prepared.");
@@ -2120,7 +2265,7 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       const baseName =
         activePhoto?.file.name?.replace(/\.[^/.]+$/, "") || "manual-editor";
-      const filename = `${baseName}-edited.${backgroundRemoved ? "png" : "jpg"}`;
+      const filename = `${baseName}-edited.${savedExtension}`;
       const formData = new FormData();
       formData.append("file", blob, filename);
 
@@ -2167,7 +2312,9 @@ export function ManualEditorProvider({ children }: { children: ReactNode }) {
 
       const metadata = {
         url: cloudinaryUrl,
-        size: `${currentPreset.widthMm}×${currentPreset.heightMm} mm`,
+        size: isAdmissionPreset(currentPreset)
+          ? `${currentPreset.widthPx}×${currentPreset.heightPx} px`
+          : `${currentPreset.widthMm}×${currentPreset.heightMm} mm`,
         sizeType: currentPreset.label,
         widthPx: canvas.width,
         heightPx: canvas.height,
@@ -2724,12 +2871,20 @@ if (image.complete) triggerPrint(); else image.addEventListener("load", triggerP
     setFlipX,
 
     downloadEdited,
+    exportFormat,
+    setExportFormat,
+    exportQuality,
+    setExportQuality,
+    cropRequestId,
+    requestCrop,
+    startOver,
 
     printEdited,
 
     printStudioOpen,
 
     printStudioImage,
+    printStudioPreset,
 
     closePrintStudio,
 

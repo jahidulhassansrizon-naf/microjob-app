@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import { useManualEditor } from "./EditorProvider";
 import CropEditor from "./CropEditor";
 import ObjectMaskCanvas from "./ObjectMaskCanvas";
-import { createCanvas, fitSize, get2d, releaseCanvas } from "./canvasUtils";
+import { createCanvas, fitSize, get2d, getFillRect, releaseCanvas } from "./canvasUtils";
 import { renderObjectAdjust } from "./objectAdjust";
 /* Longest side used for the live Object Adjust preview. */
 const PREVIEW_MAX_SIDE = 800;
@@ -20,8 +20,8 @@ function getResponsiveCanvasStyle(ratio: number) {
     // calculated from the same ratio, so the visible frame always matches
     // the selected print size.
     return {
-        width: `min(72vw, 420px, calc(var(--canvas-max, 400px) * ${safeRatio}))`,
-        height: `min(var(--canvas-max, 400px), calc(72vw * ${inverseRatio}), calc(420px * ${inverseRatio}))`,
+        width: `min(72vw, 520px, calc(var(--canvas-max, 400px) * ${safeRatio}))`,
+        height: `min(var(--canvas-max, 400px), calc(72vw * ${inverseRatio}), calc(520px * ${inverseRatio}))`,
         boxSizing: "border-box" as const,
         transition: "width 180ms ease, height 180ms ease",
     };
@@ -50,22 +50,9 @@ function getScanOverlayStyle(sourceRatio: number, containerRatio: number): CSSPr
         bottom: 0,
     };
 }
+// Same "fill" placement as the export (see getFillRect in canvasUtils).
 function getContainedRect(sourceWidth: number, sourceHeight: number, containerWidth: number, containerHeight: number) {
-    if (sourceWidth <= 0 ||
-        sourceHeight <= 0 ||
-        containerWidth <= 0 ||
-        containerHeight <= 0) {
-        return { x: 0, y: 0, width: 0, height: 0 };
-    }
-    const scale = Math.min(containerWidth / sourceWidth, containerHeight / sourceHeight);
-    const width = sourceWidth * scale;
-    const height = sourceHeight * scale;
-    return {
-        x: (containerWidth - width) / 2,
-        y: (containerHeight - height) / 2,
-        width,
-        height,
-    };
+    return getFillRect(sourceWidth, sourceHeight, containerWidth, containerHeight);
 }
 function waitForImage(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
@@ -489,12 +476,16 @@ export default function PhotoWorkspace() {
         !isRemovingBackground &&
         !compareOpen &&
         activeAiTool !== "object";
+    // Head stays pinned to the top (matches the export); only rotated views centre.
+    const fitPosition = ((rotation % 360) + 360) % 360 === 0 ? "50% 0%" : "50% 50%";
     const presetRatio = currentPreset.heightMm > 0
         ? currentPreset.widthMm / currentPreset.heightMm
         : 1;
-    const presetSizeText = `${currentPreset.widthMm} × ${currentPreset.heightMm} mm`;
+    const presetSizeText = currentPreset.widthPx && currentPreset.heightPx
+        ? `${currentPreset.widthPx} × ${currentPreset.heightPx} px`
+        : `${currentPreset.widthMm} × ${currentPreset.heightMm} mm`;
     return (<>
-      <main className="lg:col-span-6 bg-[#F2E8D2] border border-[#E3D6B8] rounded-3xl p-5 md:p-6 lg:p-4 flex flex-col items-center justify-center relative min-h-[520px] lg:min-h-0 lg:h-full lg:overflow-y-auto [--canvas-max:400px] lg:[--canvas-max:min(440px,46vh)] shadow-lg text-[#3B2F1E]">
+      <main className="lg:col-span-6 bg-[#F2E8D2] border border-[#E3D6B8] rounded-3xl p-5 md:p-6 lg:p-4 flex flex-col items-center justify-center relative min-h-[520px] lg:min-h-0 lg:h-full lg:overflow-y-auto [--canvas-max:420px] lg:[--canvas-max:min(560px,66vh)] shadow-lg text-[#3B2F1E]">
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/jpg,image/png,image/webp" onChange={handleFileInput} className="hidden"/>
 
         {!activePhoto && photoMode !== "dual" ? (<div className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 bg-[#F6EEDB] cursor-pointer transition ${isDragging
@@ -553,7 +544,7 @@ export default function PhotoWorkspace() {
                             boxSizing: "border-box",
                             transition: "aspect-ratio 180ms ease",
                         }}>
-                          {photo ? (<img src={photo.url} alt={`Photo ${index + 1}`} className="block w-full h-full object-contain"/>) : (<div className="text-sm text-[#7A6A50] text-center">
+                          {photo ? (<img src={photo.url} alt={`Photo ${index + 1}`} className="block w-full h-full object-cover" style={{ objectPosition: fitPosition }}/>) : (<div className="text-sm text-[#7A6A50] text-center">
                               <div className="font-bold text-[#5A4A32]"><T>{"Empty "}</T>{index === 0 ? <T>{"Left"}</T> : <T>{"Right"}</T>}<T>{"Slot\n                              "}</T></div>
                               <div className="text-[11px] text-[#7A6A50] mt-1">
                                 {presetSizeText}
@@ -605,7 +596,7 @@ export default function PhotoWorkspace() {
                         event.stopPropagation();
                         setComparePosition(50);
                     }} role="group" aria-label={t("Before and after image comparison")}>
-                        <img src={compareOriginalUrl} alt={t("Original photo")} className="absolute inset-0 block h-full w-full object-contain" draggable={false}/>
+                        <img src={compareOriginalUrl} alt={t("Original photo")} className="absolute inset-0 block h-full w-full object-cover" style={{ objectPosition: fitPosition }} draggable={false}/>
 
                         <div className="absolute inset-0 overflow-hidden" style={{
                         clipPath: `inset(0 ${100 - comparePosition}% 0 0)`,
@@ -613,7 +604,8 @@ export default function PhotoWorkspace() {
                             ? activeBackground
                             : "transparent",
                     }}>
-                          <img src={activePhoto!.url} alt={t("Edited photo")} className="absolute inset-0 block h-full w-full object-contain" style={{
+                          <img src={activePhoto!.url} alt={t("Edited photo")} className="absolute inset-0 block h-full w-full object-cover" style={{
+                        objectPosition: fitPosition,
                         filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%) hue-rotate(${hue}deg) sepia(${sepia}%) grayscale(${grayscale}%)`,
                     }} draggable={false}/>
                         </div>
@@ -626,7 +618,8 @@ export default function PhotoWorkspace() {
 
                         <div className="pointer-events-none absolute left-3 top-3 rounded-full border border-white/30 bg-[#2A2117]/70 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Edited\n                        "}</T></div>
                         <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-white/30 bg-[#2A2117]/65 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.12em] text-white shadow-lg backdrop-blur-sm"><T>{"Original\n                        "}</T></div>
-                      </div>) : (<img src={activePhoto!.url} alt={t("Uploaded")} className="absolute inset-0 block w-full h-full object-contain pointer-events-none select-none" draggable={false} onDragStart={(event) => event.preventDefault()} style={{
+                      </div>) : (<img src={activePhoto!.url} alt={t("Uploaded")} className="absolute inset-0 block w-full h-full object-cover pointer-events-none select-none" draggable={false} onDragStart={(event) => event.preventDefault()} style={{
+                        objectPosition: fitPosition,
                         filter: `brightness(${100 + brightness}%) contrast(${100 + contrast}%) saturate(${100 + saturation}%) hue-rotate(${hue}deg) sepia(${sepia}%) grayscale(${grayscale}%)`,
                     }}/>)}
 
@@ -651,23 +644,23 @@ export default function PhotoWorkspace() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap justify-center">
-                  <button type="button" onClick={() => setZoom(Math.max(25, zoom - 10))} className="h-9 w-9 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] flex items-center justify-center transition" title={t("Zoom out")}>
+                  <button type="button" onClick={() => setZoom(Math.max(25, zoom - 10))} className="h-10 w-10 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] flex items-center justify-center transition" title={t("Zoom out")}>
                     <ZoomOut size={14}/>
                   </button>
-                  <span className="h-9 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] flex items-center text-sm font-extrabold">
+                  <span className="h-10 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] flex items-center text-sm font-extrabold">
                     {zoom}<T>{"%\n                  "}</T></span>
-                  <button type="button" onClick={() => setZoom(Math.min(300, zoom + 10))} className="h-9 w-9 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] flex items-center justify-center transition" title={t("Zoom in")}>
+                  <button type="button" onClick={() => setZoom(Math.min(300, zoom + 10))} className="h-10 w-10 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] flex items-center justify-center transition" title={t("Zoom in")}>
                     <ZoomIn size={14}/>
                   </button>
-                  <button type="button" onClick={() => setRotation((rotation - 90 + 360) % 360)} className="h-9 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
-                    <RotateCcw size={13}/><T>{"Rotate\n                  "}</T></button>
-                  <button type="button" onClick={() => setRotation((rotation + 90) % 360)} className="h-9 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
-                    <RotateCw size={13}/><T>{"Rotate\n                  "}</T></button>
-                  <button type="button" onClick={() => setFlipX(!flipX)} className={`h-9 px-3 rounded-lg text-sm font-extrabold flex items-center gap-1 transition ${flipX
+                  <button type="button" onClick={() => setRotation((rotation - 90 + 360) % 360)} className="h-10 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
+                    <RotateCcw size={13}/><T>{"Rotate left\n                  "}</T></button>
+                  <button type="button" onClick={() => setRotation((rotation + 90) % 360)} className="h-10 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
+                    <RotateCw size={13}/><T>{"Rotate right\n                  "}</T></button>
+                  <button type="button" onClick={() => setFlipX(!flipX)} className={`h-10 px-3 rounded-lg text-sm font-extrabold flex items-center gap-1 transition ${flipX
                     ? "bg-[#DC2626] text-white shadow-md"
                     : "bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8]"}`}>
                     <FlipHorizontal2 size={13}/><T>{"Mirror\n                  "}</T></button>
-                  {hasComparison && (<button type="button" disabled={Boolean(aiProcessing)} onClick={() => setCompareOpen((current) => !current)} className={`h-9 px-3 rounded-lg text-sm font-extrabold flex items-center gap-1 transition ${compareOpen
+                  {hasComparison && (<button type="button" disabled={Boolean(aiProcessing)} onClick={() => setCompareOpen((current) => !current)} className={`h-10 px-3 rounded-lg text-sm font-extrabold flex items-center gap-1 transition ${compareOpen
                         ? "bg-[#DC2626] text-white shadow-md"
                         : "bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8]"} disabled:cursor-not-allowed disabled:opacity-50`} title={t("Compare edited and original")} aria-pressed={compareOpen}>
                       <ArrowLeftRight size={13}/><T>{"Compare\n                    "}</T></button>)}
@@ -675,7 +668,7 @@ export default function PhotoWorkspace() {
                     setZoom(100);
                     setRotation(0);
                     setFlipX(false);
-                }} className="h-9 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
+                }} className="h-10 px-3 rounded-lg bg-[#FBF6E8] text-[#3B2F1E] hover:bg-[#EFE3C8] text-sm font-extrabold flex items-center gap-1 transition">
                     <Maximize2 size={13}/><T>{"Reset\n                  "}</T></button>
                 </div>
               </>)}

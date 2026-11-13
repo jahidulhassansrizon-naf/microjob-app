@@ -8,41 +8,21 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useManualEditor } from "./EditorProvider";
-import { releaseCanvas } from "./canvasUtils";
+import { getFillRect, releaseCanvas } from "./canvasUtils";
 
 type Point = {
   x: number;
   y: number;
 };
 
+// Same "fill" placement as the preview and the export (see getFillRect).
 function getContainedRect(
   sourceWidth: number,
   sourceHeight: number,
   containerWidth: number,
   containerHeight: number,
 ) {
-  if (
-    sourceWidth <= 0 ||
-    sourceHeight <= 0 ||
-    containerWidth <= 0 ||
-    containerHeight <= 0
-  ) {
-    return { x: 0, y: 0, width: 0, height: 0 };
-  }
-
-  const scale = Math.min(
-    containerWidth / sourceWidth,
-    containerHeight / sourceHeight,
-  );
-  const width = sourceWidth * scale;
-  const height = sourceHeight * scale;
-
-  return {
-    x: (containerWidth - width) / 2,
-    y: (containerHeight - height) / 2,
-    width,
-    height,
-  };
+  return getFillRect(sourceWidth, sourceHeight, containerWidth, containerHeight);
 }
 
 function waitForImage(url: string): Promise<HTMLImageElement> {

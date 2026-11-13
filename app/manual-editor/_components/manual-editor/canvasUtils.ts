@@ -81,3 +81,39 @@ export function canvasToBlob(
     );
   });
 }
+
+/**
+ * "Fill" placement used by the preview AND the export so both always match.
+ *
+ * The cropped photo rarely has exactly the aspect ratio of the selected card
+ * (free-form crop happens before the size is chosen). Letterboxing it
+ * ("contain") leaves empty strips on the sides; after background removal the
+ * subject (shoulders / shirt) stops abruptly at the image edge and the strips
+ * show the plain background colour -> a visible gap that also prints badly.
+ *
+ * Fill scales the photo until it covers the whole card. Overflow is trimmed
+ * evenly left/right, and from the BOTTOM only (top-anchored) so the head and
+ * headroom are never cut in a passport-style photo.
+ */
+export function getFillRect(
+  sourceWidth: number,
+  sourceHeight: number,
+  boxWidth: number,
+  boxHeight: number,
+  anchorTop = true,
+) {
+  if (sourceWidth <= 0 || sourceHeight <= 0 || boxWidth <= 0 || boxHeight <= 0) {
+    return { x: 0, y: 0, width: 0, height: 0 };
+  }
+
+  const scale = Math.max(boxWidth / sourceWidth, boxHeight / sourceHeight);
+  const width = sourceWidth * scale;
+  const height = sourceHeight * scale;
+
+  return {
+    x: (boxWidth - width) / 2,
+    y: anchorTop && height > boxHeight ? 0 : (boxHeight - height) / 2,
+    width,
+    height,
+  };
+}

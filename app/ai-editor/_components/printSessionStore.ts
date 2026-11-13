@@ -20,6 +20,10 @@ export type PrintSessionItem = {
 };
 export type PrintSessionSnapshot = {
     pageSizeKey: string;
+    /** Only used when pageSizeKey is "Custom" (a hand-sized or photo-fitted page). */
+    customPageW?: number;
+    customPageH?: number;
+    autoFitH?: boolean;
     orientation: "portrait" | "landscape";
     hAlign: "left" | "center" | "right";
     autoLayout: boolean;

@@ -2,7 +2,7 @@
 import { useAiEditorText } from "./aiEditorI18n";
 import React, { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, } from "react";
 import { createPortal } from "react-dom";
-import { AlignCenterHorizontal, AlignLeft, AlignRight, ArrowLeftRight, ChevronDown, Copy, Download, Frame, Grid3X3, Image as ImageIcon, LayoutGrid, Minus, Move, Plus, Printer, Redo2, RotateCw, Ruler, Trash2, Undo2, X, } from "lucide-react";
+import { AlignCenterHorizontal, AlignLeft, AlignRight, ArrowLeftRight, ChevronDown, Copy, Download, Frame, Grid3X3, Image as ImageIcon, LayoutGrid, Maximize2, Minus, Move, Plus, Printer, Redo2, RotateCw, Ruler, Trash2, Undo2, X, } from "lucide-react";
 import jsPDF from "jspdf";
 import type { PrintSessionSnapshot } from "./printSessionStore";
 import { getAiEditorThumbnailUrl } from "./aiEditorData";
@@ -20,6 +20,11 @@ const ZOOM_MAX = 400;
 const ZOOM_PRESETS = [100, 150, 200, 300];
 const ZOOM_STEP = 20;
 const MIN_ITEM_MM = 5;
+const MIN_PAGE_MM = 20;
+const MAX_PAGE_MM = 1000;
+/** While the page height follows the photos, photos are laid out on one very tall virtual sheet. */
+const AUTO_LAYOUT_HEIGHT_MM = 3000;
+const SNAP_MM = 2;
 const CUT_COLOR = "#555555";
 const BORDER_COLORS = ["#000000", "#FFFFFF", "#6B7280", "#DC2626", "#1D4ED8"];
 
@@ -33,7 +38,9 @@ const PAGE_SIZES = {
     "6R": { label: "6R — 152×203 mm", widthMm: 152, heightMm: 203 },
     "8R": { label: "8R — 203×254 mm", widthMm: 203, heightMm: 254 },
 } as const;
-type PageSizeKey = keyof typeof PAGE_SIZES;
+type PresetPageKey = keyof typeof PAGE_SIZES;
+/** "Custom" = a page whose size the user sets by hand or lets follow the photos. */
+type PageSizeKey = PresetPageKey | "Custom";
 type Orientation = "portrait" | "landscape";
 type Unit = "mm" | "cm" | "in";
 type CutStyle = "dashed" | "solid" | "marks";
@@ -196,6 +203,34 @@ function findFreePosition(widthMm: number, heightMm: number, pageWidthMm: number
         }
     }
     return null;
+}
+/** Outer edges of all photos (rotation included), so the page can be fitted around them. */
+function measureExtent(list: StudioItem[]): {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+} {
+    if (!list.length)
+        return { left: 0, top: 0, right: 0, bottom: 0 };
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
+    for (const item of list) {
+        const radians = (normalizeAngle(item.rotation) * Math.PI) / 180;
+        const cos = Math.abs(Math.cos(radians));
+        const sin = Math.abs(Math.sin(radians));
+        const halfW = (item.widthMm * cos + item.heightMm * sin) / 2;
+        const halfH = (item.widthMm * sin + item.heightMm * cos) / 2;
+        const cx = item.xMm + item.widthMm / 2;
+        const cy = item.yMm + item.heightMm / 2;
+        left = Math.min(left, cx - halfW);
+        top = Math.min(top, cy - halfH);
+        right = Math.max(right, cx + halfW);
+        bottom = Math.max(bottom, cy + halfH);
+    }
+    return { left, top, right, bottom };
 }
 function pageOf(item: StudioItem): number {
     return item.page ?? 0;
@@ -641,6 +676,11 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     const [gapMm, setGapMm] = useState(DEFAULT_GAP_MM);
     const [marginMm, setMarginMm] = useState(DEFAULT_MARGIN_MM);
     const [freeSize, setFreeSize] = useState(false);
+    const [customPageW, setCustomPageW] = useState(210);
+    const [customPageH, setCustomPageH] = useState(297);
+    const [autoFitH, setAutoFitH] = useState(false);
+    const [resizeTick, setResizeTick] = useState(0);
+    const resizingPageRef = useRef(false);
     const [cuttingBorder, setCuttingBorder] = useState(false);
     const [cutStyle, setCutStyle] = useState<CutStyle>("dashed");
     const [cutMm, setCutMm] = useState(DEFAULT_CUT_MM);
@@ -720,12 +760,22 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             },
         }));
     }, []);
-    const pageWidthMm = orientation === "portrait"
-        ? PAGE_SIZES[pageSizeKey].widthMm
-        : PAGE_SIZES[pageSizeKey].heightMm;
-    const pageHeightMm = orientation === "portrait"
-        ? PAGE_SIZES[pageSizeKey].heightMm
-        : PAGE_SIZES[pageSizeKey].widthMm;
+    const isCustomPage = pageSizeKey === "Custom";
+    const presetPage = PAGE_SIZES[isCustomPage ? "A4" : pageSizeKey];
+    const pageWidthMm = isCustomPage
+        ? customPageW
+        : orientation === "portrait" ? presetPage.widthMm : presetPage.heightMm;
+    const manualHeightMm = isCustomPage
+        ? customPageH
+        : orientation === "portrait" ? presetPage.heightMm : presetPage.widthMm;
+    const autoSheet = isCustomPage && autoFitH;
+    const contentExtent = useMemo(() => measureExtent(items), [items]);
+    // The real sheet (what is shown, saved as PDF and printed). With "auto height" it hugs the photos.
+    const sheetHeightMm = autoSheet && items.length
+        ? Math.max(MIN_PAGE_MM, Math.ceil((contentExtent.bottom + marginMm) * 10) / 10)
+        : manualHeightMm;
+    // The height the layout engine may use. Auto height lays photos out on one tall sheet.
+    const pageHeightMm = autoSheet ? AUTO_LAYOUT_HEIGHT_MM : manualHeightMm;
     const visualScale = fitScale * (zoom / 100);
 
     const showToast = useCallback((message: string, title = "Notice") => {
@@ -762,6 +812,9 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     }, []);
     const createInitialLayout = useCallback(() => {
         setPageSizeKey("A4");
+        setCustomPageW(210);
+        setCustomPageH(297);
+        setAutoFitH(false);
         setOrientation("portrait");
         setHAlign("left");
         setAutoLayout(true);
@@ -789,8 +842,13 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         setSessionMulti(sourceImages.length > 1);
         if (initialSnapshot && initialSnapshot.items.length) {
             const saved = initialSnapshot;
-            const savedPage = (saved.pageSizeKey in PAGE_SIZES ? saved.pageSizeKey : "A4") as PageSizeKey;
+            const savedPage = (saved.pageSizeKey in PAGE_SIZES || saved.pageSizeKey === "Custom" ? saved.pageSizeKey : "A4") as PageSizeKey;
             setPageSizeKey(savedPage);
+            if (savedPage === "Custom") {
+                setCustomPageW(clamp(Number(saved.customPageW) || 210, MIN_PAGE_MM, MAX_PAGE_MM));
+                setCustomPageH(clamp(Number(saved.customPageH) || 297, MIN_PAGE_MM, MAX_PAGE_MM));
+                setAutoFitH(!!saved.autoFitH);
+            }
             setOrientation(saved.orientation === "landscape" ? "landscape" : "portrait");
             setHAlign(saved.hAlign ?? "left");
             setAutoLayout(!!saved.autoLayout);
@@ -915,6 +973,9 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     // Everything needed to rebuild this layout later.
     const snapshot = useMemo<PrintSessionSnapshot>(() => ({
         pageSizeKey,
+        customPageW,
+        customPageH,
+        autoFitH,
         orientation,
         hAlign,
         autoLayout,
@@ -938,7 +999,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             page: pageOf(item),
             sourceKey: item.sourceKey,
         })),
-    }), [autoLayout, cutMm, cutStyle, cuttingBorder, gapMm, hAlign, imageBorder, imageBorderColor, imageBorderMm, items, marginMm, orientation, pageSizeKey, printStudioImage]);
+    }), [autoLayout, cutMm, cutStyle, cuttingBorder, gapMm, hAlign, imageBorder, imageBorderColor, imageBorderMm, items, marginMm, orientation, pageSizeKey, customPageW, customPageH, autoFitH, printStudioImage]);
     const snapshotSig = useMemo(() => JSON.stringify({
         ...snapshot,
         items: snapshot.items.map((item) => [item.id, item.widthMm, item.heightMm, item.xMm, item.yMm, item.rotation, item.page, item.image.length]),
@@ -1079,14 +1140,16 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             if (!rect.width || !rect.height)
                 return;
             const widthScale = (rect.width - 70) / pageWidthMm;
-            const heightScale = (rect.height - 70) / pageHeightMm;
-            setFitScale(clamp(Math.min(widthScale, heightScale), 1.2, 4.5));
+            if (resizingPageRef.current)
+                return;
+            const heightScale = (rect.height - 70) / sheetHeightMm;
+            setFitScale(clamp(autoSheet ? widthScale : Math.min(widthScale, heightScale), 1.2, 4.5));
         };
         updateScale();
         const observer = new ResizeObserver(updateScale);
         observer.observe(workspace);
         return () => observer.disconnect();
-    }, [pageWidthMm, pageHeightMm, printStudioOpen, printStudioImage, mounted]);
+    }, [pageWidthMm, sheetHeightMm, autoSheet, resizeTick, printStudioOpen, printStudioImage, mounted]);
 
     const reflow = useCallback((list: StudioItem[], mode: HAlign = hAlign, sortByArea = false) => flowLayout(list, pageWidthMm, pageHeightMm, gapMm, marginMm, mode, sortByArea), [gapMm, hAlign, marginMm, pageHeightMm, pageWidthMm]);
     const finalizeAuto = useCallback((list: StudioItem[]): StudioItem[] => {
@@ -1372,6 +1435,14 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         commit(next, items);
     }, [autoLayout, commit, gapMm, hAlign, items, marginMm, showToast]);
     const setPage = useCallback((value: PageSizeKey) => {
+        if (value === "Custom") {
+            // Start from the page that is on screen now, so nothing jumps.
+            setCustomPageW(pageWidthMm);
+            setCustomPageH(sheetHeightMm);
+            setPageSizeKey("Custom");
+            return;
+        }
+        setAutoFitH(false);
         setPageSizeKey(value);
         const width = orientation === "portrait"
             ? PAGE_SIZES[value].widthMm
@@ -1380,8 +1451,10 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             ? PAGE_SIZES[value].heightMm
             : PAGE_SIZES[value].widthMm;
         applyPageChange(width, height);
-    }, [applyPageChange, orientation]);
+    }, [applyPageChange, orientation, pageWidthMm, sheetHeightMm]);
     const setPageOrientation = useCallback((value: Orientation) => {
+        if (pageSizeKey === "Custom")
+            return;
         setOrientation(value);
         const width = value === "portrait"
             ? PAGE_SIZES[pageSizeKey].widthMm
@@ -1391,6 +1464,104 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             : PAGE_SIZES[pageSizeKey].widthMm;
         applyPageChange(width, height);
     }, [applyPageChange, pageSizeKey]);
+    // Typed width / height of the custom page.
+    const applyCustomDims = useCallback((width: number, height: number) => {
+        const nextW = clamp(width, MIN_PAGE_MM, MAX_PAGE_MM);
+        const nextH = clamp(height, MIN_PAGE_MM, MAX_PAGE_MM);
+        setCustomPageW(nextW);
+        setCustomPageH(nextH);
+        applyPageChange(nextW, autoFitH ? AUTO_LAYOUT_HEIGHT_MM : nextH);
+    }, [applyPageChange, autoFitH]);
+    // Shrinks (or grows) the page so it holds exactly the photos and nothing more.
+    const fitPageToPhotos = useCallback((both: boolean) => {
+        if (!items.length) {
+            showToast("আগে পেজে ছবি যোগ করুন, তারপর পেজ ফিট করুন।", "Notice");
+            return;
+        }
+        const width = pageWidthMm;
+        let next = items;
+        const onManySheets = new Set(items.map(pageOf)).size > 1;
+        if (autoLayout || onManySheets) {
+            const flowed = flowLayout(items, width, AUTO_LAYOUT_HEIGHT_MM, gapMm, marginMm, hAlign, false);
+            if (flowed.failed) {
+                showToast("এই প্রস্থে সব ছবি ধরছে না। প্রস্থ বাড়ান অথবা ছবির মাপ কমান।", "Page Full");
+                return;
+            }
+            next = flowed.placed;
+            setAutoLayout(true);
+        }
+        const extent = measureExtent(next);
+        const oneSheet = new Set(next.map(pageOf)).size === 1;
+        const dx = both && oneSheet ? marginMm - extent.left : 0;
+        const dy = oneSheet ? marginMm - extent.top : 0;
+        if (dx || dy) {
+            next = next.map((item) => ({ ...item, xMm: Math.max(0, item.xMm + dx), yMm: Math.max(0, item.yMm + dy) }));
+        }
+        const fitted = measureExtent(next);
+        const nextW = both ? fitted.right + marginMm : width;
+        const nextH = fitted.bottom + marginMm;
+        setPageSizeKey("Custom");
+        setCustomPageW(clamp(Math.ceil(nextW * 10) / 10, MIN_PAGE_MM, MAX_PAGE_MM));
+        setCustomPageH(clamp(Math.ceil(nextH * 10) / 10, MIN_PAGE_MM, MAX_PAGE_MM));
+        commit(next, items);
+        setSelectedId(null);
+        showToast("পেজ এখন ছবির মাপ অনুযায়ী ফিট হয়েছে।", "Page Fitted");
+    }, [autoLayout, commit, gapMm, hAlign, items, marginMm, pageWidthMm, showToast]);
+    const toggleAutoFitH = useCallback((on: boolean) => {
+        if (!on) {
+            setCustomPageH(sheetHeightMm);
+            setAutoFitH(false);
+            return;
+        }
+        if (new Set(items.map(pageOf)).size > 1) {
+            const flowed = flowLayout(items, pageWidthMm, AUTO_LAYOUT_HEIGHT_MM, gapMm, marginMm, hAlign, false);
+            if (flowed.failed) {
+                showToast("এই প্রস্থে সব ছবি ধরছে না। প্রস্থ বাড়ান অথবা ছবির মাপ কমান।", "Page Full");
+                return;
+            }
+            setAutoLayout(true);
+            commit(flowed.placed, items);
+        }
+        setAutoFitH(true);
+    }, [commit, gapMm, hAlign, items, marginMm, pageWidthMm, sheetHeightMm, showToast]);
+    // Drag the right / bottom edge of the page on the canvas to make it smaller or bigger by hand.
+    const beginPageResize = useCallback((event: React.PointerEvent<HTMLElement>, axis: "x" | "y" | "xy") => {
+        if (event.button !== 0)
+            return;
+        event.preventDefault();
+        event.stopPropagation();
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const startW = pageWidthMm;
+        const startH = sheetHeightMm;
+        const scale = Math.max(0.001, visualScale);
+        if (axis !== "x") {
+            setCustomPageH(startH);
+            setAutoFitH(false);
+        }
+        resizingPageRef.current = true;
+        const snap = (value: number, tight: number, min: number) => {
+            const snapped = Math.abs(value - tight) <= SNAP_MM ? tight : value;
+            return Math.round(clamp(snapped, Math.max(MIN_PAGE_MM, min), MAX_PAGE_MM) * 10) / 10;
+        };
+        const onMove = (move: PointerEvent) => {
+            const extent = measureExtent(itemsRef.current);
+            if (axis !== "y")
+                setCustomPageW(snap(startW + (move.clientX - startX) / scale, extent.right + marginMm, extent.right));
+            if (axis !== "x")
+                setCustomPageH(snap(startH + (move.clientY - startY) / scale, extent.bottom + marginMm, extent.bottom));
+        };
+        const onUp = () => {
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onUp);
+            resizingPageRef.current = false;
+            setResizeTick((value) => value + 1);
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onUp);
+    }, [marginMm, pageWidthMm, sheetHeightMm, visualScale]);
     const autoArrange = useCallback(() => {
         if (!items.length)
             return;
@@ -1469,7 +1640,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             return;
         const rect = page.getBoundingClientRect();
         const pxPerMmX = rect.width / pageWidthMm;
-        const pxPerMmY = rect.height / pageHeightMm;
+        const pxPerMmY = autoSheet ? pxPerMmX : rect.height / sheetHeightMm;
         const dx = (event.clientX - interaction.startX) / Math.max(0.001, pxPerMmX);
         const dy = (event.clientY - interaction.startY) / Math.max(0.001, pxPerMmY);
         const start = interaction.startItem;
@@ -1494,12 +1665,11 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         }
         const centerX = rect.left +
             ((start.xMm + start.widthMm / 2) / pageWidthMm) * rect.width;
-        const centerY = rect.top +
-            ((start.yMm + start.heightMm / 2) / pageHeightMm) * rect.height;
+        const centerY = rect.top + (start.yMm + start.heightMm / 2) * pxPerMmY;
         const radians = Math.atan2(event.clientY - centerY, event.clientX - centerX);
         const angle = normalizeAngle((radians * 180) / Math.PI + 90);
         setItems((current) => current.map((item) => item.id === interaction.id ? { ...item, rotation: angle } : item));
-    }, [freeSize, pageHeightMm, pageWidthMm]);
+    }, [autoSheet, freeSize, pageHeightMm, pageWidthMm, sheetHeightMm]);
     const endInteraction = useCallback((event?: React.PointerEvent<HTMLElement>) => {
         const interaction = interactionRef.current;
         if (!interaction)
@@ -1599,7 +1769,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         const scale = EXPORT_DPI / 25.4;
         const canvas = document.createElement("canvas");
         canvas.width = Math.max(1, Math.round(pageWidthMm * scale));
-        canvas.height = Math.max(1, Math.round(pageHeightMm * scale));
+        canvas.height = Math.max(1, Math.round(sheetHeightMm * scale));
         const ctx = canvas.getContext("2d");
         if (!ctx)
             throw new Error("Could not create print canvas.");
@@ -1679,7 +1849,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         imageBorderColor,
         imageBorderMm,
         items,
-        pageHeightMm,
+        sheetHeightMm,
         pageWidthMm,
         printStudioImage,
     ]);
@@ -1690,7 +1860,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         let canvas: HTMLCanvasElement | null = null;
         try {
             const pageNumbers = getPageNumbers(items);
-            const pdfOrientation = pageWidthMm > pageHeightMm ? "landscape" : "portrait";
+            const pdfOrientation = pageWidthMm > sheetHeightMm ? "landscape" : "portrait";
             let pdf: jsPDF | null = null;
             for (const pageValue of pageNumbers) {
                 canvas = await renderStudioCanvas(pageValue);
@@ -1703,14 +1873,14 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                     pdf = new jsPDF({
                         orientation: pdfOrientation,
                         unit: "mm",
-                        format: [pageWidthMm, pageHeightMm],
+                        format: [pageWidthMm, sheetHeightMm],
                         compress: true,
                     });
                 }
                 else {
-                    pdf.addPage([pageWidthMm, pageHeightMm], pdfOrientation);
+                    pdf.addPage([pageWidthMm, sheetHeightMm], pdfOrientation);
                 }
-                pdf.addImage(imageData, "JPEG", 0, 0, pageWidthMm, pageHeightMm);
+                pdf.addImage(imageData, "JPEG", 0, 0, pageWidthMm, sheetHeightMm);
             }
             pdf?.save(nameForPdf(pageSizeKey));
         }
@@ -1728,7 +1898,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     }, [
         isExporting,
         items,
-        pageHeightMm,
+        sheetHeightMm,
         pageSizeKey,
         pageWidthMm,
         renderStudioCanvas,
@@ -1781,11 +1951,11 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             frame = iframe;
             iframe.setAttribute("aria-hidden", "true");
             iframe.tabIndex = -1;
-            iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${pageWidthMm}mm;height:${pageHeightMm}mm;border:0;opacity:0;pointer-events:none;`;
+            iframe.style.cssText = `position:fixed;left:-10000px;top:0;width:${pageWidthMm}mm;height:${sheetHeightMm}mm;border:0;opacity:0;pointer-events:none;`;
             await new Promise<void>((resolve, reject) => {
                 iframe.onload = () => resolve();
                 iframe.onerror = () => reject(new Error("Could not open print preview."));
-                iframe.srcdoc = buildPrintHtml(objectUrls, pageWidthMm, pageHeightMm, t("Print Photo Layout"));
+                iframe.srcdoc = buildPrintHtml(objectUrls, pageWidthMm, sheetHeightMm, t("Print Photo Layout"));
                 document.body.appendChild(iframe);
             });
             const printWindow = iframe.contentWindow;
@@ -1840,7 +2010,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     }, [
         isExporting,
         items,
-        pageHeightMm,
+        sheetHeightMm,
         pageWidthMm,
         renderStudioCanvas,
         showToast,
@@ -1853,7 +2023,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
     const pageNumbers = getPageNumbers(items);
     const sheetCount = pageNumbers.length;
     const usedArea = items.reduce((sum, item) => sum + item.widthMm * item.heightMm, 0);
-    const pageUsage = Math.min(100, Math.round((usedArea / (pageWidthMm * pageHeightMm * sheetCount)) * 100));
+    const pageUsage = Math.min(100, Math.round((usedArea / (pageWidthMm * sheetHeightMm * sheetCount)) * 100));
     const activePhotoCount = new Set(items.map((item) => item.image ?? printStudioImage)).size;
     const activePageValue = selectedItem ? pageOf(selectedItem) : pageNumbers[pageNumbers.length - 1];
     const sourceRatio = sourcePreset.widthMm / sourcePreset.heightMm;
@@ -2161,12 +2331,43 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 {Object.entries(PAGE_SIZES).map(([key, page]) => (<option key={key} value={key}>
                     {page.label}
                   </option>))}
+                <option value="Custom">কাস্টম — নিজের মাপ / ছবি অনুযায়ী</option>
               </select>
 
-              <div className="grid grid-cols-2 gap-1.5 mt-2">
+              <button type="button" onClick={() => fitPageToPhotos(true)} disabled={!items.length} className="w-full mt-2 h-9 rounded-lg border border-[#10B981]/40 bg-[#10B981]/10 hover:bg-[#10B981]/20 text-[#047857] text-[11px] font-extrabold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors" title="কাগজ নষ্ট না করতে পেজ ছবির মাপে ছোট/বড় করে নিন">
+                <Maximize2 size={12}/>
+                ছবির মাপে পেজ ফিট করুন
+              </button>
+
+              {!isCustomPage && (<div className="grid grid-cols-2 gap-1.5 mt-2">
                 <button type="button" onClick={() => setPageOrientation("portrait")} className={`h-8 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${orientation === "portrait" ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-[#3B2F1E] hover:bg-[#d8c9a4]"}`}>{t("Portrait")}</button>
                 <button type="button" onClick={() => setPageOrientation("landscape")} className={`h-8 rounded-md text-[11px] font-extrabold cursor-pointer transition-colors ${orientation === "landscape" ? "bg-[#DC2626] text-white" : "bg-[#E3D6B8] text-[#3B2F1E] hover:bg-[#d8c9a4]"}`}>{t("Landscape")}</button>
-              </div>
+              </div>)}
+
+              {isCustomPage && (<div className="mt-2 rounded-lg border border-[#E3D6B8] bg-[#F2E8D2]/60 p-2.5 space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-bold text-[#3B2F1E]/60 mb-1">পেজের প্রস্থ</p>
+                      <NumberField ariaLabel="পেজের প্রস্থ" value={formatInUnit(pageWidthMm, unit)} min={MIN_PAGE_MM / UNIT_FACTOR[unit]} max={MAX_PAGE_MM / UNIT_FACTOR[unit]} suffix={unitLabel} onCommit={(value) => applyCustomDims(value * UNIT_FACTOR[unit], sheetHeightMm)}/>
+                    </div>
+                    <div className={autoFitH ? "opacity-50 pointer-events-none" : ""}>
+                      <p className="text-[10px] font-bold text-[#3B2F1E]/60 mb-1">পেজের উচ্চতা</p>
+                      <NumberField ariaLabel="পেজের উচ্চতা" value={formatInUnit(sheetHeightMm, unit)} min={MIN_PAGE_MM / UNIT_FACTOR[unit]} max={MAX_PAGE_MM / UNIT_FACTOR[unit]} suffix={unitLabel} onCommit={(value) => applyCustomDims(pageWidthMm, value * UNIT_FACTOR[unit])}/>
+                    </div>
+                  </div>
+                  <Toggle checked={autoFitH} onChange={toggleAutoFitH} label="উচ্চতা নিজে নিজে ফিট হবে" hint="ছবি যোগ/সরালে পেজের নিচের অংশ আপনা-আপনি ছোট বা বড় হবে।"/>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button type="button" onClick={() => fitPageToPhotos(false)} disabled={!items.length} className="h-8 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#F2E8D2] text-[#3B2F1E] text-[10px] font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                      শুধু উচ্চতা ফিট
+                    </button>
+                    <button type="button" onClick={() => fitPageToPhotos(true)} disabled={!items.length} className="h-8 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] hover:bg-[#F2E8D2] text-[#3B2F1E] text-[10px] font-bold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                      প্রস্থ + উচ্চতা ফিট
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-[#3B2F1E]/60 leading-snug">
+                    পেজের ডান বা নিচের কিনারা টেনেও ছোট-বড় করতে পারবেন। ছবি কেটে যাবে না। প্রিন্টে একই মাপ ({pageWidthMm.toFixed(1)} × {sheetHeightMm.toFixed(1)} মিমি) কাগজ বা কাস্টম পেপার সাইজ দিন; PDF ডাউনলোড করলে ঠিক এই মাপেই হবে।
+                  </p>
+                </div>)}
 
               <div className="mt-3 space-y-2.5">
                 <RangeField label={t("Image Gap (mm):")} valueLabel={`${gapMm}`} value={gapMm} min={0} max={10} step={0.5} onChange={setGapMm}/>
@@ -2243,7 +2444,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             <p className="mt-2 text-[10px] leading-snug text-[#3B2F1E]/60">
               {t("Print tip: select the same paper size, set Margins to None, Scale to 100%, and turn off Headers and footers.")}{" "}
               <span className="font-bold text-[#3B2F1E]/80">
-                {t("Paper size")}: {pageWidthMm} × {pageHeightMm} মিমি
+                {t("Paper size")}: {pageWidthMm} × {sheetHeightMm} মিমি
               </span>
             </p>
             {onPrintSingle && (<button type="button" onClick={() => { void onPrintSingle(); }} disabled={isExporting} className="w-full mt-2 h-9 rounded-lg bg-[#E3D6B8] hover:bg-[#d8c9a4] text-[#3B2F1E] text-[13px] font-extrabold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 transition-colors">
@@ -2256,7 +2457,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
         <main className="flex-1 min-w-0 min-h-[260px] md:min-h-0 flex flex-col bg-[#F2E8D2]">
           <div className="min-h-11 shrink-0 bg-white/80 border-b border-[#E3D6B8] px-3 sm:px-4 py-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <div className="text-[11px] font-bold text-[#3B2F1E]/70">
-              {items.length} {t("items")} • {pageWidthMm.toFixed(1)}×{pageHeightMm.toFixed(1)} মিমি{sheetCount > 1 ? ` • ${sheetCount} পেজ` : ""}
+              {items.length} {t("items")} • {pageWidthMm.toFixed(1)}×{sheetHeightMm.toFixed(1)} মিমি{sheetCount > 1 ? ` • ${sheetCount} পেজ` : ""}
             </div>
             <div className="flex items-center gap-1.5">
               <button type="button" onClick={() => setZoomCentered(zoom - ZOOM_STEP)} className="w-7 h-7 rounded-md bg-[#FBF6E8] border border-[#E3D6B8] text-[#3B2F1E] flex items-center justify-center cursor-pointer hover:bg-[#F2E8D2]">
@@ -2278,7 +2479,7 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
             {sheetCount > 1 && (<p className="mb-1.5 text-[11px] font-extrabold text-[#3B2F1E]/70">পেজ {pageIndex + 1} / {sheetCount}</p>)}
             <div ref={(node) => { if (node) pageRefs.current.set(pageValue, node); else pageRefs.current.delete(pageValue); }} className="relative shrink-0 bg-[#FBF6E8] border border-[#E3D6B8] shadow-[0_18px_48px_rgba(15,23,42,0.12)]" style={{
             width: `${pageWidthMm * visualScale}px`,
-            height: `${pageHeightMm * visualScale}px`,
+            height: `${sheetHeightMm * visualScale}px`,
         }}>
               {marginMm > 0 && (<div className="absolute pointer-events-none border border-dashed border-[#DC2626]/25" style={{
                 left: `${marginGuidePx}px`,
@@ -2286,12 +2487,28 @@ export default function AiPrintStudioModal({ open, image, preset, onClose, onPri
                 right: `${marginGuidePx}px`,
                 bottom: `${marginGuidePx}px`,
             }}/>)}
+              {isCustomPage && (<>
+                  <div className="absolute top-0 -right-3 h-full w-6 flex items-center justify-center cursor-ew-resize z-[60]" style={{ touchAction: "none" }} onPointerDown={(event) => beginPageResize(event, "x")} title="টেনে প্রস্থ বদলান">
+                    <span className="block w-1.5 h-12 max-h-[60%] rounded-full bg-[#DC2626] border border-white shadow"/>
+                  </div>
+                  {!autoFitH && (<>
+                      <div className="absolute left-0 -bottom-3 w-full h-6 flex items-center justify-center cursor-ns-resize z-[60]" style={{ touchAction: "none" }} onPointerDown={(event) => beginPageResize(event, "y")} title="টেনে উচ্চতা বদলান">
+                        <span className="block h-1.5 w-12 max-w-[60%] rounded-full bg-[#DC2626] border border-white shadow"/>
+                      </div>
+                      <div className="absolute -right-3 -bottom-3 w-6 h-6 rounded-full bg-[#DC2626] text-white border-2 border-white shadow-md flex items-center justify-center cursor-nwse-resize z-[61]" style={{ touchAction: "none" }} onPointerDown={(event) => beginPageResize(event, "xy")} title="টেনে মাপ বদলান">
+                        <Move size={10} className="rotate-45"/>
+                      </div>
+                    </>)}
+                  <div className="absolute left-1/2 -translate-x-1/2 -bottom-9 rounded-md bg-[#3B2F1E]/90 text-white px-1.5 py-0.5 text-[10px] font-bold whitespace-nowrap pointer-events-none">
+                    {pageWidthMm.toFixed(1)} × {sheetHeightMm.toFixed(1)} মিমি
+                  </div>
+                </>)}
               {items.filter((item) => pageOf(item) === pageValue).map((item) => {
             const selected = item.id === selectedId;
             const left = (item.xMm / pageWidthMm) * 100;
-            const top = (item.yMm / pageHeightMm) * 100;
+            const top = (item.yMm / sheetHeightMm) * 100;
             const width = (item.widthMm / pageWidthMm) * 100;
-            const height = (item.heightMm / pageHeightMm) * 100;
+            const height = (item.heightMm / sheetHeightMm) * 100;
             return (<div key={item.id} className="absolute cursor-move" style={{
                     left: `${left}%`,
                     top: `${top}%`,

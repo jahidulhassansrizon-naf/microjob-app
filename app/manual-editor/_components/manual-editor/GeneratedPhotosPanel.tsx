@@ -158,7 +158,12 @@ export default function GeneratedPhotosPanel() {
 
       {previewPhoto && (<GeneratedPhotoPreview photo={previewPhoto} onClose={() => setPreviewPhoto(null)} onDownload={() => downloadHistoryImage(previewPhoto)} onPrint={async () => {
                 setPreviewPhoto(null);
-                openPrintStudioWithImage(previewPhoto.url);
+                const dpi = Number(previewPhoto.dpi) || 300;
+                const wPx = Number(previewPhoto.widthPx) || 0;
+                const hPx = Number(previewPhoto.heightPx) || 0;
+                openPrintStudioWithImage(previewPhoto.url, wPx > 0 && hPx > 0
+                    ? { id: "saved-photo", label: "Photo", widthMm: (wPx / dpi) * 25.4, heightMm: (hPx / dpi) * 25.4 }
+                    : null);
             }} onDelete={async () => {
                 await deleteHistoryImage(previewPhoto);
                 setPreviewPhoto(null);

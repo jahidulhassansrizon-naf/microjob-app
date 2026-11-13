@@ -1,96 +1,84 @@
 "use client";
-import React, { useRef, type PointerEvent as ReactPointerEvent } from "react";
-import { ManualT as T } from "./_components/manual-editor/manualEditorI18n";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ManualT as T, useManualEditorText } from "./_components/manual-editor/manualEditorI18n";
 import DashboardNavbar from "@/app/dashboard/_components/DashboardNavbar";
 import PhotoSizePanel from "./_components/manual-editor/PhotoSizePanel";
+import ExportFormatPanel from "./_components/manual-editor/ExportFormatPanel";
 import BackgroundPanel from "./_components/manual-editor/BackgroundPanel";
 import AiToolsPanel from "./_components/manual-editor/AiToolsPanel";
 import PhotoWorkspace from "./_components/manual-editor/PhotoWorkspace";
 import AdjustmentsPanel from "./_components/manual-editor/AdjustmentsPanel";
-import FitToHeight from "./_components/manual-editor/FitToHeight";
 import QrUploadPanel from "./_components/manual-editor/QrUploadPanel";
+import DownloadPanel from "./_components/manual-editor/DownloadPanel";
+import StepCard from "./_components/manual-editor/StepCard";
+import { ArrowLeft, ArrowRight, Check, RefreshCcw, Scissors, Smartphone } from "lucide-react";
 import GeneratedPhotosPanel from "./_components/manual-editor/GeneratedPhotosPanel";
 import ScanModal from "./_components/manual-editor/ScanModal";
 import PrintStudioModal from "./_components/manual-editor/PrintStudioModal";
+import { PoseFixLauncher } from "./_components/manual-editor/PoseFixModal";
 import { ManualEditorProvider, useManualEditor, } from "./_components/manual-editor/EditorProvider";
-/*
- * The left panel has no visible scrollbar, so let the mouse drag it
- * (press on an empty area / between buttons and pull up or down). Wheel,
- * touch and keyboard scrolling keep working natively. A drag never clicks
- * the button it started on.
+
+type StepInfo = { id: number; short: [string, string]; title: [string, string]; hint: [string, string] };
+
+/**
+ * One step at a time. The person only ever sees the tools for the step they are on;
+ * Download / Print appear only at the very end.
  */
-function useDragScroll() {
-    const drag = useRef<{ y: number; top: number; moved: boolean; id: number; } | null>(null);
-    const suppressClick = useRef(false);
-    const finish = (event: ReactPointerEvent<HTMLElement>) => {
-        const d = drag.current;
-        if (!d)
-            return;
-        drag.current = null;
-        delete event.currentTarget.dataset.dragging;
-        if (d.moved) {
-            suppressClick.current = true;
-            window.setTimeout(() => {
-                suppressClick.current = false;
-            }, 0);
-            try {
-                event.currentTarget.releasePointerCapture(d.id);
-            }
-            catch {
-                // capture already released
-            }
-        }
-    };
-    // Marks the panel as scrollable only while its content really overflows,
-    // so the grab cursor and drag-scroll appear exactly when they are useful.
-    const syncScrollable = (el: HTMLElement) => {
-        const overflowing = el.scrollHeight - el.clientHeight > 2;
-        if (overflowing)
-            el.dataset.scrollable = "1";
-        else
-            delete el.dataset.scrollable;
-        return overflowing;
-    };
-    return {
-        onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
-            if (event.pointerType !== "mouse" || event.button !== 0)
-                return;
-            if (!syncScrollable(event.currentTarget))
-                return;
-            if ((event.target as HTMLElement).closest("input, select, textarea, [role=\"slider\"]"))
-                return;
-            drag.current = { y: event.clientY, top: event.currentTarget.scrollTop, moved: false, id: event.pointerId };
-        },
-        onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
-            const d = drag.current;
-            if (!d) {
-                if (event.pointerType === "mouse")
-                    syncScrollable(event.currentTarget);
-                return;
-            }
-            const dy = event.clientY - d.y;
-            if (!d.moved) {
-                if (Math.abs(dy) < 6)
-                    return;
-                d.moved = true;
-                event.currentTarget.dataset.dragging = "1";
-                event.currentTarget.setPointerCapture(d.id);
-            }
-            event.currentTarget.scrollTop = d.top - dy;
-        },
-        onPointerUp: finish,
-        onPointerCancel: finish,
-        onClickCapture: (event: React.MouseEvent<HTMLElement>) => {
-            if (suppressClick.current) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        },
-    };
-}
+const STEPS: StepInfo[] = [
+    { id: 1, short: ["ছবি আপলোড", "Upload"], title: ["ছবি আপলোড করুন", "Upload your photo"], hint: ["প্রথমে আপনার ছবিটি দিন।", "Start by adding your photo."] },
+    { id: 2, short: ["ক্রপ", "Crop"], title: ["ছবি ক্রপ করুন", "Crop your photo"], hint: ["ছবির বাড়তি অংশ কেটে ফেলুন। দরকার না হলে এই ধাপ বাদ দিন।", "Cut away what you do not need. Skip it if not needed."] },
+    { id: 3, short: ["মাপ ও ধরন", "Size & type"], title: ["মাপ ও ফাইলের ধরন", "Size and file type"], hint: ["ফর্ম, ভর্তি বা প্রিন্টের জন্য যে মাপ ও ফরম্যাট লাগবে সেটা বেছে নিন।", "Pick the size and format your form, admission or print needs."] },
+    { id: 4, short: ["ব্যাকগ্রাউন্ড", "Background"], title: ["ব্যাকগ্রাউন্ড", "Background"], hint: ["একটা রং বেছে নিন, অথবা পুরনো ব্যাকগ্রাউন্ড সরিয়ে দিন।", "Choose a colour, or remove the old background."] },
+    { id: 5, short: ["ঠিকঠাক", "Adjust"], title: ["ঠিকঠাক করুন", "Adjust the photo"], hint: ["ছবি আরও উজ্জ্বল, স্পষ্ট বা রঙিন করুন। দরকার না হলে পরের ধাপে যান।", "Make it brighter, sharper or more colourful. Skip if it looks fine."] },
+    { id: 6, short: ["ডাউনলোড", "Download"], title: ["ডাউনলোড ও প্রিন্ট", "Download and print"], hint: ["সব ঠিক থাকলে ডাউনলোড বা প্রিন্ট করুন।", "If everything looks right, download or print."] },
+];
+const LAST_STEP = STEPS.length;
+
 function ManualEditorScreen() {
-    const { loading, isAuthenticated } = useManualEditor();
-    const leftDragScroll = useDragScroll();
+    const { loading, isAuthenticated, activePhoto, photoMode, cropAvailable, resetEditor, requestCrop, startOver } = useManualEditor();
+    const { locale } = useManualEditorText();
+    const bn = String(locale ?? "").toLowerCase().startsWith("bn");
+    const pick = (pair: [string, string]) => (bn ? pair[0] : pair[1]);
+    const tx = (b: string, e: string) => (bn ? b : e);
+
+    // In "Dual" mode the photos live in two slots, so the wizard keeps going even while a slot is empty.
+    const hasPhoto = Boolean(activePhoto) || photoMode === "dual";
+    const [step, setStep] = useState(1);
+    const [maxStep, setMaxStep] = useState(1);
+    const goTo = useCallback((next: number) => {
+        const value = Math.min(LAST_STEP, Math.max(1, next));
+        setStep(value);
+        setMaxStep((current) => Math.max(current, value));
+    }, []);
+
+    // Photo added -> crop step. Photo removed / editor reset -> back to the start.
+    const hadPhotoRef = useRef(false);
+    useEffect(() => {
+        if (!hasPhoto) {
+            setStep(1);
+            setMaxStep(1);
+        }
+        else if (!hadPhotoRef.current) {
+            setStep((current) => (current === 1 ? 2 : current));
+            setMaxStep((current) => Math.max(current, 2));
+        }
+        hadPhotoRef.current = hasPhoto;
+    }, [hasPhoto]);
+
+    // Crop finished (or closed) the first time -> size step.
+    const cropWasOpenRef = useRef(cropAvailable);
+    useEffect(() => {
+        if (cropWasOpenRef.current && !cropAvailable && hasPhoto) {
+            setStep((current) => (current === 2 ? 3 : current));
+            setMaxStep((current) => Math.max(current, 3));
+        }
+        cropWasOpenRef.current = cropAvailable;
+    }, [cropAvailable, hasPhoto]);
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }, [step]);
+
     if (loading) {
         return (<div className="page-font min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
@@ -101,32 +89,107 @@ function ManualEditorScreen() {
     }
     if (!isAuthenticated)
         return null;
-    return (<div className="manual-editor-root min-h-screen lg:h-screen lg:overflow-hidden bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col font-sans page-font select-none text-[#3B2F1E]">
+
+    const current = STEPS[step - 1];
+    const next = STEPS[step] ?? null;
+
+    let panel: React.ReactNode = null;
+    if (step === 1) {
+        panel = (<div className="flex flex-col gap-3">
+          <p className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-3 py-2.5 text-[14px] font-bold leading-snug text-[#5A4A32]">
+            {tx("ডান পাশের বক্সে ক্লিক করে ছবি দিন, অথবা ছবিটা টেনে এনে ছেড়ে দিন। ছবি দিলেই পরের ধাপ নিজে থেকে খুলবে।", "Click the box next to this to add a photo, or drag a photo into it. The next step opens by itself.")}
+          </p>
+          <details className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-3">
+            <summary className="flex cursor-pointer items-center gap-2 text-[14px] font-extrabold text-[#3B2F1E]"><Smartphone size={16}/>{tx("মোবাইল থেকে ছবি দিন", "Upload from your phone")}</summary>
+            <div className="mt-3"><QrUploadPanel /></div>
+          </details>
+        </div>);
+    }
+    else if (step === 2) {
+        panel = (<div className="flex flex-col gap-2.5">
+          <button type="button" onClick={requestCrop} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#DC2626] py-3 text-[16px] font-extrabold text-white shadow-sm transition-colors hover:bg-[#B91C1C]"><Scissors size={18}/>{tx("ক্রপ করুন", "Crop the photo")}</button>
+          <button type="button" onClick={() => goTo(3)} className="flex w-full cursor-pointer items-center justify-center rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] py-2.5 text-[14px] font-extrabold text-[#3B2F1E] transition-colors hover:bg-[#EFE3C8]">{tx("ক্রপ লাগবে না, পরের ধাপে যাই", "No crop needed, go to the next step")}</button>
+          <p className="text-[12.5px] font-semibold leading-snug text-[#6B5A40]">{tx("ক্রপের সময় ছবি ঘোরানো ও আয়নার মতো উল্টানোও যায়।", "While cropping you can also rotate and mirror the photo.")}</p>
+          <div className="mt-1 border-t border-[#E3D6B8] pt-2.5">
+            <p className="mb-1.5 text-[12.5px] font-semibold leading-snug text-[#6B5A40]">{tx("ছবির মাথা, ঘাড় বা কাঁধ বাঁকা থাকলে আগে সোজা করে নিন:", "If the head, neck or shoulders are crooked, straighten them first:")}</p>
+            <PoseFixLauncher variant="wide" />
+          </div>
+        </div>);
+    }
+    else if (step === 3) {
+        panel = (<div className="flex flex-col gap-3">
+          <PhotoSizePanel />
+          <ExportFormatPanel />
+          {photoMode === "dual" && (<p className="rounded-xl bg-[#DC2626]/10 px-3 py-2 text-[12.5px] font-bold leading-snug text-[#B91C1C]">{tx("দুটি ছবি: ডান পাশে বাঁ ও ডান দুই জায়গায় দুটি ছবি দিন।", "Two photos: add one photo in each of the left and right slots on the preview.")}</p>)}
+        </div>);
+    }
+    else if (step === 4) {
+        panel = <BackgroundPanel />;
+    }
+    else if (step === 5) {
+        panel = (<div className="flex flex-col gap-3">
+          <AdjustmentsPanel />
+          <details className="rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] p-3">
+            <summary className="cursor-pointer text-[14px] font-extrabold text-[#3B2F1E]">{tx("✨ AI টুলস (শুধু দরকার হলে)", "✨ AI tools (only if needed)")}</summary>
+            <p className="mt-1 text-[12.5px] font-semibold text-[#6B5A40]">{tx("ছবিতে সমস্যা থাকলে এখান থেকে ঠিক করুন।", "Use these if the photo needs fixing.")}</p>
+            <div className="mt-3"><AiToolsPanel /></div>
+          </details>
+        </div>);
+    }
+    else {
+        panel = <DownloadPanel onChangeSize={() => goTo(3)} />;
+    }
+
+    return (<div className="manual-editor-root min-h-screen bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] flex flex-col font-sans page-font select-none text-[#3B2F1E]">
       <DashboardNavbar />
-      <div className="w-full p-3 md:p-4 lg:px-4 lg:py-3 flex flex-col gap-5 lg:gap-3 flex-1 lg:min-h-0">
-        <div className="grid grid-cols-1 lg:grid-cols-12 lg:grid-rows-1 gap-6 lg:gap-4 lg:flex-1 lg:min-h-0">
-          <aside {...leftDragScroll} className="me-left scroll lg:col-span-3 bg-[#F2E8D2] border border-[#E3D6B8] rounded-3xl p-4 md:p-5 lg:p-4 flex flex-col gap-5 lg:gap-3 shadow-sm overflow-visible lg:overflow-hidden max-h-[85vh] lg:max-h-none lg:h-full lg:min-h-0">
-            <FitToHeight className="flex flex-col gap-5 lg:gap-3">
-              <PhotoSizePanel />
-              <BackgroundPanel />
-              <AiToolsPanel />
-            </FitToHeight>
-          </aside>
+      <div className="w-full p-3 md:p-4 lg:px-5 lg:py-4 flex flex-col gap-4 flex-1">
+        {/* Steps bar: tap a finished step to go back to it */}
+        <ol className="flex items-center gap-x-1.5 overflow-x-auto rounded-2xl border border-[#E3D6B8] bg-[#F2E8D2] px-3 py-2.5 text-[14px] font-bold text-[#3B2F1E]">
+          {STEPS.map((item, index) => {
+            const active = item.id === step;
+            const done = item.id < maxStep || (item.id === 1 && hasPhoto && !active);
+            const reachable = item.id <= maxStep && (hasPhoto || item.id === 1);
+            return (<React.Fragment key={item.id}>
+              <li className="shrink-0">
+                <button type="button" disabled={!reachable} onClick={() => goTo(item.id)} className={`flex items-center gap-2 rounded-xl px-2 py-1 transition ${active ? "bg-[#DC2626]/10 ring-1 ring-[#DC2626]/40" : reachable ? "hover:bg-[#EFE3C8]" : "opacity-50"} disabled:cursor-not-allowed`}>
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-extrabold text-white ${done && !active ? "bg-[#10B981]" : active ? "bg-[#DC2626]" : "bg-[#B0A080]"}`}>
+                    {done && !active ? <Check size={14} strokeWidth={3}/> : item.id}
+                  </span>
+                  <span className={active ? "text-[#DC2626]" : ""}>{pick(item.short)}</span>
+                </button>
+              </li>
+              {index < STEPS.length - 1 && <span aria-hidden="true" className="shrink-0 text-[#B0A080]">›</span>}
+            </React.Fragment>);
+          })}
+          <li className="ml-auto shrink-0 pl-2">
+            <button type="button" onClick={resetEditor} title={tx("ছবির সব এডিট মুছে ফেলুন (ছবি থাকবে)", "Clear all edits (the photo stays)")} className="flex items-center gap-1 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] px-2 py-1 text-[12px] font-extrabold text-[#6B5A40] hover:bg-[#EFE3C8]"><RefreshCcw size={13}/><T>Reset</T></button>
+          </li>
+        </ol>
 
-          <PhotoWorkspace />
+        {/* Left: only the current step. Right: the photo. */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          <div className="order-2 lg:order-1 lg:col-span-4 flex flex-col gap-3">
+            <StepCard step={step} title={pick(current.title)} hint={pick(current.hint)}>
+              {panel}
+            </StepCard>
 
-          <aside className="me-right lg:col-span-3 flex flex-col lg:h-full lg:min-h-0 lg:overflow-hidden">
-            <FitToHeight className="flex flex-col gap-5 lg:gap-2">
-              <QrUploadPanel />
-              <AdjustmentsPanel />
-            </FitToHeight>
-          </aside>
+            <div className="flex items-center gap-2">
+              {step > 1 && (<button type="button" onClick={() => goTo(step - 1)} className="flex cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-4 py-3 text-[15px] font-extrabold text-[#3B2F1E] transition-colors hover:bg-[#EFE3C8]"><ArrowLeft size={16}/>{tx("পিছনে", "Back")}</button>)}
+              {next ? (<button type="button" disabled={step === 1 && !hasPhoto} onClick={() => goTo(step + 1)} className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-2xl bg-[#DC2626] px-4 py-3 text-[15px] font-extrabold text-white shadow-sm transition-colors hover:bg-[#B91C1C] disabled:cursor-not-allowed disabled:opacity-40">
+                  <span className="truncate">{step === 1 && !hasPhoto ? tx("আগে ছবি দিন", "Add a photo first") : (next.id === 6 ? tx("পরের ধাপ: ডাউনলোড ও প্রিন্ট", "Next: Download & print") : tx(`পরের ধাপ: ${pick(next.short)}`, `Next: ${pick(next.short)}`))}</span><ArrowRight size={16} className="shrink-0"/>
+                </button>) : (<button type="button" onClick={startOver} className="flex min-w-0 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] px-4 py-3 text-[15px] font-extrabold text-[#3B2F1E] transition-colors hover:bg-[#EFE3C8]"><RefreshCcw size={15}/>{tx("নতুন ছবি দিয়ে আবার শুরু", "Start again with a new photo")}</button>)}
+            </div>
+          </div>
+
+          <div className="order-1 lg:order-2 lg:col-span-8 lg:sticky lg:top-3 lg:self-start lg:h-[calc(100vh-24px)] lg:min-h-[560px]">
+            <PhotoWorkspace />
+          </div>
         </div>
 
-        <GeneratedPhotosPanel />
+        {(step === 1 || step === LAST_STEP) && <GeneratedPhotosPanel />}
       </div>
 
-      <footer className="mt-auto shrink-0 border-t border-[#E3D6B8] bg-[#F2E8D2] px-5 py-3 lg:py-1.5 text-[12px] text-[#6B5A40]">
+      <footer className="mt-auto shrink-0 border-t border-[#E3D6B8] bg-[#F2E8D2] px-5 py-3 text-[13px] text-[#6B5A40]">
         <div className="w-full flex items-center justify-between gap-3">
           <span><T>{"Manual Editor"}</T></span>
           <span><T>{"Browser editing is local; AI processing runs in your browser.\n          "}</T></span>
@@ -152,42 +215,12 @@ function ManualEditorScreen() {
         .scroll::-webkit-scrollbar-thumb { background: linear-gradient(180deg,#F87171,#DC2626); border-radius: 999px; border: 3px solid #F2E8D2; min-height: 48px; }
         .scroll::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg,#EF4444,#B91C1C); }
 
-        /* Left panel: still scrolls (wheel / touch / keyboard) but shows no scrollbar. */
-        .manual-editor-root .me-left { scrollbar-width: none; -ms-overflow-style: none; overflow-anchor: none; overscroll-behavior: contain; }
-        .manual-editor-root .me-left::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        /* Open hand on empty areas, closed hand (everywhere) while dragging. */
-        .manual-editor-root .me-left[data-scrollable="1"] { cursor: grab; }
-        .manual-editor-root .me-left[data-dragging="1"],
-        .manual-editor-root .me-left[data-dragging="1"] * { cursor: grabbing !important; }
-
         .manual-editor-root button:not(:disabled),
         .manual-editor-root [role="button"],
         .manual-editor-root input[type="range"],
         .manual-editor-root select,
         .manual-editor-root summary {
           cursor: pointer;
-        }
-
-        /* One-screen fit on desktop: tighter vertical rhythm on shorter viewports,
-           so every panel stays visible without inner scrolling. */
-        @media (min-width: 1024px) and (max-height: 900px) {
-          .manual-editor-root .me-left { gap: 0.6rem; padding-top: 0.75rem; padding-bottom: 0.75rem; }
-          .manual-editor-root .me-left section { gap: 0.5rem; }
-          .manual-editor-root .me-left .lg\\:h-14 { height: 3.4rem; }
-          .manual-editor-root .me-left .lg\\:h-16 { height: 3.75rem; }
-          .manual-editor-root .me-left .lg\\:h-\\[72px\\] { height: 4.2rem; }
-          .manual-editor-root .me-left .lg\\:h-9 { height: 2rem; }
-          .manual-editor-root .me-right .mb-4,
-          .manual-editor-root .me-right .lg\\:mb-2 { margin-bottom: 0.4rem; }
-        }
-        @media (min-width: 1024px) and (max-height: 760px) {
-          .manual-editor-root .me-left .lg\\:h-14 { height: 2.9rem; }
-          .manual-editor-root .me-left .lg\\:h-16 { height: 3.2rem; }
-          .manual-editor-root .me-left .lg\\:h-\\[72px\\] { height: 3.6rem; }
-          .manual-editor-root .me-left .lg\\:h-9 { height: 1.75rem; }
-          .manual-editor-root .me-left .lg\\:h-14 svg,
-          .manual-editor-root .me-left .lg\\:h-16 svg { width: 1rem; height: 1rem; }
-          .manual-editor-root .me-right input[type="range"] { height: 0.9rem; }
         }
 
         .manual-editor-root button:disabled,
