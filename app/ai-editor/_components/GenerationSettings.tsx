@@ -17,6 +17,7 @@ import { EDITING_GUIDE_CATEGORIES, EDITING_GUIDES, isOptionEntry } from "./editi
 import TiePicker, { canHaveTie, getTieFromGuides, withTie } from "./TiePicker";
 import GuideIcon from "./GuideIcon";
 import PhotoSizeIcon from "./PhotoSizeIcon";
+import AdmissionPicker from "./AdmissionPicker";
 import { CLOTHING_NAMES } from "./clothingStyles";
 import AiEditorVideoGuide from "./AiEditorVideoGuide";
 export interface PhotoSizeOption {
@@ -39,6 +40,10 @@ export interface GenerationSettingsProps {
   showVisaPopup?: boolean;
   setShowVisaPopup?: (show: boolean) => void;
   visaSizesList?: VisaSizeOption[];
+  showAdmissionPopup?: boolean;
+  setShowAdmissionPopup?: (show: boolean) => void;
+  selectedAdmissionLabel?: string;
+  setSelectedAdmissionLabel?: (label: string) => void;
   selectedVisaSize?: string;
   setSelectedVisaSize?: (size: string) => void;
   setSelectedSize?: (size: string) => void;
@@ -466,6 +471,10 @@ export default function GenerationSettings({
   showVisaPopup = false,
   setShowVisaPopup = () => {},
   visaSizesList = [],
+  showAdmissionPopup = false,
+  setShowAdmissionPopup = () => {},
+  selectedAdmissionLabel = "",
+  setSelectedAdmissionLabel = () => {},
   selectedVisaSize = "",
   setSelectedVisaSize = () => {},
   setSelectedSize = () => {},
@@ -940,7 +949,7 @@ export default function GenerationSettings({
             </button>
           </div>
 
-          <div className="gs-sizes grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-5 gap-2">
+          <div className="gs-sizes grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-6 gap-2">
             {photoSizes.map((size) => {
               const isActive = selectedSize === size.id;
               return (
@@ -1009,6 +1018,24 @@ export default function GenerationSettings({
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+          {showAdmissionPopup && (
+            <div className="gs-pop absolute left-0 top-[85px] w-full max-w-[340px] max-h-[70vh] overflow-y-auto bg-[#FBF6E8] border-2 border-[#DC2626] rounded-2xl shadow-xl p-4 z-50">
+              <h4 className="text-sm font-semibold text-[#3B2F1E] mb-3">
+                <AiT>{"Admission Photo Size"}</AiT>
+              </h4>
+              <AdmissionPicker
+                selectedLabel={selectedSize === "Admission" ? selectedAdmissionLabel : ""}
+                onSelect={(label) => {
+                  setSelectedAdmissionLabel(label);
+                  setSelectedSize("Admission");
+                  setShowAdmissionPopup(false);
+                  if (isDualMode) {
+                    exitDualMode("Admission");
+                  }
+                }}
+              />
             </div>
           )}
         </div>

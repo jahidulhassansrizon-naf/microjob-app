@@ -40,6 +40,7 @@ function filterString(filters: FilterState) {
     ].join(" ");
 }
 import { EXPORT_DPI, addDpiMetadata, canvasToBlob, downloadBlob, getExportPhysicalSize, isOriginalSizeLabel, physicalToPixels, printSinglePhoto, } from "./photoExport";
+import { parseAdmissionLabel, resolveExportFormat } from "./admissionSizes";
 const TRANSPARENT_BACKGROUND_STYLE: React.CSSProperties = {
     backgroundImage: "linear-gradient(45deg, #d1d5db 25%, transparent 25%), linear-gradient(-45deg, #d1d5db 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #d1d5db 75%), linear-gradient(-45deg, transparent 75%, #d1d5db 75%)",
     backgroundSize: "16px 16px",
@@ -188,7 +189,7 @@ export default function ImagePreviewModal({
         const physical = getExportPhysicalSize(photoSizeLabel, selectedAspect, currentAspectOption?.ratio);
         return {
             physical,
-            ...physicalToPixels(physical, image.dpi || EXPORT_DPI),
+            ...physicalToPixels(physical, parseAdmissionLabel(photoSizeLabel) ? 300 : (image.dpi || EXPORT_DPI)),
         };
     };
     const renderCanvasToExactExportSize = async () => {
@@ -297,13 +298,14 @@ export default function ImagePreviewModal({
         setActionError(null);
         try {
             const exported = await renderCanvasToExactExportSize();
-            const rawBlob = await canvasToBlob(exported.canvas, format);
-            const finalBlob = await addDpiMetadata(rawBlob, format, exported.dpi);
+            const fmt = resolveExportFormat(format, image.size);
+            const rawBlob = await canvasToBlob(exported.canvas, fmt, image.size);
+            const finalBlob = await addDpiMetadata(rawBlob, fmt, exported.dpi);
             const sizeToken = image.size
                 ?.replace(/[×x]/g, "x")
                 .replace(/\s+/g, "")
                 .replace(/[^a-zA-Z0-9._-]/g, "") || "photo";
-            downloadBlob(finalBlob, `${sizeToken}-${exported.widthPx}x${exported.heightPx}-${exported.dpi}dpi-${Date.now()}.${format}`);
+            downloadBlob(finalBlob, `${sizeToken}-${exported.widthPx}x${exported.heightPx}-${exported.dpi}dpi-${Date.now()}.${fmt}`);
         }
         catch (error) {
             console.error("Download failed:", error);

@@ -26,6 +26,8 @@ const AI_EDITOR_BN: Record<string, string> = {
   "BD E-Passport (25x30 mm)": "বাংলাদেশি ই-পাসপোর্ট (২৫×৩০ মিমি)",
   "BD Visa (35x45mm)": "বাংলাদেশি ভিসা (৩৫×৪৫ মিমি)",
   "BD Birth Certificate (35x45mm)": "বাংলাদেশি জন্মনিবন্ধন (৩৫×৪৫ মিমি)",
+  "University Admission (DU, GST, CUET...)": "বিশ্ববিদ্যালয় ভর্তি (ঢাবি, গুচ্ছ, চুয়েট...)",
+  "Admission Photo Size": "ভর্তির ছবির মাপ",
   "2×2 inch": "২×২ ইঞ্চি",
   "40×60 mm": "৪০×৬০ মিমি",
   "40×50 mm": "৪০×৫০ মিমি",
@@ -710,7 +712,7 @@ const AI_EDITOR_BN: Record<string, string> = {
 /** Additional UI strings (kept separate so they can never clash with keys above). */
 const AI_EDITOR_BN_EXTRA: Record<string, string> = {
   "Print directly from here": "এখান থেকেই প্রিন্ট করুন",
-  "Passport": "পাসপোর্ট", "Dual": "ডুয়াল", "E-Pass": "ই-পাস", "Visa": "ভিসা", "Birth": "জন্ম নিবন্ধন",
+  "Passport": "পাসপোর্ট", "Dual": "ডুয়াল", "E-Pass": "ই-পাস", "Visa": "ভিসা", "Birth": "জন্ম নিবন্ধন", "Admission": "ভর্তি",
   "BACKGROUND": "ব্যাকগ্রাউন্ড", "PNG": "PNG", "selected": "টি নির্বাচিত", "Done": "সম্পন্ন", "Cancel": "বাতিল",
   "Close": "বন্ধ করুন", "Locked": "লক করা", "Clothing": "পোশাক", "Default Clothing": "ডিফল্ট পোশাক",
   "Edit": "সম্পাদনা", "Delete": "মুছুন", "Print": "প্রিন্ট", "Download": "ডাউনলোড", "Transparent": "স্বচ্ছ",

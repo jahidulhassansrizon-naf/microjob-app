@@ -1,4 +1,5 @@
 "use client";
+import AdmissionPicker from "./AdmissionPicker";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Camera, Check, ChevronLeft, ChevronRight, Ban, Image as ImageIcon, Palette, Ruler, Shirt, SlidersHorizontal, Sparkles, Hand, Volume2, VolumeX, X, Lightbulb, PlayCircle, ScanFace, Smile, Sun, Gem } from "lucide-react";
@@ -19,6 +20,7 @@ import { CLOTHING_COLORS, RawSvgClothingPreview } from "./GenerationSettings";
 export interface WizardResult {
   size: string;
   visaSize: string;
+  admissionSize: string;
   bg: number;
   customBg: string;
   clothing: number;
@@ -507,7 +509,7 @@ export default function PhotoSetupWizard({
   const goBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const sizeLabel = draft.size
-    ? `${t(draft.size)}${draft.size === "Visa" ? ` (${t(draft.visaSize)})` : ""}`
+    ? `${t(draft.size)}${draft.size === "Visa" ? ` (${t(draft.visaSize)})` : ""}${draft.size === "Admission" ? ` (${draft.admissionSize})` : ""}`
     : "নির্দিষ্ট মাপ নেই";
   const bgOption = backgroundColors[draft.bg];
   const bgLabel =
@@ -595,6 +597,16 @@ export default function PhotoSetupWizard({
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {draft.size === "Admission" && (
+            <div className="rounded-xl border border-[#E3D6B8] bg-[#F7EFD9] p-3">
+              <p className="text-sm font-semibold mb-2">ভর্তির ছবির মাপ বাছাই করুন</p>
+              <AdmissionPicker
+                selectedLabel={draft.admissionSize}
+                onSelect={(label) => update({ admissionSize: label })}
+              />
             </div>
           )}
 

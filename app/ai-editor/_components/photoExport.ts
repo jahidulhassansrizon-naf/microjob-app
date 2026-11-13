@@ -1,4 +1,5 @@
 import type jsPDF from "jspdf";
+import { parseAdmissionLabel, resolveExportFormat } from "./admissionSizes";
 
 export const EXPORT_DPI = 300;
 export type PhysicalSize = {
@@ -8,6 +9,16 @@ export type PhysicalSize = {
 };
 export function parsePhysicalSizeLabel(label: string): PhysicalSize {
     const normalized = String(label || "").trim();
+    // Exact-pixel admission labels ("470×610 px · ≤200KB · JPG"): stored as mm at 300 dpi,
+    // so physicalToPixels(..., 300) gives back the exact pixel size.
+    const admission = parseAdmissionLabel(normalized);
+    if (admission) {
+        return {
+            width: (admission.widthPx / 300) * 25.4,
+            height: (admission.heightPx / 300) * 25.4,
+            unit: "mm",
+        };
+    }
     const inchMatch = normalized.match(/(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*inch/i);
     if (inchMatch) {
         return {
@@ -199,7 +210,81 @@ async function addPngDpi(blob: Blob, dpi: number): Promise<Blob> {
 export async function addDpiMetadata(blob: Blob, format: "jpg" | "png", dpi: number): Promise<Blob> {
     return format === "jpg" ? addJpegDpi(blob, dpi) : addPngDpi(blob, dpi);
 }
-export async function canvasToBlob(canvas: HTMLCanvasElement, format: "jpg" | "png"): Promise<Blob> {
+/** JPEG bytes with a COM (comment) segment of padding added so the file reaches `minBytes`. */
+function padJpegToMinBytes(blob: Blob, bytes: Uint8Array, minBytes: number): Blob {
+    if (bytes.length >= minBytes || bytes[0] !== 0xff || bytes[1] !== 0xd8)
+        return blob;
+    const need = minBytes - bytes.length;
+    const parts: Uint8Array[] = [bytes.subarray(0, 2)];
+    let remaining = need;
+    while (remaining > 0) {
+        const payload = Math.min(65533 - 2, Math.max(1, remaining - 4));
+        const seg = new Uint8Array(4 + payload);
+        seg[0] = 0xff;
+        seg[1] = 0xfe;
+        const len = payload + 2;
+        seg[2] = (len >> 8) & 0xff;
+        seg[3] = len & 0xff;
+        seg.fill(0x20, 4);
+        parts.push(seg);
+        remaining -= seg.length;
+    }
+    parts.push(bytes.subarray(2));
+    return new Blob(parts.map(toBlobArrayBuffer), { type: "image/jpeg" });
+}
+/**
+ * Encodes the canvas so the file is as sharp as possible but inside the portal's KB limit.
+ * Used for exact-pixel admission sizes. Tries JPEG qualities from high to low.
+ */
+async function encodeWithinKB(canvas: HTMLCanvasElement, spec: { maxKB?: number; minKB?: number; format: "jpg" | "png" | "any" }): Promise<Blob> {
+    const flattened = document.createElement("canvas");
+    flattened.width = canvas.width;
+    flattened.height = canvas.height;
+    const context = flattened.getContext("2d");
+    if (!context)
+        throw new Error("Could not create JPG export canvas.");
+    context.fillStyle = "#FFFFFF";
+    context.fillRect(0, 0, flattened.width, flattened.height);
+    context.drawImage(canvas, 0, 0);
+    const toJpeg = (quality: number) => new Promise<Blob | null>((resolve) => flattened.toBlob(resolve, "image/jpeg", quality));
+    // Stay a little under the limit: portals count KB as 1000 or 1024 bytes, and DPI metadata is added afterwards.
+    const maxBytes = spec.maxKB ? spec.maxKB * 1000 - 1024 : Number.POSITIVE_INFINITY;
+    const minBytes = spec.minKB ? spec.minKB * 1024 + 2048 : 0;
+    let best: Blob | null = await toJpeg(0.95);
+    if (!best)
+        throw new Error("Could not encode the image for export.");
+    if (best.size > maxBytes) {
+        let lo = 0.05;
+        let hi = 0.95;
+        let fit: Blob | null = null;
+        for (let i = 0; i < 9; i += 1) {
+            const mid = (lo + hi) / 2;
+            const candidate = await toJpeg(mid);
+            if (!candidate)
+                break;
+            if (candidate.size <= maxBytes) {
+                fit = candidate;
+                lo = mid;
+            }
+            else {
+                hi = mid;
+            }
+        }
+        best = fit ?? (await toJpeg(0.05)) ?? best;
+    }
+    if (minBytes && best.size < minBytes) {
+        const bytes = new Uint8Array(await best.arrayBuffer());
+        best = padJpegToMinBytes(best, bytes, minBytes);
+    }
+    flattened.width = 0;
+    flattened.height = 0;
+    return best;
+}
+export async function canvasToBlob(canvas: HTMLCanvasElement, format: "jpg" | "png", sizeLabel?: string): Promise<Blob> {
+    const admission = sizeLabel ? parseAdmissionLabel(sizeLabel) : null;
+    if (admission && format === "jpg" && (admission.maxKB || admission.minKB)) {
+        return encodeWithinKB(canvas, admission);
+    }
     const mimeType = format === "jpg" ? "image/jpeg" : "image/png";
     const quality = format === "jpg" ? 0.95 : undefined;
     let exportCanvas = canvas;
@@ -365,13 +450,14 @@ export async function renderPhotoToExportCanvas(image: ExportableImage) {
 export async function downloadPhotoFormat(image: ExportableImage, format: "jpg" | "png") {
     const exported = await renderPhotoToExportCanvas(image);
     try {
-        const rawBlob = await canvasToBlob(exported.canvas, format);
-        const finalBlob = await addDpiMetadata(rawBlob, format, exported.dpi);
+        const fmt = resolveExportFormat(format, image.size);
+        const rawBlob = await canvasToBlob(exported.canvas, fmt, image.size);
+        const finalBlob = await addDpiMetadata(rawBlob, fmt, exported.dpi);
         const sizeToken = image.size
             ?.replace(/[×x]/g, "x")
             .replace(/\s+/g, "")
             .replace(/[^a-zA-Z0-9._-]/g, "") || "photo";
-        downloadBlob(finalBlob, `${sizeToken}-${exported.widthPx}x${exported.heightPx}-${exported.dpi}dpi-${Date.now()}.${format}`);
+        downloadBlob(finalBlob, `${sizeToken}-${exported.widthPx}x${exported.heightPx}-${exported.dpi}dpi-${Date.now()}.${fmt}`);
     }
     finally {
         exported.canvas.width = 0;
@@ -753,9 +839,10 @@ export async function downloadPhotosArchive(images: ExportableImage[], format: "
         const image = images[index];
         const exported = await renderPhotoToExportCanvas(image);
         try {
-            const rawBlob = await canvasToBlob(exported.canvas, format);
-            const finalBlob = await addDpiMetadata(rawBlob, format, exported.dpi);
-            const name = `photo-${String(index + 1).padStart(3, "0")}-${exportFilenameToken(image.size)}.${format}`;
+            const fmt = resolveExportFormat(format, image.size);
+            const rawBlob = await canvasToBlob(exported.canvas, fmt, image.size);
+            const finalBlob = await addDpiMetadata(rawBlob, fmt, exported.dpi);
+            const name = `photo-${String(index + 1).padStart(3, "0")}-${exportFilenameToken(image.size)}.${fmt}`;
             files.push({ name, bytes: new Uint8Array(await finalBlob.arrayBuffer()) });
         }
         finally {

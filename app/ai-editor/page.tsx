@@ -1,4 +1,5 @@
 "use client";
+import { ADMISSION_PRESETS, parseAdmissionLabel, presetLabel } from "./_components/admissionSizes";
 import { AiT, useAiEditorText } from "./_components/aiEditorI18n";
 import { buildImageUploadRequest } from "@/lib/clientUpload";
 import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
@@ -178,6 +179,8 @@ export default function PhotoEditorPage() {
     const [rotate, setRotate] = useState(0);
     const [showVisaPopup, setShowVisaPopup] = useState(false);
     const [selectedVisaSize, setSelectedVisaSize] = useState("35×45 mm");
+    const [showAdmissionPopup, setShowAdmissionPopup] = useState(false);
+    const [selectedAdmissionLabel, setSelectedAdmissionLabel] = useState(presetLabel(ADMISSION_PRESETS[0]));
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     // Guided setup wizard (opens after a photo is uploaded + cropped)
     const WIZARD_DISABLED_KEY = "sebalagbe:ai-editor:setup-wizard-disabled";
@@ -309,6 +312,13 @@ export default function PhotoEditorPage() {
             aspect: "35/45",
             dims: "35×45 mm",
         },
+        {
+            id: "Admission",
+            label: "Admission",
+            tooltip: "University Admission (DU, GST, CUET...)",
+            aspect: "1/1",
+            dims: "Admission",
+        },
     ];
     const visaSizesList = [
         { label: "2×2 inch", aspect: "1/1" },
@@ -360,6 +370,18 @@ export default function PhotoEditorPage() {
         };
     };
     const getExactExportDimensions = (sizeLabel: string) => {
+        // Admission presets are exact pixels (e.g. 470x610 px): never rescale them by DPI.
+        const admission = parseAdmissionLabel(sizeLabel);
+        if (admission) {
+            return {
+                width: admission.widthPx,
+                height: admission.heightPx,
+                unit: "mm" as const,
+                widthPx: admission.widthPx,
+                heightPx: admission.heightPx,
+                dpi: 300,
+            };
+        }
         const physical = parsePhysicalSize(sizeLabel);
         const widthInches = physical.unit === "in" ? physical.width : physical.width / 25.4;
         const heightInches = physical.unit === "in" ? physical.height : physical.height / 25.4;
@@ -566,6 +588,8 @@ export default function PhotoEditorPage() {
         if (!selectedSize) return "Original Size";
         if (selectedSize === "Visa")
             return selectedVisaSize;
+        if (selectedSize === "Admission")
+            return selectedAdmissionLabel;
         const found = photoSizes.find((p) => p.id === selectedSize);
         return found ? found.dims : "35×45 mm";
     };
@@ -656,6 +680,13 @@ export default function PhotoEditorPage() {
                 style: getStyleFromAspect(found ? found.aspect : "35/45"),
             };
         }
+        if (selectedSize === "Admission") {
+            const adm = parseAdmissionLabel(selectedAdmissionLabel);
+            return {
+                text: adm ? `${adm.widthPx}×${adm.heightPx} px` : "Admission",
+                style: getStyleFromAspect(adm ? `${adm.widthPx}/${adm.heightPx}` : "1/1"),
+            };
+        }
         const foundSize = photoSizes.find((p) => p.id === selectedSize);
         return {
             text: foundSize ? foundSize.dims : "35×45 mm",
@@ -667,6 +698,9 @@ export default function PhotoEditorPage() {
             if (visaPopupRef.current &&
                 !visaPopupRef.current.contains(event.target as Node))
                 setShowVisaPopup(false);
+            if (visaPopupRef.current &&
+                !visaPopupRef.current.contains(event.target as Node))
+                setShowAdmissionPopup(false);
             if (colorPickerRef.current &&
                 !colorPickerRef.current.contains(event.target as Node))
                 setShowColorPicker(false);
@@ -897,6 +931,7 @@ export default function PhotoEditorPage() {
         setIsDualMode(true);
         setSelectedSize("Dual");
         setShowVisaPopup(false);
+        setShowAdmissionPopup(false);
         setShowColorPicker(false);
         setIsDualPreviewActive(false);
         const sourceForLeft = originalImageForDual || uploadedImage;
@@ -918,6 +953,18 @@ export default function PhotoEditorPage() {
         setRegeneratingId(null);
     };
     const handleSizeClick = (sizeId: string) => {
+        if (sizeId === "Admission") {
+            // Same behaviour as Visa: click again on the selected one to clear it, otherwise open the list.
+            setShowVisaPopup(false);
+            if (!isDualMode && selectedSize === "Admission") {
+                setSelectedSize("");
+                setShowAdmissionPopup(false);
+                return;
+            }
+            setShowAdmissionPopup((prev) => !prev);
+            return;
+        }
+        setShowAdmissionPopup(false);
         if (sizeId === "Visa") {
             // Clicking the already-selected Visa option clears the size constraint.
             // To choose another visa format, click Visa again to reopen its size list.
@@ -1872,6 +1919,10 @@ export default function PhotoEditorPage() {
         if (result.size === "Visa" && result.visaSize) {
             setSelectedVisaSize(result.visaSize);
         }
+        setShowAdmissionPopup(false);
+        if (result.size === "Admission" && result.admissionSize) {
+            setSelectedAdmissionLabel(result.admissionSize);
+        }
         setSelectedBg(result.bg);
         if (/^#[0-9A-F]{6}$/i.test(result.customBg)) {
             setCustomBgColor(result.customBg.toUpperCase());
@@ -1901,6 +1952,8 @@ export default function PhotoEditorPage() {
         setPrintSession(null);
         setSelectedSize("");
         setSelectedVisaSize("35×45 mm");
+        setSelectedAdmissionLabel(presetLabel(ADMISSION_PRESETS[0]));
+        setShowAdmissionPopup(false);
         setSelectedBg(-1);
         setCustomBgColor("#8B1E1E");
         setSelectedClothing(-1);
@@ -2220,7 +2273,7 @@ export default function PhotoEditorPage() {
             Middle + QR = row 1 (fixed viewport-based height). "Recent photos" = row 2, aligned under the upload box + QR. */}
         <div className="ai-row flex flex-col lg:flex-row lg:flex-wrap xl:grid xl:grid-cols-[var(--ai-left-w)_minmax(0,1fr)_var(--ai-right-w)] xl:grid-rows-[minmax(0,1fr)_auto] xl:flex-1 xl:min-h-0 w-full max-w-[1400px] xl:max-w-none gap-3 sm:gap-4 items-center lg:items-start xl:items-stretch min-w-0">
           <div className="w-full lg:w-[var(--ai-left-w-lg)] lg:shrink-0 xl:w-full xl:row-span-2 xl:min-h-0 xl:overflow-hidden flex flex-col [&>*]:flex-1 xl:[&>*]:min-h-0">
-            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} onOpenSetupWizard={isDualMode ? undefined : openSetupWizardFromButton} isGenerating={isGenerating}/>
+            <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} showAdmissionPopup={showAdmissionPopup} setShowAdmissionPopup={setShowAdmissionPopup} selectedAdmissionLabel={selectedAdmissionLabel} setSelectedAdmissionLabel={setSelectedAdmissionLabel} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} onOpenSetupWizard={isDualMode ? undefined : openSetupWizardFromButton} isGenerating={isGenerating}/>
           </div>
 
           <div className="w-full min-w-0 lg:flex-1 lg:basis-0 xl:flex-1 flex flex-col [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
@@ -2252,6 +2305,7 @@ export default function PhotoEditorPage() {
       <PhotoSetupWizard open={showSetupWizard} image={uploadedImage} initial={{
         size: isDualMode ? "" : selectedSize,
         visaSize: selectedVisaSize,
+        admissionSize: selectedAdmissionLabel,
         bg: selectedBg,
         customBg: customBgColor,
         clothing: selectedClothing,

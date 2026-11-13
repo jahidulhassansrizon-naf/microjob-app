@@ -106,6 +106,18 @@ export default function PhotoSizeIcon({
         </svg>
       );
 
+    case "Admission":
+      // Graduation cap over a photo frame
+      return (
+        <svg {...common}>
+          <rect x="5" y="14" width="22" height="14" rx="2.4" fill="currentColor" fillOpacity="0.12" />
+          <path d="M16 4.5l11.5 5.2L16 14.9 4.5 9.7 16 4.5z" fill="currentColor" fillOpacity="0.2" />
+          <path d="M26 11v5.5" strokeWidth="1.4" />
+          <circle cx="16" cy="19.2" r="2.3" />
+          <path d="M11.4 26c.5-2.4 2.3-3.7 4.6-3.7s4.1 1.3 4.6 3.7" />
+        </svg>
+      );
+
     default:
       return (
         <svg {...common}>
