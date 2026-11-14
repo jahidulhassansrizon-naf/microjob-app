@@ -1,16 +1,14 @@
 {
-  "name": "microjob-playwright",
-  "version": "1.0.0",
+  "name": "ei-neo-api-bot",
+  "version": "2.0.0",
   "private": true,
   "main": "server.js",
+  "engines": { "node": ">=18" },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "selftest": "node selftest.js"
   },
   "dependencies": {
-    "express": "^5.1.0",
-    "http-proxy": "^1.18.1",
-    "multer": "^2.0.2",
-    "playwright": "^1.63.0",
-    "ws": "^8.18.0"
+    "sharp": "^0.34.0"
   }
 }

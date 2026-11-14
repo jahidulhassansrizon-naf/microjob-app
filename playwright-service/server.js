@@ -1,3260 +1,590 @@
-const express = require("express");
-const { chromium } = require("playwright");
-const multer = require("multer");
-const { spawn } = require("node:child_process");
-const { promises: fs, existsSync } = require("node:fs");
-const crypto = require("node:crypto");
-const os = require("node:os");
-const path = require("node:path");
-
-const notifier = require("./notifier");
-
-// --------------------------------------------------
-// Things the admin panel can show (served by /admin-report, protected by BOT_ALERT_KEY)
-// --------------------------------------------------
-
-const BOT_STARTED_AT = Date.now();
-
-// Last console lines (kept in memory), so the admin panel can show them without opening GitHub.
-const logBuffer = [];
-{
-  const toText = (args) =>
-    args
-      .map((a) =>
-        typeof a === "string" ? a : a instanceof Error ? a.message : (() => { try { return JSON.stringify(a); } catch { return String(a); } })(),
-      )
-      .join(" ")
-      .replace(/https?:\/\/[-a-z0-9.]+\.trycloudflare\.com\S*/gi, "[tunnel]")
-      .replace(/\s+/g, " ")
-      .slice(0, 300);
-  const push = (level, args) => {
-    logBuffer.push({ at: new Date().toISOString(), level, text: toText(args) });
-    while (logBuffer.length > 200) logBuffer.shift();
-  };
-  const origLog = console.log.bind(console);
-  const origError = console.error.bind(console);
-  console.log = (...args) => { push("info", args); origLog(...args); };
-  console.error = (...args) => { push("error", args); origError(...args); };
-}
-
-// Plain-words explanation of a failure message: what it most likely means and what to do.
-function explainFailure(message) {
-  const m = String(message || "");
-  if (/logged-out|signInVisible|accounts\.google\.com/i.test(m)) {
-    return {
-      cause: "The Google login of this session expired.",
-      advice: "Log in again, run save-session.js for this slot, update the GEMINI_SESSION_JSON_N secret and restart the bot.",
-    };
-  }
-  if (/Timed out waiting for the generated image/i.test(m)) {
-    return {
-      cause: "Gemini did not finish the image in time (slow, throttled or stuck).",
-      advice: "If only one session repeats this, check it with /session-test?slot=N. The bot already retries on another session.",
-    };
-  }
-  if (/empty image/i.test(m)) {
-    return { cause: "Gemini returned an empty image.", advice: "Usually temporary. The bot retries on another session." };
-  }
-  if (/Timeout \d+ms exceeded|waitFor|locator|selector/i.test(m)) {
-    return {
-      cause: "A part of the Gemini page never appeared (the page did not open properly for this account).",
-      advice: "Open /session-test?slot=N. The account may need a consent or verification screen, or the Gemini page changed.",
-    };
-  }
-  if (/limit/i.test(m)) {
-    return { cause: "The daily image limit of this account is reached.", advice: "Nothing to do. The session comes back by itself." };
-  }
-  if (/could not create this image|refus/i.test(m)) {
-    return { cause: "Gemini declined to create this photo.", advice: "Usually the photo or the request. The user can press Generate again." };
-  }
-  return { cause: "Unknown error.", advice: "See the bot log below for the full message." };
-}
-
-// Important things that happened (session stopped, failed attempt, job failed ...), newest last.
-const eventLog = [];
-
-function logEvent(type, slot, message) {
-  const text = String(message || "").replace(/\s+/g, " ").slice(0, 240);
-  const explained = type === "info" ? { cause: "", advice: "" } : explainFailure(text);
-  eventLog.push({
-    at: new Date().toISOString(),
-    type,
-    slot: Number(slot) || 0,
-    message: text,
-    cause: explained.cause,
-    advice: explained.advice,
-  });
-  while (eventLog.length > 150) eventLog.shift();
-}
-
-// One line per finished job: how long, and which sessions were tried.
-const jobLog = [];
-
-const app = express();
-
-const PORT = Number(process.env.BOT_PORT) || 3000;
-const DISPLAY = process.env.DISPLAY || ":99";
-
-const VNC_PORT = 5900;
-const WEBSOCKIFY_PORT = 6080;
-
-const BROWSER_DATA_DIR = process.env.BROWSER_DATA_DIR || "/tmp/gemini-profile";
-
-const VNC_PASSWORD_FILE = "/tmp/vnc-password";
-
-process.env.DISPLAY = DISPLAY;
-
-let browserContext = null;
-let desktopStarted = false;
-const desktopProcesses = [];
-
-app.use(express.json({ limit: "10mb" }));
-
-// --------------------------------------------------
-// CORS
-// --------------------------------------------------
-
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, x-api-key",
-  );
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-
-  next();
-});
-
-// --------------------------------------------------
-// Helpers
-// --------------------------------------------------
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function startProcess(command, args, name) {
-  console.log(`Starting ${name}...`);
-
-  const child = spawn(command, args, {
-    env: {
-      ...process.env,
-      DISPLAY,
-      XAUTHORITY: "/tmp/gemini-xauth",
-    },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  child.stdout.on("data", (data) => {
-    console.log(`[${name}] ${data.toString().trim()}`);
-  });
-
-  child.stderr.on("data", (data) => {
-    console.error(`[${name}] ${data.toString().trim()}`);
-  });
-
-  child.on("error", (error) => {
-    console.error(`${name} error:`, error);
-  });
-
-  child.on("exit", (code, signal) => {
-    console.log(`${name} exited`, {
-      code,
-      signal,
-    });
-  });
-
-  desktopProcesses.push(child);
-
-  return child;
-}
-
-// --------------------------------------------------
-// Desktop
-// --------------------------------------------------
-
-async function startDesktop() {
-  if (desktopStarted) {
-    return;
-  }
-
-  desktopStarted = true;
-
-  console.log("Starting cloud desktop...");
-
-  const xauthFile = "/tmp/gemini-xauth";
-  const cookie = crypto.randomBytes(16).toString("hex");
-
-  // Create X11 authentication cookie.
-  await fs
-    .rm(xauthFile, {
-      force: true,
-    })
-    .catch(() => {});
-
-  spawn("xauth", ["-f", xauthFile, "add", DISPLAY, ".", cookie], {
-    stdio: "inherit",
-  });
-
-  await sleep(1000);
-
-  process.env.XAUTHORITY = xauthFile;
-
-  // ----------------------------------------------
-  // Xvfb
-  // ----------------------------------------------
-
-  startProcess(
-    "Xvfb",
-    [
-      DISPLAY,
-      "-screen",
-      "0",
-      "1440x900x24",
-      "-auth",
-      xauthFile,
-      "-nolisten",
-      "tcp",
-      "+extension",
-      "RANDR",
-    ],
-    "Xvfb",
-  );
-
-  await sleep(1500);
-
-  // ----------------------------------------------
-  // Fluxbox
-  // ----------------------------------------------
-
-  startProcess("fluxbox", [], "fluxbox");
-
-  await sleep(1500);
-
-  // ----------------------------------------------
-  // VNC password
-  // ----------------------------------------------
-
-  const vncPassword = process.env.NO_VNC_PASSWORD;
-
-  if (!vncPassword) {
-    throw new Error("NO_VNC_PASSWORD environment variable is required.");
-  }
-
-  if (vncPassword.length > 8) {
-    throw new Error(
-      "NO_VNC_PASSWORD must be 8 characters or fewer because of the VNC password protocol.",
-    );
-  }
-
-  await fs.writeFile(VNC_PASSWORD_FILE, `${vncPassword}\n`, {
-    mode: 0o600,
-  });
-
-  // ----------------------------------------------
-  // x11vnc
-  // ----------------------------------------------
-
-  startProcess(
-    "x11vnc",
-    [
-      "-display",
-      DISPLAY,
-      "-auth",
-      xauthFile,
-      "-rfbport",
-      String(VNC_PORT),
-      "-passwdfile",
-      VNC_PASSWORD_FILE,
-      "-forever",
-      "-shared",
-      "-listen",
-      "127.0.0.1",
-      "-noxdamage",
-    ],
-    "x11vnc",
-  );
-
-  await sleep(2500);
-
-  // ----------------------------------------------
-  // websockify
-  // ----------------------------------------------
-
-  startProcess(
-    "websockify",
-    [
-      "--verbose",
-      "--web",
-      "/usr/share/novnc",
-      String(WEBSOCKIFY_PORT),
-      `127.0.0.1:${VNC_PORT}`,
-    ],
-    "websockify",
-  );
-
-  await sleep(2500);
-
-  console.log("Cloud desktop is ready.");
-}
-
-// --------------------------------------------------
-// Chromium
-// --------------------------------------------------
-
-async function getBrowserContext() {
-  if (browserContext) {
-    return browserContext;
-  }
-
-  await fs.mkdir(BROWSER_DATA_DIR, {
-    recursive: true,
-  });
-
-  console.log("Launching cloud Chromium...");
-
-  browserContext = await chromium.launchPersistentContext(BROWSER_DATA_DIR, {
-    headless: false,
-
-    viewport: {
-      width: 1440,
-      height: 900,
-    },
-
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--start-maximized",
-    ],
-  });
-
-  console.log("Cloud Chromium launched.");
-
-  return browserContext;
-}
-
-async function getGeminiPage() {
-  const context = await getBrowserContext();
-
-  const pages = context.pages();
-
-  let page = pages.find((item) => item.url().includes("gemini.google.com"));
-
-  if (!page) {
-    page = pages[0] || (await context.newPage());
-
-    await page.goto("https://gemini.google.com/app", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-  }
-
-  return page;
-}
-
-// --------------------------------------------------
-// Gemini image editing helpers
-// --------------------------------------------------
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 15 * 1024 * 1024,
-  },
-});
-
-function parseUpload(req, res, next) {
-  upload.single("image")(req, res, (error) => {
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    next();
-  });
-}
-
-function parseTemplateUpload(req, res, next) {
-  upload.fields([
-    {
-      name: "image",
-      maxCount: 1,
-    },
-    {
-      name: "templateImage",
-      maxCount: 1,
-    },
-    // Couple templates: the second person's photo (optional).
-    //   image  = person 1, image2 = person 2
-    {
-      name: "image2",
-      maxCount: 1,
-    },
-  ])(req, res, (error) => {
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    next();
-  });
-}
-
-// Dual mode (AI Editor): two separate photos in one request.
-//   image  = left person
-//   image2 = right person
-function parseDualUpload(req, res, next) {
-  upload.fields([
-    {
-      name: "image",
-      maxCount: 1,
-    },
-    {
-      name: "image2",
-      maxCount: 1,
-    },
-  ])(req, res, (error) => {
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    }
-
-    next();
-  });
-}
-
-// Optional protection: if ASK_KEY is set in Render's Environment,
-// every protected request must send the same value in the
-// "x-api-key" header. If ASK_KEY is not set, the route is open.
-function requireApiKey(req, res, next) {
-  const requiredKey = process.env.ASK_KEY;
-
-  if (!requiredKey) {
-    return next();
-  }
-
-  if (req.get("x-api-key") !== requiredKey) {
-    return res.status(401).json({
-      success: false,
-      error: "Invalid or missing API key.",
-    });
-  }
-
-  next();
-}
-
-// --------------------------------------------------
-// Multiple Gemini sessions (up to 3 Google accounts)
-//
-// Files: gemini-session-1.json, gemini-session-2.json, gemini-session-3.json
-// (the old single gemini-session.json still works as slot 1).
-// Jobs are spread over all sessions (least busy first, max
-// the per-session limit each). When Gemini says "limit resets at ...",
-// that session is parked until the reset time and the SAME job is
-// retried on the next session. The parked state is saved to
-// session-limits.json so a server restart does not forget it.
-// --------------------------------------------------
-
-// Up to 10 sessions. Only the slots that have a gemini-session-N.json file are used,
-// so adding a 4th (or 5th...) session only needs its file, no code change.
-const SESSION_SLOTS = Array.from({ length: 10 }, (_, i) => i + 1);
-const LIMIT_STATE_FILE = path.join(__dirname, "session-limits.json");
-const DEFAULT_LIMIT_PARK_MS = 60 * 60 * 1000; // used if reset time can't be read
-const LIMIT_TEXT_REGEX =
-  /limit resets|your limit resets|reached your (daily |usage )?limit|can create more images as soon as/i;
-
-// Gemini sometimes gives up and writes this instead of making the image.
-// The bot stops right away (no 3-minute wait) and the visitor is asked to retry.
-// Known texts are caught instantly; unknown texts are caught by isReplyFinished() below.
-const REFUSAL_TEXT_REGEX =
-  /hard time fulfilling your request|encountered an error doing what you asked|couldn'?t (generate|create) (the |that |this )?image|unable to (generate|create) (the |that |this )?image|can'?t (generate|create|edit) (the |that |this )?(image|photo)/i;
-
-// True when Gemini has finished writing its reply (the "Good response" feedback
-// button is there and the "Stop response" button is gone). If no download button
-// exists at that point, Gemini answered with text only and no image will come.
-async function isReplyFinished(page) {
-  const feedback = await page
-    .getByRole("button", { name: /good response/i })
-    .last()
-    .isVisible()
-    .catch(() => false);
-
-  if (!feedback) return false;
-
-  const stopVisible = await page
-    .getByRole("button", { name: /stop (response|generating)/i })
-    .first()
-    .isVisible()
-    .catch(() => false);
-
-  return !stopVisible;
-}
-
-class GeminiLimitError extends Error {
-  constructor(message, resetAt) {
-    super(message);
-    this.name = "GeminiLimitError";
-    this.resetAt = resetAt || 0;
-  }
-}
-
-// { "1": <epoch ms when usable again>, ... }
-let limitState = {};
-
+"use strict";
+/**
+ * EI neo bot v2 - NO Google login, NO Playwright, NO cookies.
+ *
+ * Same routes as before, so the website does not change:
+ *   POST /edit-image        (image, prompt)
+ *   POST /template-edit     (image, templateImage, [image2], prompt)
+ *   POST /edit-image-dual   (image, image2, prompt)
+ *   GET  /health            POST /warm-hint    GET /admin-report    POST /notify
+ *
+ * Instead of driving the Gemini website, it calls an image API:
+ *   1) Cloudflare Workers AI  (FLUX.2 klein)  - has a free daily allowance
+ *   2) Gemini API "nano banana"               - only if your key can use it
+ * Providers are tried in the order of IMAGE_PROVIDERS. When one is out of quota
+ * (HTTP 429) it rests until its reset time and the next one is used.
+ *
+ * Needs Node 18+ (Node 22 on GitHub Actions is fine) and the "sharp" package.
+ */
+
+const http = require("http");
+const crypto = require("crypto");
+
+let sharp = null;
 try {
-  limitState = JSON.parse(require("node:fs").readFileSync(LIMIT_STATE_FILE, "utf8"));
+  sharp = require("sharp");
 } catch {
-  limitState = {};
+  /* reported later, only when an image really needs resizing */
 }
 
-function saveLimitState() {
-  fs.writeFile(LIMIT_STATE_FILE, JSON.stringify(limitState, null, 2)).catch(
-    () => {},
-  );
-}
+// ------------------------------------------------------------------ config
+const PORT = Number(process.env.BOT_PORT) || 4000;
+const HOST = "127.0.0.1";
+const MAX_CONCURRENT = Number(process.env.MAX_CONCURRENT_GENERATIONS) || 6;
+const MAX_QUEUE = Number(process.env.MAX_QUEUE_LENGTH) || 100;
+const REQUEST_TIMEOUT_MS = Number(process.env.PROVIDER_TIMEOUT_MS) || 120000;
+const MAX_UPLOAD_BYTES = 40 * 1024 * 1024;
+const STARTED_AT = Date.now();
 
-function sessionFileForSlot(slot) {
-  const candidates = [
-    `/etc/secrets/gemini-session-${slot}.json`,
-    path.join(__dirname, `gemini-session-${slot}.json`),
-  ];
+const GEMINI_BASE = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com").replace(/\/+$/, "");
+const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+const CF_BASE = (process.env.CF_BASE_URL || "https://api.cloudflare.com").replace(/\/+$/, "");
+const CF_MODEL = process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-2-klein-4b";
 
-  if (slot === 1) {
-    candidates.push(
-      "/etc/secrets/gemini-session.json",
-      path.join(__dirname, "gemini-session.json"),
-    );
+// Reads KEY, KEY_2, KEY_3 ... KEY_10 (several keys = more free quota)
+function readNumbered(name) {
+  const out = [];
+  for (const n of ["", ...Array.from({ length: 9 }, (_, i) => `_${i + 2}`)]) {
+    const v = (process.env[name + n] || "").trim();
+    if (v) out.push(v);
   }
-
-  return candidates.find((p) => existsSync(p));
+  return out;
 }
 
-// All sessions that have a file on disk, in order 1, 2, 3.
-function listSessions() {
-  return SESSION_SLOTS.map((slot) => ({
-    slot,
-    file: sessionFileForSlot(slot),
-    usableAt: Number(limitState[slot]) || 0,
-  })).filter((s) => s.file);
-}
-
-function isSessionUsable(session) {
-  return Date.now() >= session.usableAt;
-}
-
-// "Current session" pointer: the session being used right now. It stays on
-// one session until that one runs out of limit, then moves 1 -> 2 -> 3 -> ...
-// and wraps around to 1 again. It is saved in session-limits.json too.
-function getCurrentSlot(sessions) {
-  const saved = Number(limitState.current) || 0;
-  return sessions.some((s) => s.slot === saved) ? saved : sessions[0].slot;
-}
-
-function setCurrentSlot(slot) {
-  if (limitState.current !== slot) {
-    limitState.current = slot;
-    saveLimitState();
-    console.log(`Current Gemini session is now ${slot}.`);
-  }
-}
-
-// Sessions in circular order, starting at startSlot.
-function circularFrom(sessions, startSlot) {
-  const index = Math.max(
-    0,
-    sessions.findIndex((s) => s.slot === startSlot),
-  );
-
-  return [...sessions.slice(index), ...sessions.slice(0, index)];
-}
-
-// Why a session is parked ("limit" or "logged-out"); only used for status messages.
-const sessionDownReason = {};
-
-// Health of each session, apart from the daily limit: a session that keeps timing out
-// or failing (for example its Gemini page does not open properly) is rested for a while,
-// so jobs stop wasting 30 to 100 seconds on it. slot -> { streak, lastError, lastErrorAt, coolUntil }
-const sessionHealth = {};
-
-function healthOf(slot) {
-  if (!sessionHealth[slot]) {
-    sessionHealth[slot] = { streak: 0, lastError: "", lastErrorAt: 0, coolUntil: 0 };
-  }
-  return sessionHealth[slot];
-}
-
-function isCooling(slot) {
-  return healthOf(slot).coolUntil > Date.now();
-}
-
-// Usable (no limit parked) and not resting after repeated failures.
-function isSessionHealthy(session) {
-  return isSessionUsable(session) && !isCooling(session.slot);
-}
-
-function noteSessionSuccess(slot) {
-  const h = healthOf(slot);
-  h.streak = 0;
-  h.coolUntil = 0;
-}
-
-function noteSessionFailure(slot, message) {
-  const h = healthOf(slot);
-  h.streak += 1;
-  h.lastError = String(message || "")
-    .replace(/\s+/g, " ")
-    .slice(0, 220);
-  h.lastErrorAt = Date.now();
-  logEvent("attempt-failed", slot, h.lastError);
-
-  // 2 failures in a row: rest 10 min; then 20, 30 ... up to 60 minutes.
-  if (h.streak >= 2) {
-    const minutes = Math.min(60, 10 * (h.streak - 1));
-    h.coolUntil = Date.now() + minutes * 60_000;
-    sessionDownReason[slot] = "failing";
-    logEvent("session-resting", slot, `Rested ${minutes} min after ${h.streak} failures in a row. ${h.lastError}`);
-    console.log(
-      `Session ${slot} failed ${h.streak} times in a row, resting it for ${minutes} minutes. Last error: ${h.lastError}`,
-    );
-  }
-}
-
-function markSessionLimited(slot, resetAt) {
-  sessionDownReason[slot] = "limit";
-  const u = usageOf(slot);
-  logEvent("session-limit", slot, `Daily limit reached after ${u.since} images this run.`);
-  if (u.since > 0) u.limitAfter = u.since;
-  u.since = 0;
-  const until = resetAt && resetAt > Date.now() ? resetAt : Date.now() + DEFAULT_LIMIT_PARK_MS;
-  limitState[slot] = until;
-  saveLimitState();
-  console.log(
-    `Session ${slot}: limit reached, parked until ${new Date(until).toLocaleString()}.`,
-  );
-}
-
-// Reads "Your limit resets at 11:05 PM" and returns epoch ms (0 if not found).
-function parseResetTime(text) {
-  const m = /resets?\s+(?:at|on)?\s*(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec(
-    String(text || ""),
-  );
-
-  if (!m) {
-    return 0;
-  }
-
-  let hour = Number(m[1]);
-  const minute = Number(m[2]);
-  const ampm = (m[3] || "").toUpperCase();
-
-  if (ampm === "PM" && hour < 12) hour += 12;
-  if (ampm === "AM" && hour === 12) hour = 0;
-
-  const target = new Date();
-  target.setHours(hour, minute, 0, 0);
-
-  // Time already passed today means it is tomorrow.
-  if (target.getTime() <= Date.now()) {
-    target.setDate(target.getDate() + 1);
-  }
-
-  // Small safety margin so we don't retry a minute too early.
-  return target.getTime() + 60 * 1000;
-}
-
-function getMimeType(extension) {
-  const normalized = String(extension || "").toLowerCase();
-
-  if (normalized === ".jpg" || normalized === ".jpeg") {
-    return "image/jpeg";
-  }
-
-  if (normalized === ".webp") {
-    return "image/webp";
-  }
-
-  if (normalized === ".gif") {
-    return "image/gif";
-  }
-
-  return "image/png";
-}
-
-function getExtension(mimeType) {
-  const normalized = String(mimeType || "").toLowerCase();
-
-  if (normalized.includes("jpeg") || normalized.includes("jpg")) {
-    return ".jpg";
-  }
-
-  if (normalized.includes("webp")) {
-    return ".webp";
-  }
-
-  if (normalized.includes("gif")) {
-    return ".gif";
-  }
-
-  return ".png";
-}
-
-// --------------------------------------------------
-// Concurrency settings
-//
-// All of these can be changed from environment variables (for example
-// in the GitHub Actions workflow) without touching the code.
-//
-//   MAX_CONCURRENT_GENERATIONS  how many Gemini jobs run at the same time
-//   MAX_QUEUE_LENGTH            how many more may wait in line
-//   QUEUE_WAIT_TIMEOUT_MS       longest a request may wait in line
-//   GENERATION_TIMEOUT_MS       longest a single job may run
-//   BROWSER_RECYCLE_AFTER_JOBS  restart the shared Chromium after N jobs
-//                               (only while idle) to avoid slow memory growth
-// --------------------------------------------------
-
-function readIntEnv(name, fallback, min, max) {
-  const parsed = Number.parseInt(process.env[name] || "", 10);
-
-  if (!Number.isFinite(parsed)) {
-    return fallback;
-  }
-
-  return Math.min(max, Math.max(min, parsed));
-}
-
-// Jobs that start on the same session are spaced this far apart (ms), so one
-// account never opens many Gemini pages in the very same moment.
-const SESSION_START_STAGGER_MS = readIntEnv("SESSION_START_STAGGER_MS", 1000, 0, 10_000);
-
-// Total number of Gemini jobs allowed at the same moment (the machine limit:
-// about 20 headless Chromium pages fit on a 4 vCPU / 16 GB GitHub runner).
-const MAX_CONCURRENT_GENERATIONS = readIntEnv("MAX_CONCURRENT_GENERATIONS", 20, 1, 200);
-
-// Highest number of jobs one Google account may run at once. 5 per account was
-// tested and works; 15 on one account made Google block it.
-const PER_SESSION_HARD_MAX = readIntEnv("PER_SESSION_MAX", 5, 1, 20);
-
-// PER_SESSION_CONCURRENCY is optional. If it is NOT set, the limit per account is
-// worked out automatically from the number of session files:
-//   4 sessions  -> 20 / 4  = 5 each
-//   10 sessions -> 20 / 10 = 2 each
-// so adding a session file spreads the same total load over more accounts.
-const PER_SESSION_FIXED = readIntEnv("PER_SESSION_CONCURRENCY", 0, 0, 20);
-
-function perSessionLimit() {
-  if (PER_SESSION_FIXED > 0) {
-    return PER_SESSION_FIXED;
-  }
-
-  const count = Math.max(1, listSessions().length);
-
-  return Math.min(
-    PER_SESSION_HARD_MAX,
-    Math.max(1, Math.ceil(MAX_CONCURRENT_GENERATIONS / count)),
-  );
-}
-
-// How many jobs may run right now: only sessions that are not parked / logged
-// out count, and never more than MAX_CONCURRENT_GENERATIONS. This stops the bot
-// from accepting 20 jobs when only 3 sessions work (and leaving 5 stuck).
-function currentCapacity() {
-  const sessions = listSessions();
-  const usableList = sessions.filter(isSessionUsable);
-  const healthyList = usableList.filter((x) => !isCooling(x.slot));
-  // If every usable session is resting, still count them (jobs will try them as a last resort).
-  const usable = healthyList.length || usableList.length;
-
-  if (usable === 0) {
-    return MAX_CONCURRENT_GENERATIONS;
-  }
-
-  return Math.max(
-    1,
-    Math.min(MAX_CONCURRENT_GENERATIONS, usable * perSessionLimit()),
-  );
-}
-
-// How many times one job may be tried again on ANOTHER session after Gemini
-// refuses it or it times out (each retry only if enough job time is left).
-const MAX_JOB_RETRIES = readIntEnv("MAX_JOB_RETRIES", 2, 0, 5);
-// How long ONE attempt waits for Gemini's image after the prompt is sent. A stuck
-// attempt must give up early enough that the job still has time for a retry on
-// another session (in the 20-at-once test, good images were done in under 90s,
-// the stuck ones waited 150s and then had no time left to retry).
-const IMAGE_WAIT_MS = readIntEnv("IMAGE_WAIT_MS", 100_000, 30_000, 300_000);
-const RETRY_MIN_REMAINING_MS = readIntEnv("RETRY_MIN_REMAINING_MS", 80_000, 0, 600_000);
-
-// Counters shown on /health so a load test shows WHY jobs failed.
-const stats = {
-  jobs: 0,
-  jobsOk: 0,
-  jobsFailed: 0,
-  retries: 0,
-  attemptsRefused: 0,
-  attemptsTimedOut: 0,
-  limitHits: 0,
-  loggedOutSessions: 0,
-  otherErrors: 0,
-  peakActive: 0,
-  peakWaiting: 0,
-  totalOkMs: 0,
-};
-
-// Images made per session in this run, and since that session last hit its limit.
-// limitAfter = how many images it made before the last limit message (shows the real daily limit).
-const sessionUsage = {};
-
-function usageOf(slot) {
-  if (!sessionUsage[slot]) {
-    sessionUsage[slot] = { ok: 0, since: 0, limitAfter: 0 };
-  }
-  return sessionUsage[slot];
-}
-
-function notePeaks() {
-  if (activeJobs > stats.peakActive) stats.peakActive = activeJobs;
-  if (waitingJobs.length > stats.peakWaiting) stats.peakWaiting = waitingJobs.length;
-}
-
-const MAX_QUEUE_LENGTH = readIntEnv("MAX_QUEUE_LENGTH", 100, 0, 1000);
-const QUEUE_WAIT_TIMEOUT_MS = readIntEnv(
-  "QUEUE_WAIT_TIMEOUT_MS",
-  200_000,
-  5_000,
-  600_000,
-);
-const GENERATION_TIMEOUT_MS = readIntEnv(
-  "GENERATION_TIMEOUT_MS",
-  270_000,
-  30_000,
-  900_000,
-);
-const BROWSER_RECYCLE_AFTER_JOBS = readIntEnv(
-  "BROWSER_RECYCLE_AFTER_JOBS",
-  60,
-  5,
-  100_000,
-);
-
-// Temp folders created by this server (see withTempDir). Anything older than
-// this is a leftover from a crash and is removed by the sweeper.
-const TEMP_DIR_PREFIXES = [
-  "gemini-edit-",
-  "gemini-template-edit-",
-  "gemini-dual-edit-",
-];
-const TEMP_DIR_MAX_AGE_MS = 30 * 60 * 1000;
-const TEMP_SWEEP_INTERVAL_MS = 10 * 60 * 1000;
-
-// --------------------------------------------------
-// Errors
-// --------------------------------------------------
-
+// ------------------------------------------------------------------ small helpers
 class HttpError extends Error {
-  constructor(message, statusCode = 500, extra = {}) {
+  constructor(statusCode, message, extra = {}) {
     super(message);
-    this.name = "HttpError";
     this.statusCode = statusCode;
-    this.retryAfter = extra.retryAfter || 0;
-    this.code = extra.code || "";
+    Object.assign(this, extra);
   }
 }
 
-// Gemini refused / failed to make this image. Not a limit and not a broken session.
-class GeminiRefusedError extends HttpError {
-  constructor() {
-    super("Gemini could not create this image this time. Please try again.", 422, {
-      code: "GEMINI_REFUSED",
-    });
-    this.name = "GeminiRefusedError";
-  }
+const eventLog = [];
+function logEvent(type, message, extra = {}) {
+  const entry = { at: new Date().toISOString(), type, message: String(message).slice(0, 300), ...extra };
+  eventLog.push(entry);
+  while (eventLog.length > 150) eventLog.shift();
+  console.log(`[${type}] ${entry.message}`);
 }
 
-function makeClientClosedError() {
-  return new HttpError("Request was cancelled by the client.", 499);
+function nextUtcMidnight() {
+  const d = new Date();
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1, 0, 1, 0);
 }
 
-function abortReason(signal) {
-  return signal && signal.reason instanceof Error
-    ? signal.reason
-    : makeClientClosedError();
-}
-
-function throwIfAborted(signal) {
-  if (signal && signal.aborted) {
-    throw abortReason(signal);
-  }
-}
-
-// --------------------------------------------------
-// Job queue (counting semaphore with a bounded waiting line)
-//
-// Every generation takes one slot. When all slots are busy, new requests
-// wait in line (up to MAX_QUEUE_LENGTH). If the line is full, or a request
-// waits too long, it gets a clear 503 instead of hanging forever.
-// A request whose client disconnects leaves the line immediately.
-// --------------------------------------------------
-
-let activeJobs = 0;
-const waitingJobs = [];
-
-function removeWaiter(waiter) {
-  const index = waitingJobs.indexOf(waiter);
-
-  if (index !== -1) {
-    waitingJobs.splice(index, 1);
-  }
-
-  clearTimeout(waiter.timer);
-  waiter.signal.removeEventListener("abort", waiter.onAbort);
-}
-
-function acquireSlot(signal) {
-  return new Promise((resolve, reject) => {
-    if (signal.aborted) {
-      return reject(abortReason(signal));
-    }
-
-    if (activeJobs < currentCapacity()) {
-      activeJobs += 1;
-      notePeaks();
-      return resolve();
-    }
-
-    if (waitingJobs.length >= MAX_QUEUE_LENGTH) {
-      return reject(
-        new HttpError(
-          "The image server is busy right now. Please try again in a moment.",
-          503,
-          { retryAfter: 15 },
-        ),
-      );
-    }
-
-    const waiter = { signal, resolve, timer: null, onAbort: null };
-
-    waiter.timer = setTimeout(() => {
-      removeWaiter(waiter);
-      reject(
-        new HttpError(
-          "Too many people are generating images right now. Please try again in a moment.",
-          503,
-          { retryAfter: 15 },
-        ),
-      );
-    }, QUEUE_WAIT_TIMEOUT_MS);
-
-    waiter.onAbort = () => {
-      removeWaiter(waiter);
-      reject(abortReason(signal));
-    };
-
-    signal.addEventListener("abort", waiter.onAbort, { once: true });
-
-    waitingJobs.push(waiter);
-    notePeaks();
-  });
-}
-
-// Lets waiting requests in while there is free capacity. Capacity changes
-// when a session gets parked or comes back, so this also runs on a timer.
-function pumpWaiters() {
-  while (waitingJobs.length > 0 && activeJobs < currentCapacity()) {
-    const next = waitingJobs[0];
-
-    removeWaiter(next);
-    activeJobs += 1;
-    notePeaks();
-    next.resolve();
-  }
-}
-
-function releaseSlot() {
-  activeJobs = Math.max(0, activeJobs - 1);
-
-  pumpWaiters();
-
-  if (activeJobs === 0) {
-    recycleBrowserIfIdle().catch(() => {});
-  }
-}
-
-setInterval(pumpWaiters, 2000).unref();
-
-// --------------------------------------------------
-// Keep-alive (stops Cloudflare 524 on long jobs)
-//
-// A Cloudflare tunnel cuts any request that has not received an answer
-// (HTTP headers) within about 100 seconds and returns error 524. A busy
-// generation can take longer than that. So when the caller sends the header
-//   x-keepalive: 1
-// the bot answers "200" immediately and then writes one blank space every
-// KEEPALIVE_INTERVAL_MS while it works. The real JSON arrives at the end.
-// Blank spaces in front of JSON are ignored by JSON.parse.
-//
-// Because the HTTP status is already sent, the real status travels inside
-// the JSON body ("status" and "retryAfter"). Callers that do not send the
-// header get the old behaviour (real HTTP status, Retry-After header).
-// --------------------------------------------------
-
-const KEEPALIVE_INTERVAL_MS = readIntEnv("KEEPALIVE_INTERVAL_MS", 15_000, 1_000, 60_000);
-
-function startKeepAlive(res) {
-  if (res.headersSent || res.locals.keepAliveStarted) {
-    return;
-  }
-
-  res.locals.keepAliveStarted = true;
-
-  res.writeHead(200, {
+function sendJson(res, status, body, headers = {}) {
+  if (res.writableEnded || res.destroyed) return;
+  const data = JSON.stringify(body);
+  res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "no-store",
-    "X-Accel-Buffering": "no",
+    "Content-Length": Buffer.byteLength(data),
+    ...headers,
   });
-  res.flushHeaders();
-
-  res.locals.keepAliveTimer = setInterval(() => {
-    if (!res.writableEnded && !res.destroyed) {
-      res.write(" ");
-    }
-  }, KEEPALIVE_INTERVAL_MS);
+  res.end(data);
 }
 
-function stopKeepAlive(res) {
-  if (res.locals.keepAliveTimer) {
-    clearInterval(res.locals.keepAliveTimer);
-    res.locals.keepAliveTimer = null;
-  }
-}
-
-// Same as res.status(x).json(y), but also works after keep-alive started.
-function sendJson(res, statusCode, payload) {
-  if (res.locals.keepAliveStarted) {
-    stopKeepAlive(res);
-
-    if (res.writableEnded || res.destroyed) {
-      return;
-    }
-
-    return res.end(JSON.stringify({ ...payload, status: statusCode }));
-  }
-
-  return res.status(statusCode).json(payload);
-}
-
-// Runs `work(signal)` inside a slot. The signal is aborted when:
-//   - the client disconnects (browser closed, route.ts timed out, ...), or
-//   - the job runs longer than GENERATION_TIMEOUT_MS.
-// Aborting closes that job's browser context, so it never keeps working in
-// the background or blocks a slot for people waiting behind it.
-async function runGenerationJob(res, work) {
-  const controller = new AbortController();
-
-  const onClientClose = () => {
-    if (!res.writableEnded && !controller.signal.aborted) {
-      controller.abort(makeClientClosedError());
-    }
-  };
-
-  res.on("close", onClientClose);
-
-  // Caller asked for keep-alive: answer now, so the tunnel never times out
-  // while this request waits in line or while Gemini is working.
-  if (res.req && res.req.get("x-keepalive") === "1") {
-    startKeepAlive(res);
-  }
-
-  let acquired = false;
-  let timer = null;
-
+async function fetchWithTimeout(url, options = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   try {
-    await acquireSlot(controller.signal);
-    acquired = true;
-
-    timer = setTimeout(() => {
-      controller.abort(
-        new HttpError(
-          "Image generation took too long. Please try again.",
-          504,
-        ),
-      );
-    }, GENERATION_TIMEOUT_MS);
-
-    controller.signal.deadlineAt = Date.now() + GENERATION_TIMEOUT_MS;
-
-    throwIfAborted(controller.signal);
-
-    return await work(controller.signal);
+    return await fetch(url, { ...options, signal: ctrl.signal });
   } finally {
     clearTimeout(timer);
-    res.off("close", onClientClose);
-    stopKeepAlive(res);
-
-    if (acquired) {
-      releaseSlot();
-    }
   }
 }
 
-// Last few failures, shown on /health so a failed load test can be explained
-// without opening the GitHub log. Only the short message is kept (no page URLs).
-const recentErrors = [];
-
-function noteRecentError(label, error) {
-  const message = (error instanceof Error ? error.message : String(error))
-    .replace(/\s+/g, " ")
-    .slice(0, 300);
-
-  recentErrors.push({ at: new Date().toISOString(), label, message });
-
-  while (recentErrors.length > 8) {
-    recentErrors.shift();
-  }
+// ------------------------------------------------------------------ image helpers (sharp)
+function needSharp() {
+  if (!sharp) throw new Error('The "sharp" package is not installed. Run: npm install');
+  return sharp;
 }
 
-function sendGenerationError(res, error, label) {
-  const statusCode =
-    error && typeof error.statusCode === "number" ? error.statusCode : 500;
-
-  if (statusCode !== 499) {
-    noteRecentError(label, error);
-  }
-
-  if (statusCode === 499) {
-    console.log(`${label}: client disconnected, job cancelled.`);
-  } else {
-    console.error(`${label} error:`, error);
-  }
-
-  if (res.writableEnded || res.destroyed) {
-    return;
-  }
-
-  // Headers already sent for some other reason (not our keep-alive): nothing to do.
-  if (res.headersSent && !res.locals.keepAliveStarted) {
-    return;
-  }
-
-  if (error && error.retryAfter && !res.headersSent) {
-    res.set("Retry-After", String(error.retryAfter));
-  }
-
-  // Only our own HttpError messages are written for visitors. Anything else
-  // (Playwright / Gemini page details) gets a plain friendly message.
-  const isSafe = error instanceof HttpError || statusCode < 500;
-  const publicMessage = isSafe && error instanceof Error
-    ? error.message
-    : "Image generation is taking longer than usual. Please wait a moment and try again.";
-
-  return sendJson(res, statusCode, {
-    success: false,
-    error: publicMessage,
-    code: error && error.code ? error.code : undefined,
-    retryAfter: error && error.retryAfter ? error.retryAfter : undefined,
+// Shrinks a photo so its longest side is <= maxSide. Returns { buffer, mime, width, height }.
+async function shrink(buffer, maxSide, mime = "image/jpeg") {
+  const s = needSharp();
+  let img = s(buffer, { failOn: "none" }).rotate();
+  img = img.resize({ width: maxSide, height: maxSide, fit: "inside", withoutEnlargement: true });
+  const { data, info } = await (mime === "image/png" ? img.png() : img.jpeg({ quality: 92 })).toBuffer({
+    resolveWithObject: true,
   });
+  return { buffer: data, mime, width: info.width, height: info.height };
 }
 
-// --------------------------------------------------
-// Temp folders
-// --------------------------------------------------
+// ------------------------------------------------------------------ providers
+/**
+ * job = {
+ *   kind: "edit" | "template" | "dual",
+ *   prompt: string,
+ *   images: [{ buffer, mime }],   // in the order the website expects (template first for "template")
+ * }
+ * A provider returns { buffer, mime } or throws an error with
+ *   .kind = "quota" | "auth" | "refused" | "transient" | "bad"
+ *   .retryAt = epoch ms (for quota)
+ */
+function providerError(kind, message, extra = {}) {
+  const e = new Error(message);
+  e.kind = kind;
+  Object.assign(e, extra);
+  return e;
+}
 
-async function withTempDir(prefix, work) {
-  const dir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
-
-  try {
-    return await work(dir);
-  } finally {
-    await fs
-      .rm(dir, {
-        recursive: true,
-        force: true,
-      })
-      .catch(() => {});
+function classifyHttp(status, text, retryAfterHeader) {
+  const snippet = String(text || "").replace(/\s+/g, " ").slice(0, 220);
+  if (status === 429) {
+    const secs = Number(retryAfterHeader);
+    const retryAt = secs > 0 ? Date.now() + secs * 1000 : 0;
+    return providerError("quota", `rate/quota limit (HTTP 429): ${snippet}`, { retryAt });
   }
+  if (status === 401 || status === 403) return providerError("auth", `key rejected (HTTP ${status}): ${snippet}`);
+  if (status === 402) return providerError("quota", `payment required (HTTP 402): ${snippet}`);
+  if (status >= 500) return providerError("transient", `server error (HTTP ${status}): ${snippet}`);
+  return providerError("bad", `request rejected (HTTP ${status}): ${snippet}`);
 }
 
-async function sweepStaleTempDirs() {
-  const root = os.tmpdir();
-  const entries = await fs.readdir(root).catch(() => []);
-  const now = Date.now();
+// ---- Cloudflare Workers AI (FLUX.2 klein): inputs must be < 512x512, up to 4 of them.
+async function cloudflareGenerate(cred, job) {
+  const [accountId, token] = cred.secret.split("|");
+  const inputs = [];
+  for (const img of job.images.slice(0, 4)) inputs.push(await shrink(img.buffer, 500, "image/jpeg"));
 
-  for (const name of entries) {
-    if (!TEMP_DIR_PREFIXES.some((prefix) => name.startsWith(prefix))) {
-      continue;
+  // Output size follows the first image (template or photo), longest side 1024, multiples of 16.
+  const first = job.kind === "dual" ? { width: 4, height: 3 } : inputs[0];
+  const scale = 1024 / Math.max(first.width, first.height);
+  const round16 = (n) => Math.min(1024, Math.max(256, Math.round((n * scale) / 16) * 16));
+  const width = round16(first.width);
+  const height = round16(first.height);
+
+  const form = new FormData();
+  let prompt = job.prompt;
+  if (inputs.length > 1) {
+    const names =
+      job.kind === "template"
+        ? ["the template", "person 1", "person 2"]
+        : ["person 1 (left)", "person 2 (right)"];
+    const hint = inputs.map((_, i) => `image ${i} = ${names[i] || "extra photo"}`).join(", ");
+    prompt = `${prompt}\n\nReference images: ${hint}.`;
+  }
+  form.append("prompt", prompt.slice(0, 2000));
+  form.append("width", String(width));
+  form.append("height", String(height));
+  inputs.forEach((img, i) => {
+    form.append(`input_image_${i}`, new Blob([img.buffer], { type: img.mime }), `input_${i}.jpg`);
+  });
+
+  const url = `${CF_BASE}/client/v4/accounts/${accountId}/ai/run/${CF_MODEL}`;
+  const res = await fetchWithTimeout(url, { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
+
+  if (!res.ok) {
+    const err = classifyHttp(res.status, await res.text().catch(() => ""), res.headers.get("retry-after"));
+    // Cloudflare's free allowance resets at 00:00 UTC.
+    if (err.kind === "quota" && !err.retryAt) err.retryAt = nextUtcMidnight();
+    // Cloudflare also reports "out of neurons" as a 4xx with an error code/message.
+    throw err;
+  }
+
+  const ctype = res.headers.get("content-type") || "";
+  if (ctype.startsWith("image/")) {
+    return { buffer: Buffer.from(await res.arrayBuffer()), mime: ctype.split(";")[0] };
+  }
+  const json = await res.json().catch(() => null);
+  let b64 = json && json.result && (json.result.image || json.result.b64_json || json.result.output);
+  if (json && json.success === false) {
+    const msg = JSON.stringify(json.errors || json).slice(0, 220);
+    if (/neuron|quota|limit|capacity/i.test(msg)) throw providerError("quota", `Cloudflare: ${msg}`, { retryAt: nextUtcMidnight() });
+    throw providerError("bad", `Cloudflare: ${msg}`);
+  }
+  if (typeof b64 !== "string" || !b64) throw providerError("refused", "Cloudflare returned no image");
+  let mime = "image/png";
+  const m = /^data:([^;]+);base64,/.exec(b64);
+  if (m) {
+    mime = m[1];
+    b64 = b64.slice(m[0].length);
+  } else if (b64.startsWith("/9j/")) mime = "image/jpeg";
+  return { buffer: Buffer.from(b64, "base64"), mime };
+}
+
+// ---- Gemini API (nano banana). Works only if the key's project is allowed to make images.
+async function geminiGenerate(cred, job) {
+  const parts = [{ text: job.prompt }];
+  for (const img of job.images) {
+    const small = await shrink(img.buffer, 1536, "image/jpeg");
+    parts.push({ inline_data: { mime_type: small.mime, data: small.buffer.toString("base64") } });
+  }
+  const url = `${GEMINI_BASE}/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const res = await fetchWithTimeout(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": cred.secret },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts }],
+      generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+    }),
+  });
+
+  const raw = await res.text();
+  if (!res.ok) {
+    const err = classifyHttp(res.status, raw, res.headers.get("retry-after"));
+    if (err.kind === "quota") {
+      // "limit: 0" = this key can never make images (free tier). Rest it for a long time.
+      err.retryAt = /limit:\s*0/i.test(raw) ? Date.now() + 6 * 3600e3 : err.retryAt || Date.now() + 10 * 60e3;
     }
-
-    const fullPath = path.join(root, name);
-
-    try {
-      const stat = await fs.stat(fullPath);
-
-      if (now - stat.mtimeMs > TEMP_DIR_MAX_AGE_MS) {
-        await fs.rm(fullPath, { recursive: true, force: true });
-        console.log(`Removed stale temp folder: ${name}`);
-      }
-    } catch {
-      // Already gone or not accessible. Nothing to do.
-    }
+    throw err;
   }
-}
-
-// --------------------------------------------------
-// Shared Chromium for generation
-//
-// One Chromium process, one isolated browser context per generation.
-// This avoids serializing unrelated users and is much lighter than
-// starting a new Chromium process for every request.
-// --------------------------------------------------
-
-let generationBrowser = null;
-let generationBrowserPromise = null;
-let jobsOnCurrentBrowser = 0;
-
-async function getGenerationBrowser() {
-  if (generationBrowser && generationBrowser.isConnected()) {
-    return generationBrowser;
-  }
-
-  if (!generationBrowserPromise) {
-    generationBrowserPromise = chromium
-      .launch({
-        headless: true,
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-renderer-backgrounding",
-          "--disable-background-timer-throttling",
-          "--disable-backgrounding-occluded-windows",
-        ],
-      })
-      .then((browser) => {
-        generationBrowser = browser;
-        jobsOnCurrentBrowser = 0;
-        browser.on("disconnected", () => {
-          if (generationBrowser === browser) {
-            generationBrowser = null;
-          }
-        });
-        return browser;
-      })
-      .finally(() => {
-        generationBrowserPromise = null;
-      });
-  }
-
-  return generationBrowserPromise;
-}
-
-// Restart the shared Chromium after many jobs, but only while nobody is
-// generating, so no one's image is ever interrupted.
-async function recycleBrowserIfIdle() {
-  if (
-    PREWARM ||
-    activeJobs !== 0 ||
-    waitingJobs.length !== 0 ||
-    !generationBrowser ||
-    jobsOnCurrentBrowser < BROWSER_RECYCLE_AFTER_JOBS
-  ) {
-    return;
-  }
-
-  const browser = generationBrowser;
-  generationBrowser = null;
-  jobsOnCurrentBrowser = 0;
-
-  console.log("Recycling shared Chromium (idle, many jobs served).");
-
-  await browser.close().catch(() => {});
-}
-
-// --------------------------------------------------
-// Warm page pool (PREWARM=1)
-//
-// At the start of every run, each Google session gets ONE browser context
-// (logged in once from its session file) and a few Gemini pages that are opened
-// ahead of time and kept open. A job then only takes a ready page, types the
-// prompt, attaches the image and sends. No page opening, no new login, no new
-// context per image. After the job the page goes back to a fresh "new chat"
-// state in the background (so the next visitor never waits for it).
-//
-// Safe fallbacks: if no ready page is free a job opens its own page in the same
-// context (the old speed), a broken page is closed and replaced, and
-// PREWARM=0 (or not set) brings back the old behaviour completely.
-//
-//   PREWARM                  1 = on, anything else = off
-//   WARM_PAGES_PER_SESSION   ready pages per session (0 = same as the jobs per session)
-//   WARM_OPEN_STAGGER_MS     pause between opening two pages (serial start)
-// --------------------------------------------------
-
-const PREWARM = process.env.PREWARM === "1";
-const WARM_PAGES_PER_SESSION = readIntEnv("WARM_PAGES_PER_SESSION", 0, 0, 10);
-const WARM_OPEN_STAGGER_MS = readIntEnv("WARM_OPEN_STAGGER_MS", 1000, 0, 10_000);
-const WARM_MAINTAIN_INTERVAL_MS = 60_000;
-const WARM_RESET_WAIT_MS = 20_000; // a job waits at most this long for a page that is being refreshed
-const GEMINI_APP_URL = "https://gemini.google.com/app";
-const GEMINI_PROMPT_BOX = '[data-test-id="textarea-wrapper"]';
-
-const warmPool = {}; // slot -> { slot, browser, context, total, idle, resetting, replenishing, dead, lastError }
-const warmEntryPending = {};
-let warmStartedAt = 0;
-let warmStartupDone = false;
-// For the admin panel: how often a job got a ready page, had to open its own, or a bad page was replaced.
-const warmStats = { hits: 0, misses: 0, replaced: 0 };
-
-
-// --------------------------------------------------
-// Same browser identity for every session (BROWSER_LOCALE, BROWSER_TIMEZONE,
-// BROWSER_USER_AGENT). Google sees one steady, ordinary browser instead of the
-// default "HeadlessChrome / UTC / no locale" identity of a bare Playwright.
-// --------------------------------------------------
-const BROWSER_LOCALE = process.env.BROWSER_LOCALE || "en-US";
-const BROWSER_TIMEZONE = process.env.BROWSER_TIMEZONE || "Asia/Dhaka";
-const BROWSER_USER_AGENT_ENV = (process.env.BROWSER_USER_AGENT || "").trim();
-
-function browserUserAgent(browser) {
-  if (BROWSER_USER_AGENT_ENV) {
-    return BROWSER_USER_AGENT_ENV;
-  }
-
+  let json;
   try {
-    const major = String(browser.version()).split(".")[0];
-    return `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`;
+    json = JSON.parse(raw);
   } catch {
-    return undefined;
+    throw providerError("transient", "Gemini sent an unreadable answer");
   }
+  const cand = json.candidates && json.candidates[0];
+  const partsOut = (cand && cand.content && cand.content.parts) || [];
+  for (const p of partsOut) {
+    const d = p.inlineData || p.inline_data;
+    if (d && d.data) return { buffer: Buffer.from(d.data, "base64"), mime: d.mimeType || d.mime_type || "image/png" };
+  }
+  const why = (cand && cand.finishReason) || (json.promptFeedback && json.promptFeedback.blockReason) || "no image in answer";
+  throw providerError("refused", `Gemini made no image (${why})`);
 }
 
-function contextOptions(sessionFile, browser) {
-  const options = {
-    storageState: sessionFile,
-    viewport: { width: 1440, height: 900 },
-    acceptDownloads: true,
-    locale: BROWSER_LOCALE,
-    timezoneId: BROWSER_TIMEZONE,
+// Provider table. Each credential is one "slot" in the admin panel.
+const PROVIDERS = [];
+function buildProviders() {
+  const order = (process.env.IMAGE_PROVIDERS || "cloudflare,gemini")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+  const cfIds = readNumbered("CF_ACCOUNT_ID");
+  const cfTokens = readNumbered("CF_API_TOKEN");
+  const cfCreds = cfIds.map((id, i) => (cfTokens[i] ? `${id}|${cfTokens[i]}` : null)).filter(Boolean);
+  const gmCreds = readNumbered("GEMINI_API_KEY");
+
+  const defs = {
+    cloudflare: { label: "Cloudflare FLUX.2", creds: cfCreds, run: cloudflareGenerate },
+    gemini: { label: "Gemini API", creds: gmCreds, run: geminiGenerate },
   };
-  const userAgent = browserUserAgent(browser);
-
-  if (userAgent) {
-    options.userAgent = userAgent;
-  }
-
-  return options;
-}
-
-// --------------------------------------------------
-// Renewed Google cookies. Google rotates some cookies (for example
-// __Secure-1PSIDTS) while a session is in use. After a job that worked, the
-// current cookies are written to FRESH_SESSION_DIR/gemini-session-N.json; the
-// GitHub workflow copies them back into the GEMINI_SESSION_JSON_N secrets, so
-// the next run starts with fresh cookies instead of the ones from the day the
-// session was first saved. Only written after a SUCCESSFUL job, so a logged-out
-// session can never overwrite a good one.
-// --------------------------------------------------
-const FRESH_SESSION_DIR = process.env.FRESH_SESSION_DIR || path.join(__dirname, "fresh-sessions");
-const FRESH_SAVE_EVERY_MS = readIntEnv("FRESH_SAVE_EVERY_MS", 10 * 60_000, 60_000, 6 * 3_600_000);
-const FRESH_SECRET_MAX_BYTES = 45_000; // GitHub secrets are limited to 48 KB
-const freshSavedAt = {};
-
-async function saveFreshSession(slot, context) {
-  try {
-    if (!context || Date.now() - (freshSavedAt[slot] || 0) < FRESH_SAVE_EVERY_MS) {
-      return;
-    }
-
-    const isGoogle = (host) => /(^|\.)(google\.com|gstatic\.com|googleusercontent\.com)$/.test(host);
-    const full = await context.storageState();
-    const trimmed = {
-      cookies: (full.cookies || []).filter((c) => isGoogle(String(c.domain).replace(/^\./, ""))),
-      origins: (full.origins || []).filter((o) => {
-        try {
-          return isGoogle(new URL(o.origin).hostname);
-        } catch {
-          return false;
-        }
-      }),
-    };
-
-    // A real logged-in state always has these. Never save anything without them.
-    if (!trimmed.cookies.some((c) => c.name === "SID") || !trimmed.cookies.some((c) => c.name === "__Secure-1PSID")) {
-      return;
-    }
-
-    let text = JSON.stringify(trimmed);
-
-    if (Buffer.byteLength(text) > FRESH_SECRET_MAX_BYTES) {
-      text = JSON.stringify({ cookies: trimmed.cookies, origins: [] });
-    }
-
-    if (Buffer.byteLength(text) > FRESH_SECRET_MAX_BYTES) {
-      return;
-    }
-
-    await fs.mkdir(FRESH_SESSION_DIR, { recursive: true });
-    const target = path.join(FRESH_SESSION_DIR, `gemini-session-${slot}.json`);
-    await fs.writeFile(`${target}.tmp`, text, { mode: 0o600 });
-    await fs.rename(`${target}.tmp`, target);
-    freshSavedAt[slot] = Date.now();
-  } catch (error) {
-    console.log(`[fresh] session ${slot}: could not save renewed cookies: ${error && error.message}`);
-  }
-}
-
-// --------------------------------------------------
-// Demand-based warm pages (WARM_DEMAND=1, together with PREWARM=1).
-// No page is opened at start. The website tells the bot (POST /warm-hint)
-// when a logged-in visitor opens the AI editor page ("weak" hint) or has
-// chosen/uploaded a photo ("strong" hint). Each active visitor holds ONE ready
-// page, spread over the sessions round-robin, opened one at a time with a
-// pause between pages. When visitors leave, their pages are closed again.
-//   WARM_DEMAND            1 = on
-//   WARM_MAX_PAGES         most ready pages at once (default 8)
-//   WARM_PER_SESSION_MAX   most ready pages per Google account (default 2)
-//   WARM_WEAK_TTL_MS       how long a page visit counts as "active" (default 3 min)
-//   WARM_STRONG_TTL_MS     same after the photo is chosen (default 6 min)
-// --------------------------------------------------
-const WARM_DEMAND = process.env.WARM_DEMAND === "1";
-const WARM_MAX_PAGES = readIntEnv("WARM_MAX_PAGES", 8, 0, 40);
-const WARM_PER_SESSION_MAX = readIntEnv("WARM_PER_SESSION_MAX", 2, 1, 10);
-const WARM_WEAK_TTL_MS = readIntEnv("WARM_WEAK_TTL_MS", 180_000, 30_000, 3_600_000);
-const WARM_STRONG_TTL_MS = readIntEnv("WARM_STRONG_TTL_MS", 360_000, 30_000, 3_600_000);
-const WARM_HINT_MAX_KEYS = 1000;
-const warmHints = new Map(); // visitor key -> expiry time (ms)
-let warmDemandTargets = {}; // slot -> pages wanted now
-let warmKickRunning = false;
-let warmKickTimer = null;
-
-function pruneWarmHints() {
-  const now = Date.now();
-
-  for (const [key, expiresAt] of warmHints) {
-    if (expiresAt <= now) {
-      warmHints.delete(key);
-    }
-  }
-}
-
-function recordWarmHint(key, strong) {
-  const ttl = strong ? WARM_STRONG_TTL_MS : WARM_WEAK_TTL_MS;
-  const expiresAt = Date.now() + ttl;
-  const old = warmHints.get(key) || 0;
-
-  if (warmHints.size >= WARM_HINT_MAX_KEYS && !warmHints.has(key)) {
-    pruneWarmHints();
-
-    if (warmHints.size >= WARM_HINT_MAX_KEYS) {
-      return;
-    }
-  }
-
-  warmHints.set(key, Math.max(old, expiresAt));
-}
-
-function recomputeWarmTargets() {
-  pruneWarmHints();
-
-  const usable = listSessions().filter((s) => isSessionUsable(s) && !isCooling(s.slot));
-  const wanted = Math.min(WARM_MAX_PAGES, warmHints.size, usable.length * WARM_PER_SESSION_MAX);
-  const targets = {};
-
-  usable.forEach((s) => {
-    targets[s.slot] = 0;
-  });
-
-  // Round robin over the sessions, starting after the one that got the last page,
-  // so every account gets its share and no single account is loaded first.
-  for (let i = 0; i < wanted; i += 1) {
-    const s = usable[i % usable.length];
-    targets[s.slot] += 1;
-  }
-
-  warmDemandTargets = targets;
-}
-
-// How many ready pages this session should keep right now.
-function entryTarget(slot) {
-  return WARM_DEMAND ? warmDemandTargets[slot] || 0 : warmTarget();
-}
-
-function hasIdleWarmPage(slot) {
-  const entry = warmPool[slot];
-
-  return entry && !entry.dead && entry.idle.length > 0 ? 1 : 0;
-}
-
-function kickWarmMaintenance() {
-  if (warmKickTimer || warmKickRunning) {
-    return;
-  }
-
-  warmKickTimer = setTimeout(() => {
-    warmKickTimer = null;
-    warmKickRunning = true;
-    maintainWarmPool()
-      .catch(() => {})
-      .finally(() => {
-        warmKickRunning = false;
+  let slot = 0;
+  for (const name of order) {
+    const def = defs[name];
+    if (!def) continue;
+    def.creds.forEach((secret, i) => {
+      slot += 1;
+      PROVIDERS.push({
+        slot,
+        name,
+        label: `${def.label} #${i + 1}`,
+        secret,
+        run: def.run,
+        active: 0,
+        ok: 0,
+        failed: 0,
+        streak: 0,
+        lastError: "",
+        restUntil: 0,
+        restReason: "",
+        dead: false, // key rejected: needs a human
       });
-  }, 500);
-}
-
-function warmTarget() {
-  return WARM_PAGES_PER_SESSION || perSessionLimit();
-}
-
-async function createWarmEntry(slot, sessionFile) {
-  const browser = await getGenerationBrowser();
-
-  const context = await browser.newContext(contextOptions(sessionFile, browser));
-
-  const entry = {
-    slot,
-    browser,
-    context,
-    total: 0, // every page of this session: ready + in use + refreshing + opening
-    idle: [],
-    resetting: 0,
-    replenishing: false,
-    dead: false,
-    lastError: "",
-    failStreak: 0, // failed attempts in a row to open a page for this session
-    nextTryAt: 0, // do not try to fill this session again before this time
-  };
-
-  warmPool[slot] = entry;
-
-  context.on("close", () => {
-    entry.dead = true;
-
-    if (warmPool[slot] === entry) {
-      delete warmPool[slot];
-    }
-  });
-
-  return entry;
-}
-
-function getWarmEntry(slot, sessionFile) {
-  const existing = warmPool[slot];
-
-  if (existing && !existing.dead && existing.browser.isConnected()) {
-    return Promise.resolve(existing);
-  }
-
-  if (!warmEntryPending[slot]) {
-    warmEntryPending[slot] = createWarmEntry(slot, sessionFile).finally(() => {
-      delete warmEntryPending[slot];
     });
   }
-
-  return warmEntryPending[slot];
 }
 
-// Opens one Gemini page and waits until the prompt box is there.
-async function openWarmPage(entry) {
-  entry.total += 1;
+const isResting = (p) => p.restUntil > Date.now();
+const isUsable = (p) => !p.dead && !isResting(p);
 
-  let page = null;
+function rest(p, untilMs, reason) {
+  p.restUntil = untilMs;
+  p.restReason = reason;
+}
 
-  try {
-    page = await entry.context.newPage();
+async function runWithProviders(job) {
+  if (!PROVIDERS.length) {
+    throw new HttpError(503, "Image generation is not set up yet.", { code: "NOT_CONFIGURED" });
+  }
+  const tried = new Set();
+  let sawQuota = false;
+  let sawRefusal = false;
+  let nextRetry = 0;
 
-    await page.goto(GEMINI_APP_URL, {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
+  // Least busy first, but keep the configured provider order as the main rule.
+  for (;;) {
+    const candidates = PROVIDERS.filter((p) => isUsable(p) && !tried.has(p.slot));
+    if (!candidates.length) break;
+    const firstName = candidates[0].name;
+    const p = candidates.filter((c) => c.name === firstName).sort((a, b) => a.active - b.active)[0];
+    tried.add(p.slot);
 
-    await page.locator(GEMINI_PROMPT_BOX).waitFor({
-      state: "visible",
-      timeout: 45000,
-    });
-
-    return page;
-  } catch (error) {
-    entry.total = Math.max(0, entry.total - 1);
-
-    // Find out WHY the prompt box did not show (sign-in screen? popup? other page?).
-    let pageInfo = "";
-
-    if (page && !page.isClosed()) {
+    // One quick retry for network hiccups / 5xx on the same key.
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      p.active++;
+      const t0 = Date.now();
       try {
-        const bodyText = await page.locator("body").innerText({ timeout: 3000 });
-        const title = await page.title().catch(() => "");
-
-        pageInfo = ` [page: ${page.url()} | title: ${String(title).slice(0, 60)} | signInVisible: ${/Sign in/i.test(bodyText)}]`;
-      } catch {
-        pageInfo = ` [page: ${page.url()}]`;
-      }
-    }
-
-    if (page) {
-      await page.close().catch(() => {});
-    }
-
-    const wrapped = new Error(
-      `Gemini prompt box did not appear${pageInfo || ` (${error && error.message ? String(error.message).split("\n")[0] : "unknown error"})`}`,
-    );
-    wrapped.pageInfo = pageInfo;
-    throw wrapped;
-  }
-}
-
-// Brings the session back up to its number of ready pages (one page at a time).
-async function replenishWarmPool(slot) {
-  const session = listSessions().find((s) => s.slot === slot);
-
-  // A session that hit its daily limit or keeps failing is left alone for now.
-  // The maintenance timer fills it up again once it is usable.
-  if (!session || !isSessionUsable(session) || isCooling(slot)) {
-    return;
-  }
-
-  const entry = await getWarmEntry(slot, session.file);
-
-  if (entry.replenishing || Date.now() < entry.nextTryAt) {
-    return;
-  }
-
-  entry.replenishing = true;
-
-  try {
-    while (!entry.dead && entry.total < entryTarget(slot)) {
-      try {
-        const page = await openWarmPage(entry);
-
-        if (entry.dead) {
-          await page.close().catch(() => {});
+        const out = await p.run({ secret: p.secret }, job);
+        p.ok++;
+        p.streak = 0;
+        logEvent("ok", `${p.label} made an image in ${Math.round((Date.now() - t0) / 1000)}s`, { slot: p.slot });
+        return { ...out, provider: p.name };
+      } catch (err) {
+        const kind = err.kind || (err.name === "AbortError" ? "transient" : "bad");
+        const msg = err.name === "AbortError" ? "timed out" : err.message;
+        p.failed++;
+        p.streak++;
+        p.lastError = String(msg).slice(0, 240);
+        logEvent("fail", `${p.label} (${kind}): ${msg}`, { slot: p.slot });
+        if (kind === "quota") {
+          sawQuota = true;
+          const until = err.retryAt || Date.now() + 15 * 60e3;
+          rest(p, until, "quota/limit reached");
+          nextRetry = nextRetry ? Math.min(nextRetry, until) : until;
           break;
         }
-
-        entry.idle.push(page);
-        entry.lastError = "";
-        entry.failStreak = 0;
-        entry.nextTryAt = 0;
-        console.log(`[warm] session ${slot}: page ready (${entry.idle.length} ready, ${entry.total}/${entryTarget(slot)} open)`);
-      } catch (error) {
-        entry.lastError = String(error && error.message ? error.message : error)
-          .replace(/\s+/g, " ")
-          .slice(0, 240);
-
-        // Sign-in screen = the Google login of this session expired. Park it the same way
-        // a failing job would, so the admin panel shows the real reason.
-        if (/signInVisible: true|accounts\.google\.com/i.test(entry.lastError)) {
-          stats.loggedOutSessions += 1;
-          limitState[slot] = Date.now() + 6 * 60 * 60 * 1000;
-          sessionDownReason[slot] = "logged-out";
-          logEvent("session-logged-out", slot, "Google login expired (sign-in screen seen while opening a ready page).");
-          saveLimitState();
-          console.log(`[warm] session ${slot} looks logged out (re-save it with save-session.js). Skipping it.`);
+        if (kind === "auth") {
+          rest(p, Date.now() + 3600e3, "key rejected"); // tried again after 1 hour
           break;
         }
-
-        // Wait longer after every failure (2, 5, 10, then 15 minutes) so a broken
-        // session is not hammered with new page loads.
-        entry.failStreak += 1;
-        const waitMinutes = [2, 5, 10, 15][Math.min(entry.failStreak, 4) - 1];
-        entry.nextTryAt = Date.now() + waitMinutes * 60_000;
-        console.log(
-          `[warm] session ${slot}: could not open a page (${entry.lastError}). Trying again in ${waitMinutes} min.`,
-        );
-        break;
-      }
-
-      if (WARM_OPEN_STAGGER_MS > 0) {
-        await sleep(WARM_OPEN_STAGGER_MS);
-      }
-    }
-  } finally {
-    entry.replenishing = false;
-  }
-}
-
-// A job takes a ready page. Returns { entry, page, warm }.
-async function acquireWarmPage(slot, sessionFile, signal) {
-  const entry = await getWarmEntry(slot, sessionFile);
-  const waitUntil = Date.now() + WARM_RESET_WAIT_MS;
-
-  while (true) {
-    throwIfAborted(signal);
-
-    while (entry.idle.length > 0) {
-      const page = entry.idle.pop();
-
-      if (!page.isClosed()) {
-        warmStats.hits += 1;
-        return { entry, page, warm: true };
-      }
-
-      entry.total = Math.max(0, entry.total - 1);
-    }
-
-    // A page is being refreshed or opened right now: it is ready in a few
-    // seconds, which is faster than opening one more from scratch.
-    if ((entry.resetting > 0 || entry.replenishing) && Date.now() < waitUntil) {
-      await sleep(300);
-      continue;
-    }
-
-    break;
-  }
-
-  // Nothing ready: open an extra page in the same logged-in context.
-  warmStats.misses += 1;
-  const page = await openWarmPage(entry);
-
-  return { entry, page, warm: false };
-}
-
-function discardWarmPage(entry, page) {
-  entry.total = Math.max(0, entry.total - 1);
-  page.close().catch(() => {});
-
-  if (!entry.dead) {
-    replenishWarmPool(entry.slot).catch(() => {});
-  }
-}
-
-// Back to a fresh "new chat" page, in the background.
-async function resetWarmPage(entry, page) {
-  entry.resetting += 1;
-
-  try {
-    await page.goto(GEMINI_APP_URL, {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    await page.locator(GEMINI_PROMPT_BOX).waitFor({
-      state: "visible",
-      timeout: 45000,
-    });
-
-    if (entry.dead || page.isClosed()) {
-      entry.total = Math.max(0, entry.total - 1);
-      return;
-    }
-
-    entry.idle.push(page);
-  } catch {
-    discardWarmPage(entry, page);
-  } finally {
-    entry.resetting -= 1;
-  }
-}
-
-// Called when a job is finished. A page that worked is refreshed and reused;
-// a page that failed or was cancelled is closed and replaced by a new one.
-function releaseWarmPage(lease, ok) {
-  const { entry, page } = lease;
-
-  if (entry.dead) {
-    page.close().catch(() => {});
-    return;
-  }
-
-  if (!ok) {
-    warmStats.replaced += 1;
-  }
-
-  if (!ok || page.isClosed() || entry.total > entryTarget(entry.slot)) {
-    discardWarmPage(entry, page);
-    return;
-  }
-
-  resetWarmPage(entry, page).catch(() => {});
-}
-
-function warmStatus() {
-  return {
-    enabled: PREWARM,
-    startupDone: warmStartupDone,
-    startedAt: warmStartedAt ? new Date(warmStartedAt).toISOString() : null,
-    demandMode: WARM_DEMAND,
-    activeVisitors: warmHints.size,
-    demandTargets: warmDemandTargets,
-    pagesPerSession: WARM_DEMAND ? null : warmTarget(),
-    hits: warmStats.hits,
-    misses: warmStats.misses,
-    replaced: warmStats.replaced,
-    sessions: Object.fromEntries(
-      Object.values(warmPool).map((e) => [
-        e.slot,
-        {
-          ready: e.idle.length,
-          open: e.total,
-          refreshing: e.resetting,
-          lastError: e.lastError,
-          retryAt: e.nextTryAt > Date.now() ? new Date(e.nextTryAt).toISOString() : "",
-        },
-      ]),
-    ),
-  };
-}
-
-async function maintainWarmPool() {
-  if (WARM_DEMAND) {
-    recomputeWarmTargets();
-  }
-
-  for (const session of listSessions()) {
-    const entry = warmPool[session.slot];
-
-    // Demand mode: close ready pages that nobody needs any more.
-    if (WARM_DEMAND && entry) {
-      while (entry.idle.length > 0 && entry.total > entryTarget(session.slot)) {
-        const extra = entry.idle.pop();
-        entry.total = Math.max(0, entry.total - 1);
-        extra.close().catch(() => {});
-      }
-    }
-
-    if (entry) {
-      const before = entry.idle.length;
-      entry.idle = entry.idle.filter((p) => !p.isClosed());
-      entry.total = Math.max(0, entry.total - (before - entry.idle.length));
-    }
-
-    await replenishWarmPool(session.slot).catch((error) => {
-      console.log(`[warm] session ${session.slot}: maintenance error: ${error && error.message}`);
-    });
-  }
-}
-
-// Start of the run: open every session's pages one after the other.
-async function startWarmPool() {
-  warmStartedAt = Date.now();
-
-  if (WARM_DEMAND) {
-    console.log("[warm] demand mode: no page is opened now. Pages open when visitors arrive (POST /warm-hint).");
-  } else {
-    console.log(
-      `[warm] opening ${warmTarget()} Gemini page(s) for each of ${listSessions().length} session(s), one after another...`,
-    );
-
-    for (const session of listSessions()) {
-      await replenishWarmPool(session.slot).catch((error) => {
-        console.log(`[warm] session ${session.slot}: start error: ${error && error.message}`);
-      });
-    }
-  }
-
-  warmStartupDone = true;
-
-  const ready = Object.values(warmPool).reduce((n, e) => n + e.idle.length, 0);
-  console.log(
-    `[warm] startup finished in ${Math.round((Date.now() - warmStartedAt) / 1000)}s: ${ready} page(s) ready.`,
-  );
-
-  setInterval(() => {
-    maintainWarmPool().catch(() => {});
-  }, WARM_MAINTAIN_INTERVAL_MS).unref();
-}
-
-// --------------------------------------------------
-// Gemini generation (shared by all three endpoints)
-// --------------------------------------------------
-
-async function runGeminiWithSession({
-  sessionFile,
-  slot,
-  imagePaths,
-  prompt,
-  outputDir,
-  settleMs,
-  defaultFilename,
-  signal,
-}) {
-  throwIfAborted(signal);
-
-  const startedAt = Date.now();
-  const step = (message) =>
-    console.log(
-      `[session ${slot}] +${Math.round((Date.now() - startedAt) / 1000)}s ${message}`,
-    );
-
-  let context = null;
-  let page = null;
-  let onAbort = null;
-  let lease = null; // the warm page this job uses (PREWARM=1 only)
-  let jobOk = false;
-
-  try {
-    if (PREWARM) {
-      // Take a ready, already logged-in Gemini page from the pool.
-      lease = await acquireWarmPage(slot, sessionFile, signal);
-      page = lease.page;
-
-      // If the job is cancelled, closing the page makes every pending
-      // Playwright call below fail right away (the page is replaced later).
-      if (signal) {
-        const activePage = page;
-
-        onAbort = () => {
-          activePage.close().catch(() => {});
-        };
-
-        if (signal.aborted) {
-          onAbort();
-        } else {
-          signal.addEventListener("abort", onAbort, { once: true });
-        }
-      }
-
-      step(
-        lease.warm
-          ? "ready Gemini page taken from the pool"
-          : "no ready page was free, opened an extra Gemini page",
-      );
-    } else {
-      const browser = await getGenerationBrowser();
-
-      context = await browser.newContext(contextOptions(sessionFile, browser));
-
-      jobsOnCurrentBrowser += 1;
-
-      // If the job is cancelled, closing the context makes every pending
-      // Playwright call below fail right away.
-      if (signal) {
-        const activeContext = context;
-
-        onAbort = () => {
-          activeContext.close().catch(() => {});
-        };
-
-        if (signal.aborted) {
-          onAbort();
-        } else {
-          signal.addEventListener("abort", onAbort, { once: true });
-        }
-      }
-
-      page = await context.newPage();
-
-      // 1. Open Gemini
-      await page.goto("https://gemini.google.com/app", {
-        waitUntil: "domcontentloaded",
-        timeout: 60000,
-      });
-
-      step("Gemini page opened");
-    }
-
-    // 2. Type the prompt
-    const promptWrapper = page.locator('[data-test-id="textarea-wrapper"]');
-
-    await promptWrapper.waitFor({
-      state: "visible",
-      timeout: 45000,
-    });
-
-    // Limit banner already visible before we even start? Stop right away.
-    await throwIfLimitShown(page);
-
-    const promptParagraph = promptWrapper.getByRole("paragraph").first();
-
-    await promptParagraph.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
-
-    await promptParagraph.click();
-
-    await page.keyboard.insertText(String(prompt).trim());
-    step("prompt typed");
-
-    // 3. Open Upload & tools (Gemini sometimes renames this button,
-    //    so a few known names are tried)
-    //    When many pages run at once, the menu sometimes does not appear after
-    //    the click. So: if the "Upload files" item is not there after a few
-    //    seconds, close the menu (Escape) and click "Upload & tools" again.
-    const uploaderButton = page.locator(
-      '[data-test-id="local-images-files-uploader-button"]',
-    );
-
-    let menuOpened = false;
-
-    for (let attempt = 1; attempt <= 3 && !menuOpened; attempt += 1) {
-      const uploadToolsButton = await findUploadToolsButton(page);
-
-      await uploadToolsButton.click();
-      step(attempt === 1 ? "upload menu opened" : `upload menu clicked again (try ${attempt})`);
-
-      try {
-        await uploaderButton.waitFor({
-          state: "visible",
-          timeout: attempt === 3 ? 15000 : 7000,
-        });
-        menuOpened = true;
-      } catch (menuError) {
-        throwIfAborted(signal);
-
-        if (attempt === 3) {
-          throw menuError;
-        }
-
-        step("upload menu did not show, closing it and trying again");
-        await page.keyboard.press("Escape").catch(() => {});
-        await page.waitForTimeout(800);
-      }
-    }
-
-    // 4. Click the local uploader and attach the image(s).
-    //    With two images the order is kept: first file, then second file.
-
-    const filesToUpload = imagePaths.length === 1 ? imagePaths[0] : imagePaths;
-
-    const chooserPromise = page
-      .waitForEvent("filechooser", {
-        timeout: 5000,
-      })
-      .catch(() => null);
-
-    await uploaderButton.click();
-
-    const fileChooser = await chooserPromise;
-
-    if (fileChooser) {
-      await fileChooser.setFiles(filesToUpload);
-    } else {
-      const fileInput = page.locator('input[name="Filedata"]');
-
-      await fileInput.waitFor({
-        state: "attached",
-        timeout: 15000,
-      });
-
-      await fileInput.setInputFiles(filesToUpload);
-    }
-
-    // Give Gemini a moment to attach the image(s)
-    await page.waitForTimeout(settleMs);
-    step("image attached");
-
-    // 5. Send
-    const sendButton = page.getByRole("button", {
-      name: "Send message",
-    });
-
-    await sendButton.waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
-
-    await sendButton.click();
-
-    // 6. Wait for the generated image (or a limit message)
-    step("message sent, waiting for the generated image");
-
-    const waitDeadline = Date.now() + IMAGE_WAIT_MS;
-    let downloadButton = null;
-    let printedButtons = false;
-    const waitStartedAt = Date.now();
-    let replyFinishedSince = 0;
-
-    while (true) {
-      throwIfAborted(signal);
-
-      downloadButton = await findDownloadButton(page);
-
-      if (downloadButton) {
-        break;
-      }
-
-      await throwIfLimitShown(page);
-
-      // Gemini finished its reply but gave no image (whatever text it wrote):
-      // waiting longer is pointless. Give it a few seconds in case the image is
-      // still loading, then stop and ask the visitor to press Generate again.
-      if (await isReplyFinished(page)) {
-        if (!replyFinishedSince) {
-          replyFinishedSince = Date.now();
-        } else if (Date.now() - replyFinishedSince > 6000) {
-          step("Gemini finished its reply without an image, asking the visitor to retry");
-          throw new GeminiRefusedError();
-        }
-      } else {
-        replyFinishedSince = 0;
-      }
-
-      // After 45s without a download button, print what buttons exist so
-      // we can see if Gemini renamed it.
-      if (!printedButtons && Date.now() - waitStartedAt > 45000) {
-        printedButtons = true;
-
-        const names = await page
-          .evaluate(() =>
-            Array.from(document.querySelectorAll("button"))
-              .map((b) => (b.getAttribute("aria-label") || b.innerText || "").trim())
-              .filter(Boolean)
-              .slice(0, 60),
-          )
-          .catch(() => []);
-
-        step(`still no download button. Buttons on page: ${JSON.stringify(names)}`);
-      }
-
-      if (Date.now() > waitDeadline) {
-        throw new Error("Timed out waiting for the generated image.");
-      }
-
-      await page.waitForTimeout(1500);
-    }
-
-    step("image ready, downloading");
-
-    // 7. Download it
-    const downloadPromise = page.waitForEvent("download", {
-      timeout: 120000,
-    });
-
-    await downloadButton.click();
-
-    const download = await downloadPromise;
-
-    const suggestedFilename = download.suggestedFilename() || defaultFilename;
-
-    const extension = path.extname(suggestedFilename) || ".png";
-
-    const outputPath = path.join(outputDir, `generated${extension}`);
-
-    await download.saveAs(outputPath);
-    step("image downloaded");
-
-    const buffer = await fs.readFile(outputPath);
-
-    if (!buffer.length) {
-      throw new Error("Gemini returned an empty image.");
-    }
-
-    jobOk = true;
-
-    return {
-      buffer,
-      mimeType: getMimeType(extension),
-    };
-  } catch (error) {
-    // A cancelled job (client left / timeout) is not a Gemini failure.
-    if (signal && signal.aborted) {
-      throw abortReason(signal);
-    }
-
-    // Limit reached: pass it up unchanged so the next session can be tried.
-    if (error instanceof GeminiLimitError || error instanceof GeminiRefusedError) {
-      throw error;
-    }
-
-    const message = error instanceof Error ? error.message : String(error);
-
-    let pageInfo = "";
-
-    if (page) {
-      try {
-        const bodyText = await page.locator("body").innerText({
-          timeout: 3000,
-        });
-
-        const buttonNames = await page
-          .evaluate(() =>
-            Array.from(document.querySelectorAll("button"))
-              .map((b) => (b.getAttribute("aria-label") || b.innerText || "").trim())
-              .filter(Boolean)
-              .map((name) => name.slice(0, 40))
-              .slice(-30),
-          )
-          .catch(() => []);
-
-        pageInfo = ` [page: ${page.url()} | signInVisible: ${/Sign in/i.test(bodyText)} | buttons: ${JSON.stringify(buttonNames)}]`;
-      } catch {
-        pageInfo = ` [page: ${page.url()}]`;
-      }
-    }
-
-    // Debug details (page URL, button names) stay on the server only.
-    // They must never travel inside the message that is sent to the visitor.
-    if (pageInfo) {
-      console.log(`[debug]${pageInfo}`);
-    }
-
-    const wrapped = new Error(message);
-    wrapped.pageInfo = pageInfo;
-    throw wrapped;
-  } finally {
-    if (signal && onAbort) {
-      signal.removeEventListener("abort", onAbort);
-    }
-
-    if (jobOk) {
-      await saveFreshSession(slot, lease ? lease.entry.context : context);
-    }
-
-    if (lease) {
-      // Warm page: refresh and reuse it (or replace it if the job failed).
-      releaseWarmPage(lease, jobOk);
-    }
-
-    if (context) {
-      await context.close().catch(() => {});
-    }
-  }
-}
-
-// Finds an enabled "download image" button (Gemini may rename it).
-async function findDownloadButton(page) {
-  const candidates = [
-    page.getByRole("button", { name: "Download full size image" }),
-    page.getByRole("button", { name: /download.*image|download full/i }),
-    page.locator('button[aria-label*="download" i]'),
-  ];
-
-  for (const candidate of candidates) {
-    const last = candidate.last();
-
-    if (
-      (await last.isVisible().catch(() => false)) &&
-      (await last.isEnabled().catch(() => false))
-    ) {
-      return last;
-    }
-  }
-
-  return null;
-}
-
-// Finds the "+" / "Upload & tools" button in the Gemini prompt box.
-async function findUploadToolsButton(page) {
-  const candidates = [
-    page.getByRole("button", { name: "Upload & tools" }),
-    page.getByRole("button", { name: /upload|add files|attach|open upload/i }),
-    page.locator('button[aria-label*="upload" i]'),
-    page.locator('button[aria-label*="add" i]:has(mat-icon)'),
-    page.locator('button:has(mat-icon[fonticon="add_2"])'),
-    page.locator('button:has(mat-icon[fonticon="add"])'),
-  ];
-
-  const deadline = Date.now() + 20000;
-
-  while (Date.now() < deadline) {
-    for (const candidate of candidates) {
-      const first = candidate.first();
-
-      if (await first.isVisible().catch(() => false)) {
-        return first;
-      }
-    }
-
-    await sleep(500);
-  }
-
-  throw new Error("Could not find the Upload & tools button.");
-}
-
-// Looks at the page text. If Gemini shows its limit message, throws.
-async function throwIfLimitShown(page) {
-  const bodyText = await page
-    .locator("body")
-    .innerText({ timeout: 3000 })
-    .catch(() => "");
-
-  if (LIMIT_TEXT_REGEX.test(bodyText)) {
-    throw new GeminiLimitError(
-      "Gemini limit reached.",
-      parseResetTime(bodyText),
-    );
-  }
-
-  if (REFUSAL_TEXT_REGEX.test(bodyText)) {
-    throw new GeminiRefusedError();
-  }
-}
-
-// How many jobs are running on each session right now, and when the next
-// job on that session may start (for the start spacing).
-const sessionActive = {};
-const sessionNextStartAt = {};
-
-// Picks the least busy usable session (so 20 jobs at the same moment spread
-// 5 / 5 / 5 / 5 over 4 sessions, and 3 jobs go to 3 different sessions).
-// If every usable session is full, the job waits here until one is free.
-// The chosen session is counted as busy BEFORE this function returns, so two
-// jobs can never pick the same last free place.
-// Returns null when no usable session is left (all parked / already tried).
-const sessionLastClaimAt = {};
-let claimCounter = 0; // a counter (not the clock) so two claims in the same millisecond still have an order
-
-async function claimSession(signal, triedSlots, forceSlot = 0) {
-  while (true) {
-    throwIfAborted(signal);
-
-    // forceSlot is only for testing one session on its own (see /edit-image).
-    const candidates = listSessions().filter(
-      (s) =>
-        isSessionUsable(s) &&
-        !triedSlots.has(s.slot) &&
-        (!forceSlot || s.slot === forceSlot),
-    );
-
-    if (candidates.length === 0) {
-      return null;
-    }
-
-    // Sessions that keep failing are skipped while they rest, unless nothing else is left.
-    const healthy = forceSlot ? candidates : candidates.filter((s) => !isCooling(s.slot));
-    const pool = healthy.length > 0 ? healthy : candidates;
-
-    // Least busy session first, so jobs spread evenly over all accounts.
-    // On a tie, the one used longest ago goes first (round robin, so a session that was resting is tried again).
-    const limit = perSessionLimit();
-    const free = pool
-      .filter((s) => (sessionActive[s.slot] || 0) < limit)
-      .sort(
-        (a, b) =>
-          (sessionActive[a.slot] || 0) - (sessionActive[b.slot] || 0) ||
-          hasIdleWarmPage(b.slot) - hasIdleWarmPage(a.slot) ||
-          (sessionLastClaimAt[a.slot] || 0) - (sessionLastClaimAt[b.slot] || 0) ||
-          a.slot - b.slot,
-      );
-
-    const best = free[0];
-
-    if (best) {
-      sessionActive[best.slot] = (sessionActive[best.slot] || 0) + 1;
-      claimCounter += 1;
-      sessionLastClaimAt[best.slot] = claimCounter;
-      return best;
-    }
-
-    await sleep(500);
-  }
-}
-
-function releaseSession(slot) {
-  sessionActive[slot] = Math.max(0, (sessionActive[slot] || 0) - 1);
-}
-
-// Spreads job starts on one session: the 1st starts now, the 2nd after
-// SESSION_START_STAGGER_MS, the 3rd after twice that, and so on.
-async function waitForStartTurn(slot, signal) {
-  const now = Date.now();
-  const startAt = Math.max(now, sessionNextStartAt[slot] || 0);
-
-  sessionNextStartAt[slot] = startAt + SESSION_START_STAGGER_MS;
-
-  if (startAt > now) {
-    await sleep(startAt - now);
-  }
-
-  throwIfAborted(signal);
-}
-
-// Is this a failure worth trying again on another session?
-function retryKind(error) {
-  if (error instanceof GeminiRefusedError) {
-    return "refused";
-  }
-
-  const message = error instanceof Error ? error.message : String(error);
-
-  if (
-    /Timed out waiting for the generated image|returned an empty image/i.test(message) ||
-    (error && error.name === "TimeoutError") ||
-    /Timeout \d+ms exceeded/i.test(message)
-  ) {
-    return "timeout";
-  }
-
-  return "";
-}
-
-// Spreads jobs over all sessions (least busy first). When a session says its
-// limit is reached, the SAME job moves to another session. When Gemini refuses
-// the image or the attempt times out, the job is tried again on a different
-// session (up to MAX_JOB_RETRIES times, only if enough job time is left).
-// The user only sees an error if every attempt fails.
-async function runGeminiGeneration(options) {
-  stats.jobs += 1;
-  const startedAt = Date.now();
-  const trace = { attempts: [] };
-
-  const record = (ok, error) => {
-    jobLog.push({
-      at: new Date(startedAt).toISOString(),
-      ms: Date.now() - startedAt,
-      ok,
-      attempts: trace.attempts.map((a) => ({ slot: a.slot, result: a.result || "running", ms: a.ms })),
-      error: error ? String(error.message || error).replace(/\s+/g, " ").slice(0, 200) : "",
-    });
-    while (jobLog.length > 100) jobLog.shift();
-  };
-
-  try {
-    const result = await runGeminiGenerationInner({ ...options, trace });
-    stats.jobsOk += 1;
-    stats.totalOkMs += Date.now() - startedAt;
-    record(true, null);
-    return result;
-  } catch (error) {
-    if (!(error && error.statusCode === 499)) {
-      stats.jobsFailed += 1;
-      record(false, error);
-      logEvent("job-failed", 0, error && error.message ? error.message : String(error));
-    }
-    throw error;
-  }
-}
-
-async function runGeminiGenerationInner(options) {
-  if (listSessions().length === 0) {
-    throw new Error("Session file not found on server.");
-  }
-
-  // Slots this job already tried, so one job can never loop forever.
-  const triedSlots = new Set();
-  let triedAny = false;
-  let transientRetried = false;
-  let retriesUsed = 0;
-  let lastRetryableError = null;
-
-  while (true) {
-    const session = await claimSession(
-      options.signal,
-      triedSlots,
-      options.forceSlot || 0,
-    );
-
-    if (!session) {
-      break;
-    }
-
-    triedSlots.add(session.slot);
-    triedAny = true;
-
-    const attempt = { slot: session.slot, result: "", ms: 0 };
-    const attemptStartedAt = Date.now();
-    if (options.trace) options.trace.attempts.push(attempt);
-
-    try {
-      await waitForStartTurn(session.slot, options.signal);
-
-      console.log(
-        `Using Gemini session ${session.slot} (${sessionActive[session.slot]}/${perSessionLimit()} busy).`,
-      );
-
-      const generated = await runGeminiWithSession({
-        ...options,
-        sessionFile: session.file,
-        slot: session.slot,
-      });
-
-      const usage = usageOf(session.slot);
-      usage.ok += 1;
-      usage.since += 1;
-      noteSessionSuccess(session.slot);
-      attempt.result = "ok";
-
-      return generated;
-    } catch (error) {
-      if (options.signal && options.signal.aborted) {
-        attempt.result = "cancelled";
-        throw abortReason(options.signal);
-      }
-
-      if (error instanceof GeminiLimitError) {
-        attempt.result = "limit";
-        stats.limitHits += 1;
-        markSessionLimited(session.slot, error.resetAt);
-        console.log(`Session ${session.slot} is out of limit, moving to the next one...`);
-        continue;
-      }
-
-      const failMessage =
-        (error instanceof Error ? error.message : String(error)) +
-        ((error && error.pageInfo) || "");
-
-      // Logged-out / expired session: skip it for 6 hours and try the next one,
-      // so one dead account never blocks the others.
-      if (/signInVisible: true|accounts\.google\.com/i.test(failMessage)) {
-        stats.loggedOutSessions += 1;
-        attempt.result = "logged-out";
-        limitState[session.slot] = Date.now() + 6 * 60 * 60 * 1000;
-        sessionDownReason[session.slot] = "logged-out";
-        logEvent("session-logged-out", session.slot, "Google login expired (sign-in screen seen).");
-        saveLimitState();
-        console.log(
-          `Session ${session.slot} looks logged out (re-save it with save-session.js). Skipping it, trying the next one...`,
-        );
-        continue;
-      }
-
-      // The upload step timed out BEFORE the message was sent, so no Gemini
-      // quota was used. Try the whole job one more time (once per job).
-      if (
-        !transientRetried &&
-        /local-images-files-uploader-button|input\[name="Filedata"\]/.test(failMessage)
-      ) {
-        transientRetried = true;
-        attempt.result = "upload-retry";
-        triedSlots.delete(session.slot);
-        console.log(
-          `Session ${session.slot}: upload step timed out, trying this job once more...`,
-        );
-        continue;
-      }
-
-      // Gemini refused the image or the attempt timed out: try another session.
-      const kind = retryKind(error);
-
-      if (kind) {
-        attempt.result = kind;
         if (kind === "refused") {
-          stats.attemptsRefused += 1;
-          logEvent("refused", session.slot, "Gemini could not create this image.");
-        } else {
-          stats.attemptsTimedOut += 1;
-          noteSessionFailure(session.slot, failMessage);
+          sawRefusal = true;
+          break;
         }
-
-        const deadlineAt = options.signal && options.signal.deadlineAt;
-        const remainingMs = deadlineAt ? deadlineAt - Date.now() : Infinity;
-
-        if (retriesUsed < MAX_JOB_RETRIES && remainingMs >= RETRY_MIN_REMAINING_MS) {
-          retriesUsed += 1;
-          stats.retries += 1;
-          lastRetryableError = error;
-          console.log(
-            `Session ${session.slot}: ${kind}. Retry ${retriesUsed}/${MAX_JOB_RETRIES} on another session (${Math.round(remainingMs / 1000)}s of job time left)...`,
-          );
-          continue;
-        }
-
-        console.log(
-          `Session ${session.slot}: ${kind}. No more retries (used ${retriesUsed}/${MAX_JOB_RETRIES}).`,
-        );
-        throw error;
+        if (kind === "transient" && attempt === 1) continue;
+        break;
+      } finally {
+        p.active--;
       }
-
-      stats.otherErrors += 1;
-      attempt.result = "error";
-      noteSessionFailure(session.slot, failMessage);
-      console.log(
-        `Session ${session.slot} failed (not a limit message): ${failMessage}`,
-      );
-      throw error;
-    } finally {
-      // Always give the place on this session back (success, error or retry).
-      attempt.ms = Date.now() - attemptStartedAt;
-      releaseSession(session.slot);
     }
   }
 
-  // No other session left to retry on: report the real failure, not "out of limit".
-  if (lastRetryableError) {
-    throw lastRetryableError;
+  if (sawQuota) {
+    const secs = Math.max(30, Math.round(((nextRetry || Date.now() + 600e3) - Date.now()) / 1000));
+    throw new HttpError(503, "Image generation is busy right now. Please try again later.", {
+      code: "BUSY",
+      retryAfter: Math.min(secs, 3600),
+    });
   }
-
-  // Every session is parked or just hit its limit.
-  const nextBackAt = listSessions()
-    .map((x) => x.usableAt)
-    .filter((t) => t > Date.now())
-    .sort((x, y) => x - y)[0];
-
-  const waitSeconds = nextBackAt
-    ? Math.max(60, Math.ceil((nextBackAt - Date.now()) / 1000))
-    : 900;
-
-  console.log(
-    `All Gemini sessions are out of limit (${triedAny ? "just checked" : "already parked"}).`,
-  );
-
-  throw new HttpError(
-    "Image generation is busy right now. Please try again later.",
-    503,
-    { retryAfter: waitSeconds },
-  );
-}
-
-// --------------------------------------------------
-// Existing AI Editor Gemini generation (one image)
-// --------------------------------------------------
-
-function generateWithGemini(imagePath, prompt, outputDir, signal, forceSlot = 0) {
-  return runGeminiGeneration({
-    forceSlot,
-    imagePaths: [imagePath],
-    prompt,
-    outputDir,
-    settleMs: 3000,
-    defaultFilename: "gemini-generated-image.png",
-    signal,
+  if (sawRefusal) {
+    throw new HttpError(422, "The AI could not create this image. Please try another photo or press Generate again.", {
+      code: "REFUSED",
+    });
+  }
+  throw new HttpError(502, "Image generation is taking longer than usual. Please wait a moment and try again.", {
+    code: "UPSTREAM",
   });
 }
 
-// --------------------------------------------------
-// AI Template / Dual Gemini generation (two images, in order)
-// --------------------------------------------------
+// ------------------------------------------------------------------ queue
+let active = 0;
+const waiting = [];
+const stats = { jobs: 0, jobsOk: 0, jobsFailed: 0 };
 
-function generateTemplateWithGemini(
-  templateImagePath,
-  userImagePath,
-  prompt,
-  outputDir,
-  signal,
-  secondUserImagePath = null,
-) {
-  // Order: template first, then person 1, then (couple templates only) person 2.
-  const imagePaths = secondUserImagePath
-    ? [templateImagePath, userImagePath, secondUserImagePath]
-    : [templateImagePath, userImagePath];
+function acquire() {
+  if (active < MAX_CONCURRENT) {
+    active++;
+    return Promise.resolve();
+  }
+  if (waiting.length >= MAX_QUEUE) {
+    return Promise.reject(new HttpError(503, "Too many people are generating right now. Please try again in a minute.", { code: "QUEUE_FULL", retryAfter: 30 }));
+  }
+  return new Promise((resolve) => waiting.push(resolve));
+}
+function release() {
+  const next = waiting.shift();
+  if (next) next();
+  else active--;
+}
 
-  return runGeminiGeneration({
-    imagePaths,
-    prompt,
-    outputDir,
-    settleMs: secondUserImagePath ? 6000 : 4000,
-    defaultFilename: "gemini-template-generated-image.png",
-    signal,
+async function runJob(job) {
+  await acquire();
+  stats.jobs++;
+  try {
+    const out = await runWithProviders(job);
+    stats.jobsOk++;
+    return out;
+  } catch (e) {
+    stats.jobsFailed++;
+    throw e;
+  } finally {
+    release();
+  }
+}
+
+// ------------------------------------------------------------------ request parsing
+async function readRequest(req) {
+  const chunks = [];
+  let size = 0;
+  for await (const c of req) {
+    size += c.length;
+    if (size > MAX_UPLOAD_BYTES) throw new HttpError(413, "The upload is too large.");
+    chunks.push(c);
+  }
+  const hasBody = chunks.length > 0 && req.method !== "GET" && req.method !== "HEAD";
+  return new Request(`http://localhost${req.url}`, {
+    method: req.method,
+    headers: req.headers,
+    body: hasBody ? Buffer.concat(chunks) : undefined,
   });
 }
 
-// --------------------------------------------------
-// API
-// --------------------------------------------------
-
-// What the alert monitor looks at (see notifier.js).
-function monitorSnapshot() {
-  return {
-    sessions: listSessions().map((x) => ({
-      slot: x.slot,
-      usable: isSessionHealthy(x),
-      until: !isSessionUsable(x)
-        ? x.usableAt
-        : isCooling(x.slot)
-          ? healthOf(x.slot).coolUntil
-          : 0,
-      reason: isSessionHealthy(x)
-        ? ""
-        : !isSessionUsable(x)
-          ? sessionDownReason[x.slot] || ""
-          : "failing",
-      lastError: isSessionHealthy(x) ? "" : healthOf(x.slot).lastError,
-      ok: usageOf(x.slot).ok,
-      since: usageOf(x.slot).since,
-      limitAfter: usageOf(x.slot).limitAfter,
-    })),
-    jobs: stats.jobs,
-    ok: stats.jobsOk,
-    failed: stats.jobsFailed,
-    retries: stats.retries,
-    refused: stats.attemptsRefused,
-    timedOut: stats.attemptsTimedOut,
-    peakActive: stats.peakActive,
-    peakWaiting: stats.peakWaiting,
-    avgSeconds: stats.jobsOk ? Math.round(stats.totalOkMs / stats.jobsOk / 1000) : 0,
-  };
+async function fileOf(form, field) {
+  const f = form.get(field);
+  if (!f || typeof f === "string" || !f.size) return null;
+  if (!String(f.type || "").toLowerCase().startsWith("image/")) {
+    throw new HttpError(400, `Uploaded file "${field}" is not an image.`);
+  }
+  return { buffer: Buffer.from(await f.arrayBuffer()), mime: f.type };
 }
 
-// Only the GitHub watchdog script calls this (it knows a random token made for
-// this run). It sends a short status line by email.
-app.post("/notify", (req, res) => {
-  const token = process.env.NOTIFY_TOKEN || "";
+function requireKey(req) {
+  const required = process.env.ASK_KEY;
+  if (required && req.headers["x-api-key"] !== required) throw new HttpError(401, "Invalid or missing API key.");
+}
 
-  if (!token || req.get("x-notify-token") !== token) {
-    return res.status(404).end();
+// ------------------------------------------------------------------ routes
+async function handleGenerate(route, req, res) {
+  requireKey(req);
+  const request = await readRequest(req);
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    throw new HttpError(400, "Send the photos as multipart/form-data.");
+  }
+  const prompt = typeof form.get("prompt") === "string" ? form.get("prompt").trim() : "";
+  if (!prompt) {
+    throw new HttpError(400, route === "template-edit" ? "No template generation prompt was provided." : "No editing prompt was provided.");
   }
 
-  const text = req.body && typeof req.body.text === "string" ? req.body.text : "";
-
-  if (!text) {
-    return res.status(400).json({ success: false });
+  let job;
+  if (route === "edit-image") {
+    const image = await fileOf(form, "image");
+    if (!image) throw new HttpError(400, "No source image was provided.");
+    job = { kind: "edit", prompt, images: [image] };
+  } else if (route === "template-edit") {
+    const user = await fileOf(form, "image");
+    const template = await fileOf(form, "templateImage");
+    const second = await fileOf(form, "image2");
+    if (!user) throw new HttpError(400, "No user photo was provided.");
+    if (!template) throw new HttpError(400, "No template image was provided.");
+    // Order: template first, then person 1, then (couple templates) person 2.
+    job = { kind: "template", prompt, images: second ? [template, user, second] : [template, user] };
+  } else {
+    const left = await fileOf(form, "image");
+    const right = await fileOf(form, "image2");
+    if (!left) throw new HttpError(400, "No left person photo was provided.");
+    if (!right) throw new HttpError(400, "No right person photo was provided.");
+    job = { kind: "dual", prompt, images: [left, right] };
   }
 
-  notifier.notify(text);
-  return res.json({ success: true });
-});
+  const out = await runJob(job);
+  sendJson(res, 200, {
+    success: true,
+    provider: `api-${out.provider}`,
+    image: `data:${out.mime};base64,${out.buffer.toString("base64")}`,
+  });
+}
+
+function sessionsView() {
+  return PROVIDERS.map((p) => ({
+    slot: p.slot,
+    name: p.label,
+    active: p.active,
+    usable: isUsable(p),
+    healthy: isUsable(p) && p.streak < 3,
+    downReason: isResting(p) ? p.restReason : p.streak >= 3 ? "failing" : "",
+    failStreak: p.streak,
+    lastError: p.streak > 0 ? p.lastError : "",
+    lastCause: p.streak > 0 ? explain(p.lastError) : "",
+    lastAdvice: "",
+    restingUntil: isResting(p) ? new Date(p.restUntil).toISOString() : null,
+    usableAgainAt: isResting(p) ? new Date(p.restUntil).toISOString() : null,
+  }));
+}
+
+function explain(msg) {
+  const m = String(msg || "");
+  if (/quota|limit|429|neuron/i.test(m)) return "Free daily limit reached. It comes back by itself at the reset time.";
+  if (/key rejected|401|403/i.test(m)) return "The API key or token is wrong or expired. Make a new one and update the GitHub secret.";
+  if (/no image|refus|safety/i.test(m)) return "The AI declined this photo or prompt.";
+  return "Temporary provider problem. The bot tries the next provider.";
+}
 
 function healthPayload() {
   return {
     success: true,
     status: "healthy",
-    generation: {
-      active: activeJobs,
-      waiting: waitingJobs.length,
-      maxConcurrent: MAX_CONCURRENT_GENERATIONS,
-      currentCapacity: currentCapacity(),
-      maxQueue: MAX_QUEUE_LENGTH,
-    },
-    perSessionConcurrency: perSessionLimit(),
-    warmPool: warmStatus(),
-    maxJobRetries: MAX_JOB_RETRIES,
+    mode: "api (no Google login)",
+    generation: { active, waiting: waiting.length, maxConcurrent: MAX_CONCURRENT, maxQueue: MAX_QUEUE },
+    providers: PROVIDERS.map((p) => ({ slot: p.slot, name: p.label, usable: isUsable(p), ok: p.ok, failed: p.failed })),
     stats,
-    imagesPerSession: Object.fromEntries(
-      Object.entries(sessionUsage).map(([slot, u]) => [slot, u.ok]),
-    ),
-    notifier: notifier.status(),
-    recentErrors,
-    sessions: listSessions().map((x) => {
-      const h = healthOf(x.slot);
-      const why = h.streak > 0 ? explainFailure(h.lastError) : { cause: "", advice: "" };
-      return {
-        slot: x.slot,
-        active: sessionActive[x.slot] || 0,
-        usable: isSessionUsable(x),
-        healthy: isSessionHealthy(x),
-        downReason: isSessionHealthy(x) ? "" : !isSessionUsable(x) ? sessionDownReason[x.slot] || "" : "failing",
-        failStreak: h.streak,
-        lastError: h.streak > 0 ? h.lastError : "",
-        lastCause: why.cause,
-        lastAdvice: why.advice,
-        restingUntil: isCooling(x.slot) ? new Date(h.coolUntil).toISOString() : null,
-        usableAgainAt: x.usableAt > Date.now() ? new Date(x.usableAt).toISOString() : null,
-      };
-    }),
+    sessions: sessionsView(),
+    recentErrors: eventLog.filter((e) => e.type === "fail").slice(-8),
   };
 }
 
-// The website calls this when a visitor opens the AI editor (weak) or has chosen
-// a photo (strong). Needs the same x-api-key as the image routes (ASK_KEY).
-app.post("/warm-hint", requireApiKey, (req, res) => {
-  if (!PREWARM || !WARM_DEMAND) {
-    return res.json({ ok: true, mode: "off" });
-  }
-
-  const key = String((req.body && req.body.key) || "").slice(0, 80);
-
-  if (!key) {
-    return res.status(400).json({ ok: false, error: "key is required" });
-  }
-
-  recordWarmHint(key, Boolean(req.body && req.body.strong));
-  recomputeWarmTargets();
-  kickWarmMaintenance();
-
-  return res.json({ ok: true, visitors: warmHints.size });
-});
-
-app.get("/health", (req, res) => {
-  res.json(healthPayload());
-});
-
-// Detailed report for the website's admin panel. Needs the same secret as the alert route
-// (BOT_ALERT_KEY); without it this answers 404, so nothing is visible to anyone else.
-app.get("/admin-report", (req, res) => {
-  const key = (process.env.BOT_ALERT_KEY || "").trim();
-  const sent = String(req.get("x-bot-alert-key") || "");
-
-  if (!key || sent.length !== key.length || !crypto.timingSafeEqual(Buffer.from(sent), Buffer.from(key))) {
-    return res.status(404).end();
-  }
-
-  return res.json({
-    ...healthPayload(),
-    detailed: true,
-    startedAt: new Date(BOT_STARTED_AT).toISOString(),
-    uptimeSeconds: Math.round((Date.now() - BOT_STARTED_AT) / 1000),
-    events: eventLog.slice(-80),
-    jobs: jobLog.slice(-40),
-    logTail: logBuffer.slice(-120),
-  });
-});
-
-app.get("/login", async (req, res) => {
+const server = http.createServer(async (req, res) => {
+  const pathname = new URL(req.url, "http://localhost").pathname;
   try {
-    await startDesktop();
+    if (req.method === "POST" && pathname === "/edit-image") return await handleGenerate("edit-image", req, res);
+    if (req.method === "POST" && pathname === "/template-edit") return await handleGenerate("template-edit", req, res);
+    if (req.method === "POST" && pathname === "/edit-image-dual") return await handleGenerate("edit-image-dual", req, res);
 
-    const page = await getGeminiPage();
+    if (req.method === "GET" && pathname === "/health") return sendJson(res, 200, healthPayload());
 
-    await page.bringToFront();
-
-    return res.json({
-      success: true,
-      message:
-        "Cloud Chromium is running. Open /vnc.html and complete Gemini login yourself.",
-      geminiUrl: page.url(),
-      vncUrl: "/vnc.html?autoconnect=true&resize=scale&path=websockify",
-    });
-  } catch (error) {
-    console.error("Login browser error:", error);
-
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-app.get("/browser-status", async (req, res) => {
-  try {
-    if (!browserContext) {
-      return res.json({
-        success: true,
-        browserRunning: false,
-        pageCount: 0,
-        pages: [],
-      });
+    if (req.method === "POST" && pathname === "/warm-hint") {
+      requireKey(req);
+      req.resume();
+      return sendJson(res, 200, { ok: true, mode: "off" }); // nothing to warm up any more
     }
 
-    const pages = browserContext.pages();
-
-    return res.json({
-      success: true,
-      browserRunning: true,
-      pageCount: pages.length,
-      pages: pages.map((page) => page.url()),
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-app.get("/session-test", async (req, res) => {
-  let browser = null;
-
-  try {
-    // Tests the first usable session (add ?slot=2 or ?slot=3 to test another).
-    const wantedSlot = Number(req.query.slot) || 0;
-    const picked = listSessions().find((s) =>
-      wantedSlot ? s.slot === wantedSlot : true,
-    );
-    const sessionFile = picked && picked.file;
-
-    if (!sessionFile) {
-      return res.status(404).json({
-        success: false,
-        error: "Session file not found on server.",
-      });
-    }
-
-    browser = await chromium.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
-    });
-
-    const context = await browser.newContext(contextOptions(sessionFile, browser));
-
-    const page = await context.newPage();
-
-    await page.goto("https://gemini.google.com/app", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    await page.waitForTimeout(5000);
-
-    const bodyText = await page.locator("body").innerText();
-
-    const hasSignIn = /Sign in/i.test(bodyText);
-
-    const hasPromptBox =
-      (await page.locator('[data-test-id="textarea-wrapper"]').count()) > 0;
-
-    return res.json({
-      success: true,
-      sessionFileFound: true,
-      slot: picked.slot,
-      url: page.url(),
-      title: await page.title(),
-      hasSignIn,
-      hasPromptBox,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  } finally {
-    if (browser) {
-      await browser.close().catch(() => {});
-    }
-  }
-});
-
-// --------------------------------------------------
-// Existing AI Editor endpoint
-// --------------------------------------------------
-
-app.post("/edit-image", requireApiKey, parseUpload, async (req, res) => {
-  const prompt =
-    typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
-
-  if (!prompt) {
-    return res.status(400).json({
-      success: false,
-      error: "No editing prompt was provided.",
-    });
-  }
-
-  if (!req.file || !req.file.buffer || !req.file.buffer.length) {
-    return res.status(400).json({
-      success: false,
-      error: "No source image was provided.",
-    });
-  }
-
-  if (
-    !String(req.file.mimetype || "")
-      .toLowerCase()
-      .startsWith("image/")
-  ) {
-    return res.status(400).json({
-      success: false,
-      error: "Uploaded source file is not an image.",
-    });
-  }
-
-  const file = req.file;
-
-  // Testing only: start the server with  $env:ALLOW_FORCE_SLOT="1"  and call
-  // /edit-image?slot=2  to run this one job on Gemini session 2 only.
-  const forceSlot =
-    process.env.ALLOW_FORCE_SLOT === "1" ? Number(req.query.slot) || 0 : 0;
-
-  try {
-    const result = await runGenerationJob(res, (signal) =>
-      withTempDir("gemini-edit-", async (tempDir) => {
-        const sourcePath = path.join(
-          tempDir,
-          `source${getExtension(file.mimetype)}`,
-        );
-
-        await fs.writeFile(sourcePath, file.buffer);
-
-        return generateWithGemini(sourcePath, prompt, tempDir, signal, forceSlot);
-      }),
-    );
-
-    return sendJson(res, 200, {
-      success: true,
-      provider: "gemini-playwright-render",
-      image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
-    });
-  } catch (error) {
-    return sendGenerationError(res, error, "edit-image");
-  }
-});
-
-// --------------------------------------------------
-// NEW AI Template endpoint
-// --------------------------------------------------
-
-app.post(
-  "/template-edit",
-  requireApiKey,
-  parseTemplateUpload,
-  async (req, res) => {
-    const prompt =
-      typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
-
-    if (!prompt) {
-      return res.status(400).json({
-        success: false,
-        error: "No template generation prompt was provided.",
-      });
-    }
-
-    const files = req.files || {};
-
-    const userFiles = Array.isArray(files.image) ? files.image : [];
-
-    const templateFiles = Array.isArray(files.templateImage)
-      ? files.templateImage
-      : [];
-
-    const userFile = userFiles[0];
-
-    const templateFile = templateFiles[0];
-
-    // Couple templates send the second person's photo as "image2" (optional).
-    const secondUserFile = Array.isArray(files.image2) ? files.image2[0] : null;
-
-    if (!userFile || !userFile.buffer || !userFile.buffer.length) {
-      return res.status(400).json({
-        success: false,
-        error: "No user photo was provided.",
-      });
-    }
-
-    if (!templateFile || !templateFile.buffer || !templateFile.buffer.length) {
-      return res.status(400).json({
-        success: false,
-        error: "No template image was provided.",
-      });
-    }
-
-    if (
-      !String(userFile.mimetype || "")
-        .toLowerCase()
-        .startsWith("image/")
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: "Uploaded user photo is not an image.",
-      });
-    }
-
-    if (
-      !String(templateFile.mimetype || "")
-        .toLowerCase()
-        .startsWith("image/")
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: "Uploaded template file is not an image.",
-      });
-    }
-
-    if (secondUserFile) {
-      if (
-        !secondUserFile.buffer ||
-        !secondUserFile.buffer.length ||
-        !String(secondUserFile.mimetype || "")
-          .toLowerCase()
-          .startsWith("image/")
-      ) {
-        return res.status(400).json({
-          success: false,
-          error: "Uploaded second person photo is not an image.",
-        });
-      }
-    }
-
-    try {
-      const result = await runGenerationJob(res, (signal) =>
-        withTempDir("gemini-template-edit-", async (tempDir) => {
-          const templatePath = path.join(
-            tempDir,
-            `template${getExtension(templateFile.mimetype)}`,
-          );
-
-          const userPath = path.join(
-            tempDir,
-            `user${getExtension(userFile.mimetype)}`,
-          );
-
-          await fs.writeFile(templatePath, templateFile.buffer);
-
-          await fs.writeFile(userPath, userFile.buffer);
-
-          let secondUserPath = null;
-
-          if (secondUserFile) {
-            secondUserPath = path.join(
-              tempDir,
-              `user-2${getExtension(secondUserFile.mimetype)}`,
-            );
-
-            await fs.writeFile(secondUserPath, secondUserFile.buffer);
-          }
-
-          return generateTemplateWithGemini(
-            templatePath,
-            userPath,
-            prompt,
-            tempDir,
-            signal,
-            secondUserPath,
-          );
-        }),
-      );
-
+    if (req.method === "GET" && pathname === "/admin-report") {
+      const key = (process.env.BOT_ALERT_KEY || "").trim();
+      const sent = String(req.headers["x-bot-alert-key"] || "");
+      const same = key && sent.length === key.length && crypto.timingSafeEqual(Buffer.from(sent), Buffer.from(key));
+      if (!same) return sendJson(res, 404, { success: false });
       return sendJson(res, 200, {
-        success: true,
-        provider: "gemini-playwright-template",
-        image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
+        ...healthPayload(),
+        detailed: true,
+        startedAt: new Date(STARTED_AT).toISOString(),
+        uptimeSeconds: Math.round((Date.now() - STARTED_AT) / 1000),
+        events: eventLog.slice(-80),
       });
-    } catch (error) {
-      return sendGenerationError(res, error, "template-edit");
     }
-  },
-);
 
-// --------------------------------------------------
-// NEW AI Editor DUAL endpoint (two photos -> ONE group photo)
-// This reuses the generic two-image Gemini uploader
-// (generateTemplateWithGemini), which just attaches the two files in
-// order and sends the prompt.
-// --------------------------------------------------
+    if (req.method === "POST" && pathname === "/notify") {
+      req.resume();
+      return sendJson(res, 200, { success: true }); // email alerts are not used
+    }
 
-app.post(
-  "/edit-image-dual",
-  requireApiKey,
-  parseDualUpload,
-  async (req, res) => {
-    const prompt =
-      typeof req.body?.prompt === "string" ? req.body.prompt.trim() : "";
-
-    if (!prompt) {
-      return res.status(400).json({
+    return sendJson(res, 404, { success: false, error: "Not found." });
+  } catch (error) {
+    const status = error && typeof error.statusCode === "number" ? error.statusCode : 500;
+    if (status >= 500 && !(error instanceof HttpError)) console.error("Unexpected error:", error);
+    const safe = error instanceof HttpError || status < 500;
+    return sendJson(
+      res,
+      status,
+      {
         success: false,
-        error: "No editing prompt was provided.",
-      });
-    }
+        error: safe && error instanceof Error ? error.message : "Image generation is taking longer than usual. Please wait a moment and try again.",
+        code: error && error.code ? error.code : undefined,
+        retryAfter: error && error.retryAfter ? error.retryAfter : undefined,
+      },
+      error && error.retryAfter ? { "Retry-After": String(error.retryAfter) } : {},
+    );
+  }
+});
 
-    const files = req.files || {};
-    const leftFile = Array.isArray(files.image) ? files.image[0] : null;
-    const rightFile = Array.isArray(files.image2) ? files.image2[0] : null;
+server.headersTimeout = 60000;
+server.requestTimeout = 0;
+server.timeout = 0;
 
-    if (!leftFile || !leftFile.buffer || !leftFile.buffer.length) {
-      return res.status(400).json({
-        success: false,
-        error: "No left person photo was provided.",
-      });
-    }
-
-    if (!rightFile || !rightFile.buffer || !rightFile.buffer.length) {
-      return res.status(400).json({
-        success: false,
-        error: "No right person photo was provided.",
-      });
-    }
-
-    if (
-      !String(leftFile.mimetype || "").toLowerCase().startsWith("image/") ||
-      !String(rightFile.mimetype || "").toLowerCase().startsWith("image/")
-    ) {
-      return res.status(400).json({
-        success: false,
-        error: "Uploaded dual photo is not an image.",
-      });
-    }
-
-    try {
-      const result = await runGenerationJob(res, (signal) =>
-        withTempDir("gemini-dual-edit-", async (tempDir) => {
-          // File names keep the upload order: person 1 first, person 2 second.
-          const leftPath = path.join(
-            tempDir,
-            `person-1-left${getExtension(leftFile.mimetype)}`,
-          );
-          const rightPath = path.join(
-            tempDir,
-            `person-2-right${getExtension(rightFile.mimetype)}`,
-          );
-
-          await fs.writeFile(leftPath, leftFile.buffer);
-          await fs.writeFile(rightPath, rightFile.buffer);
-
-          return generateTemplateWithGemini(
-            leftPath,
-            rightPath,
-            prompt,
-            tempDir,
-            signal,
-          );
-        }),
-      );
-
-      return sendJson(res, 200, {
-        success: true,
-        provider: "gemini-playwright-dual",
-        image: `data:${result.mimeType};base64,${result.buffer.toString("base64")}`,
-      });
-    } catch (error) {
-      return sendGenerationError(res, error, "edit-image-dual");
-    }
-  },
-);
-
-// --------------------------------------------------
-// Start Node API
-// --------------------------------------------------
-
-const server = app.listen(PORT, "127.0.0.1", async () => {
+buildProviders();
+server.listen(PORT, HOST, () => {
   console.log(`Node API running on internal port ${PORT}`);
-  console.log(
-    `Generation limits: up to ${MAX_CONCURRENT_GENERATIONS} at once, ${MAX_QUEUE_LENGTH} waiting.`,
-  );
-  console.log(
-    `Sessions found: ${listSessions().length} (${perSessionLimit()} jobs per session, capacity now ${currentCapacity()}, up to ${MAX_JOB_RETRIES} retries per job, ${SESSION_START_STAGGER_MS}ms start spacing).`,
-  );
-
-  notifier.start({
-    getSnapshot: monitorSnapshot,
-    runStartMs: Number(process.env.JOB_START_EPOCH) > 0
-      ? Number(process.env.JOB_START_EPOCH) * 1000
-      : Date.now(),
-  });
-
-  sweepStaleTempDirs().catch(() => {});
-
-  setInterval(() => {
-    sweepStaleTempDirs().catch(() => {});
-  }, TEMP_SWEEP_INTERVAL_MS).unref();
-
-  if (PREWARM) {
-    // Runs in the background: the server already answers /health and jobs
-    // that arrive during start-up simply open their own page.
-    startWarmPool().catch((error) => {
-      console.error("[warm] start-up failed:", error);
-    });
-  } else {
-    console.log("Warm page pool is off (set PREWARM=1 to turn it on).");
+  if (!PROVIDERS.length) {
+    console.log("WARNING: no image provider is configured. Set CF_ACCOUNT_ID + CF_API_TOKEN (and/or GEMINI_API_KEY).");
   }
-
-  if (process.env.SKIP_DESKTOP !== "1") {
-    try {
-      await startDesktop();
-    } catch (error) {
-      console.error("Desktop startup failed:", error);
-    }
-  }
+  for (const p of PROVIDERS) console.log(`Provider slot ${p.slot}: ${p.label}`);
+  console.log(`Generation limits: up to ${MAX_CONCURRENT} at once, ${MAX_QUEUE} waiting.`);
 });
 
-// --------------------------------------------------
-// Shutdown
-// --------------------------------------------------
-
-async function shutdown(signal) {
-  console.log(`Received ${signal}. Shutting down...`);
-
-  try {
-    if (browserContext) {
-      await browserContext.close().catch(() => {});
-    }
-
-    if (generationBrowser) {
-      await generationBrowser.close().catch(() => {});
-    }
-  } finally {
-    for (const child of desktopProcesses) {
-      child.kill("SIGTERM");
-    }
-
-    server.close(() => {
-      process.exit(0);
-    });
-
-    setTimeout(() => {
-      process.exit(0);
-    }, 5000);
-  }
-}
-
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-
-process.on("SIGINT", () => shutdown("SIGINT"));
-
-// A stray error inside one job must never take the whole service down.
-process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled promise rejection:", reason);
-});
-
-process.on("uncaughtException", (error) => {
-  console.error("Uncaught exception:", error);
-});
+process.on("unhandledRejection", (e) => console.error("unhandledRejection:", e));
+process.on("SIGTERM", () => server.close(() => process.exit(0)));
