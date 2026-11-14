@@ -1313,6 +1313,202 @@ let warmStartupDone = false;
 // For the admin panel: how often a job got a ready page, had to open its own, or a bad page was replaced.
 const warmStats = { hits: 0, misses: 0, replaced: 0 };
 
+
+// --------------------------------------------------
+// Same browser identity for every session (BROWSER_LOCALE, BROWSER_TIMEZONE,
+// BROWSER_USER_AGENT). Google sees one steady, ordinary browser instead of the
+// default "HeadlessChrome / UTC / no locale" identity of a bare Playwright.
+// --------------------------------------------------
+const BROWSER_LOCALE = process.env.BROWSER_LOCALE || "en-US";
+const BROWSER_TIMEZONE = process.env.BROWSER_TIMEZONE || "Asia/Dhaka";
+const BROWSER_USER_AGENT_ENV = (process.env.BROWSER_USER_AGENT || "").trim();
+
+function browserUserAgent(browser) {
+  if (BROWSER_USER_AGENT_ENV) {
+    return BROWSER_USER_AGENT_ENV;
+  }
+
+  try {
+    const major = String(browser.version()).split(".")[0];
+    return `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${major}.0.0.0 Safari/537.36`;
+  } catch {
+    return undefined;
+  }
+}
+
+function contextOptions(sessionFile, browser) {
+  const options = {
+    storageState: sessionFile,
+    viewport: { width: 1440, height: 900 },
+    acceptDownloads: true,
+    locale: BROWSER_LOCALE,
+    timezoneId: BROWSER_TIMEZONE,
+  };
+  const userAgent = browserUserAgent(browser);
+
+  if (userAgent) {
+    options.userAgent = userAgent;
+  }
+
+  return options;
+}
+
+// --------------------------------------------------
+// Renewed Google cookies. Google rotates some cookies (for example
+// __Secure-1PSIDTS) while a session is in use. After a job that worked, the
+// current cookies are written to FRESH_SESSION_DIR/gemini-session-N.json; the
+// GitHub workflow copies them back into the GEMINI_SESSION_JSON_N secrets, so
+// the next run starts with fresh cookies instead of the ones from the day the
+// session was first saved. Only written after a SUCCESSFUL job, so a logged-out
+// session can never overwrite a good one.
+// --------------------------------------------------
+const FRESH_SESSION_DIR = process.env.FRESH_SESSION_DIR || path.join(__dirname, "fresh-sessions");
+const FRESH_SAVE_EVERY_MS = readIntEnv("FRESH_SAVE_EVERY_MS", 10 * 60_000, 60_000, 6 * 3_600_000);
+const FRESH_SECRET_MAX_BYTES = 45_000; // GitHub secrets are limited to 48 KB
+const freshSavedAt = {};
+
+async function saveFreshSession(slot, context) {
+  try {
+    if (!context || Date.now() - (freshSavedAt[slot] || 0) < FRESH_SAVE_EVERY_MS) {
+      return;
+    }
+
+    const isGoogle = (host) => /(^|\.)(google\.com|gstatic\.com|googleusercontent\.com)$/.test(host);
+    const full = await context.storageState();
+    const trimmed = {
+      cookies: (full.cookies || []).filter((c) => isGoogle(String(c.domain).replace(/^\./, ""))),
+      origins: (full.origins || []).filter((o) => {
+        try {
+          return isGoogle(new URL(o.origin).hostname);
+        } catch {
+          return false;
+        }
+      }),
+    };
+
+    // A real logged-in state always has these. Never save anything without them.
+    if (!trimmed.cookies.some((c) => c.name === "SID") || !trimmed.cookies.some((c) => c.name === "__Secure-1PSID")) {
+      return;
+    }
+
+    let text = JSON.stringify(trimmed);
+
+    if (Buffer.byteLength(text) > FRESH_SECRET_MAX_BYTES) {
+      text = JSON.stringify({ cookies: trimmed.cookies, origins: [] });
+    }
+
+    if (Buffer.byteLength(text) > FRESH_SECRET_MAX_BYTES) {
+      return;
+    }
+
+    await fs.mkdir(FRESH_SESSION_DIR, { recursive: true });
+    const target = path.join(FRESH_SESSION_DIR, `gemini-session-${slot}.json`);
+    await fs.writeFile(`${target}.tmp`, text, { mode: 0o600 });
+    await fs.rename(`${target}.tmp`, target);
+    freshSavedAt[slot] = Date.now();
+  } catch (error) {
+    console.log(`[fresh] session ${slot}: could not save renewed cookies: ${error && error.message}`);
+  }
+}
+
+// --------------------------------------------------
+// Demand-based warm pages (WARM_DEMAND=1, together with PREWARM=1).
+// No page is opened at start. The website tells the bot (POST /warm-hint)
+// when a logged-in visitor opens the AI editor page ("weak" hint) or has
+// chosen/uploaded a photo ("strong" hint). Each active visitor holds ONE ready
+// page, spread over the sessions round-robin, opened one at a time with a
+// pause between pages. When visitors leave, their pages are closed again.
+//   WARM_DEMAND            1 = on
+//   WARM_MAX_PAGES         most ready pages at once (default 8)
+//   WARM_PER_SESSION_MAX   most ready pages per Google account (default 2)
+//   WARM_WEAK_TTL_MS       how long a page visit counts as "active" (default 3 min)
+//   WARM_STRONG_TTL_MS     same after the photo is chosen (default 6 min)
+// --------------------------------------------------
+const WARM_DEMAND = process.env.WARM_DEMAND === "1";
+const WARM_MAX_PAGES = readIntEnv("WARM_MAX_PAGES", 8, 0, 40);
+const WARM_PER_SESSION_MAX = readIntEnv("WARM_PER_SESSION_MAX", 2, 1, 10);
+const WARM_WEAK_TTL_MS = readIntEnv("WARM_WEAK_TTL_MS", 180_000, 30_000, 3_600_000);
+const WARM_STRONG_TTL_MS = readIntEnv("WARM_STRONG_TTL_MS", 360_000, 30_000, 3_600_000);
+const WARM_HINT_MAX_KEYS = 1000;
+const warmHints = new Map(); // visitor key -> expiry time (ms)
+let warmDemandTargets = {}; // slot -> pages wanted now
+let warmKickRunning = false;
+let warmKickTimer = null;
+
+function pruneWarmHints() {
+  const now = Date.now();
+
+  for (const [key, expiresAt] of warmHints) {
+    if (expiresAt <= now) {
+      warmHints.delete(key);
+    }
+  }
+}
+
+function recordWarmHint(key, strong) {
+  const ttl = strong ? WARM_STRONG_TTL_MS : WARM_WEAK_TTL_MS;
+  const expiresAt = Date.now() + ttl;
+  const old = warmHints.get(key) || 0;
+
+  if (warmHints.size >= WARM_HINT_MAX_KEYS && !warmHints.has(key)) {
+    pruneWarmHints();
+
+    if (warmHints.size >= WARM_HINT_MAX_KEYS) {
+      return;
+    }
+  }
+
+  warmHints.set(key, Math.max(old, expiresAt));
+}
+
+function recomputeWarmTargets() {
+  pruneWarmHints();
+
+  const usable = listSessions().filter((s) => isSessionUsable(s) && !isCooling(s.slot));
+  const wanted = Math.min(WARM_MAX_PAGES, warmHints.size, usable.length * WARM_PER_SESSION_MAX);
+  const targets = {};
+
+  usable.forEach((s) => {
+    targets[s.slot] = 0;
+  });
+
+  // Round robin over the sessions, starting after the one that got the last page,
+  // so every account gets its share and no single account is loaded first.
+  for (let i = 0; i < wanted; i += 1) {
+    const s = usable[i % usable.length];
+    targets[s.slot] += 1;
+  }
+
+  warmDemandTargets = targets;
+}
+
+// How many ready pages this session should keep right now.
+function entryTarget(slot) {
+  return WARM_DEMAND ? warmDemandTargets[slot] || 0 : warmTarget();
+}
+
+function hasIdleWarmPage(slot) {
+  const entry = warmPool[slot];
+
+  return entry && !entry.dead && entry.idle.length > 0 ? 1 : 0;
+}
+
+function kickWarmMaintenance() {
+  if (warmKickTimer || warmKickRunning) {
+    return;
+  }
+
+  warmKickTimer = setTimeout(() => {
+    warmKickTimer = null;
+    warmKickRunning = true;
+    maintainWarmPool()
+      .catch(() => {})
+      .finally(() => {
+        warmKickRunning = false;
+      });
+  }, 500);
+}
+
 function warmTarget() {
   return WARM_PAGES_PER_SESSION || perSessionLimit();
 }
@@ -1320,14 +1516,7 @@ function warmTarget() {
 async function createWarmEntry(slot, sessionFile) {
   const browser = await getGenerationBrowser();
 
-  const context = await browser.newContext({
-    storageState: sessionFile,
-    viewport: {
-      width: 1440,
-      height: 900,
-    },
-    acceptDownloads: true,
-  });
+  const context = await browser.newContext(contextOptions(sessionFile, browser));
 
   const entry = {
     slot,
@@ -1440,7 +1629,7 @@ async function replenishWarmPool(slot) {
   entry.replenishing = true;
 
   try {
-    while (!entry.dead && entry.total < warmTarget()) {
+    while (!entry.dead && entry.total < entryTarget(slot)) {
       try {
         const page = await openWarmPage(entry);
 
@@ -1453,7 +1642,7 @@ async function replenishWarmPool(slot) {
         entry.lastError = "";
         entry.failStreak = 0;
         entry.nextTryAt = 0;
-        console.log(`[warm] session ${slot}: page ready (${entry.idle.length} ready, ${entry.total}/${warmTarget()} open)`);
+        console.log(`[warm] session ${slot}: page ready (${entry.idle.length} ready, ${entry.total}/${entryTarget(slot)} open)`);
       } catch (error) {
         entry.lastError = String(error && error.message ? error.message : error)
           .replace(/\s+/g, " ")
@@ -1578,7 +1767,7 @@ function releaseWarmPage(lease, ok) {
     warmStats.replaced += 1;
   }
 
-  if (!ok || page.isClosed() || entry.total > warmTarget()) {
+  if (!ok || page.isClosed() || entry.total > entryTarget(entry.slot)) {
     discardWarmPage(entry, page);
     return;
   }
@@ -1591,7 +1780,10 @@ function warmStatus() {
     enabled: PREWARM,
     startupDone: warmStartupDone,
     startedAt: warmStartedAt ? new Date(warmStartedAt).toISOString() : null,
-    pagesPerSession: warmTarget(),
+    demandMode: WARM_DEMAND,
+    activeVisitors: warmHints.size,
+    demandTargets: warmDemandTargets,
+    pagesPerSession: WARM_DEMAND ? null : warmTarget(),
     hits: warmStats.hits,
     misses: warmStats.misses,
     replaced: warmStats.replaced,
@@ -1611,8 +1803,21 @@ function warmStatus() {
 }
 
 async function maintainWarmPool() {
+  if (WARM_DEMAND) {
+    recomputeWarmTargets();
+  }
+
   for (const session of listSessions()) {
     const entry = warmPool[session.slot];
+
+    // Demand mode: close ready pages that nobody needs any more.
+    if (WARM_DEMAND && entry) {
+      while (entry.idle.length > 0 && entry.total > entryTarget(session.slot)) {
+        const extra = entry.idle.pop();
+        entry.total = Math.max(0, entry.total - 1);
+        extra.close().catch(() => {});
+      }
+    }
 
     if (entry) {
       const before = entry.idle.length;
@@ -1630,14 +1835,18 @@ async function maintainWarmPool() {
 async function startWarmPool() {
   warmStartedAt = Date.now();
 
-  console.log(
-    `[warm] opening ${warmTarget()} Gemini page(s) for each of ${listSessions().length} session(s), one after another...`,
-  );
+  if (WARM_DEMAND) {
+    console.log("[warm] demand mode: no page is opened now. Pages open when visitors arrive (POST /warm-hint).");
+  } else {
+    console.log(
+      `[warm] opening ${warmTarget()} Gemini page(s) for each of ${listSessions().length} session(s), one after another...`,
+    );
 
-  for (const session of listSessions()) {
-    await replenishWarmPool(session.slot).catch((error) => {
-      console.log(`[warm] session ${session.slot}: start error: ${error && error.message}`);
-    });
+    for (const session of listSessions()) {
+      await replenishWarmPool(session.slot).catch((error) => {
+        console.log(`[warm] session ${session.slot}: start error: ${error && error.message}`);
+      });
+    }
   }
 
   warmStartupDone = true;
@@ -1710,14 +1919,7 @@ async function runGeminiWithSession({
     } else {
       const browser = await getGenerationBrowser();
 
-      context = await browser.newContext({
-        storageState: sessionFile,
-        viewport: {
-          width: 1440,
-          height: 900,
-        },
-        acceptDownloads: true,
-      });
+      context = await browser.newContext(contextOptions(sessionFile, browser));
 
       jobsOnCurrentBrowser += 1;
 
@@ -1992,6 +2194,10 @@ async function runGeminiWithSession({
       signal.removeEventListener("abort", onAbort);
     }
 
+    if (jobOk) {
+      await saveFreshSession(slot, lease ? lease.entry.context : context);
+    }
+
     if (lease) {
       // Warm page: refresh and reuse it (or replace it if the job failed).
       releaseWarmPage(lease, jobOk);
@@ -2114,6 +2320,7 @@ async function claimSession(signal, triedSlots, forceSlot = 0) {
       .sort(
         (a, b) =>
           (sessionActive[a.slot] || 0) - (sessionActive[b.slot] || 0) ||
+          hasIdleWarmPage(b.slot) - hasIdleWarmPage(a.slot) ||
           (sessionLastClaimAt[a.slot] || 0) - (sessionLastClaimAt[b.slot] || 0) ||
           a.slot - b.slot,
       );
@@ -2515,6 +2722,26 @@ function healthPayload() {
   };
 }
 
+// The website calls this when a visitor opens the AI editor (weak) or has chosen
+// a photo (strong). Needs the same x-api-key as the image routes (ASK_KEY).
+app.post("/warm-hint", requireApiKey, (req, res) => {
+  if (!PREWARM || !WARM_DEMAND) {
+    return res.json({ ok: true, mode: "off" });
+  }
+
+  const key = String((req.body && req.body.key) || "").slice(0, 80);
+
+  if (!key) {
+    return res.status(400).json({ ok: false, error: "key is required" });
+  }
+
+  recordWarmHint(key, Boolean(req.body && req.body.strong));
+  recomputeWarmTargets();
+  kickWarmMaintenance();
+
+  return res.json({ ok: true, visitors: warmHints.size });
+});
+
 app.get("/health", (req, res) => {
   res.json(healthPayload());
 });
@@ -2619,13 +2846,7 @@ app.get("/session-test", async (req, res) => {
       ],
     });
 
-    const context = await browser.newContext({
-      storageState: sessionFile,
-      viewport: {
-        width: 1440,
-        height: 900,
-      },
-    });
+    const context = await browser.newContext(contextOptions(sessionFile, browser));
 
     const page = await context.newPage();
 
