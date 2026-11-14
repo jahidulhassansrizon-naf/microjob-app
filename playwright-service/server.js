@@ -1339,6 +1339,8 @@ async function createWarmEntry(slot, sessionFile) {
     replenishing: false,
     dead: false,
     lastError: "",
+    failStreak: 0, // failed attempts in a row to open a page for this session
+    nextTryAt: 0, // do not try to fill this session again before this time
   };
 
   warmPool[slot] = entry;
@@ -1393,11 +1395,29 @@ async function openWarmPage(entry) {
   } catch (error) {
     entry.total = Math.max(0, entry.total - 1);
 
+    // Find out WHY the prompt box did not show (sign-in screen? popup? other page?).
+    let pageInfo = "";
+
+    if (page && !page.isClosed()) {
+      try {
+        const bodyText = await page.locator("body").innerText({ timeout: 3000 });
+        const title = await page.title().catch(() => "");
+
+        pageInfo = ` [page: ${page.url()} | title: ${String(title).slice(0, 60)} | signInVisible: ${/Sign in/i.test(bodyText)}]`;
+      } catch {
+        pageInfo = ` [page: ${page.url()}]`;
+      }
+    }
+
     if (page) {
       await page.close().catch(() => {});
     }
 
-    throw error;
+    const wrapped = new Error(
+      `Gemini prompt box did not appear${pageInfo || ` (${error && error.message ? String(error.message).split("\n")[0] : "unknown error"})`}`,
+    );
+    wrapped.pageInfo = pageInfo;
+    throw wrapped;
   }
 }
 
@@ -1413,7 +1433,7 @@ async function replenishWarmPool(slot) {
 
   const entry = await getWarmEntry(slot, session.file);
 
-  if (entry.replenishing) {
+  if (entry.replenishing || Date.now() < entry.nextTryAt) {
     return;
   }
 
@@ -1431,12 +1451,34 @@ async function replenishWarmPool(slot) {
 
         entry.idle.push(page);
         entry.lastError = "";
+        entry.failStreak = 0;
+        entry.nextTryAt = 0;
         console.log(`[warm] session ${slot}: page ready (${entry.idle.length} ready, ${entry.total}/${warmTarget()} open)`);
       } catch (error) {
         entry.lastError = String(error && error.message ? error.message : error)
           .replace(/\s+/g, " ")
-          .slice(0, 200);
-        console.log(`[warm] session ${slot}: could not open a page (${entry.lastError}). Will try again later.`);
+          .slice(0, 240);
+
+        // Sign-in screen = the Google login of this session expired. Park it the same way
+        // a failing job would, so the admin panel shows the real reason.
+        if (/signInVisible: true|accounts\.google\.com/i.test(entry.lastError)) {
+          stats.loggedOutSessions += 1;
+          limitState[slot] = Date.now() + 6 * 60 * 60 * 1000;
+          sessionDownReason[slot] = "logged-out";
+          logEvent("session-logged-out", slot, "Google login expired (sign-in screen seen while opening a ready page).");
+          saveLimitState();
+          console.log(`[warm] session ${slot} looks logged out (re-save it with save-session.js). Skipping it.`);
+          break;
+        }
+
+        // Wait longer after every failure (2, 5, 10, then 15 minutes) so a broken
+        // session is not hammered with new page loads.
+        entry.failStreak += 1;
+        const waitMinutes = [2, 5, 10, 15][Math.min(entry.failStreak, 4) - 1];
+        entry.nextTryAt = Date.now() + waitMinutes * 60_000;
+        console.log(
+          `[warm] session ${slot}: could not open a page (${entry.lastError}). Trying again in ${waitMinutes} min.`,
+        );
         break;
       }
 
@@ -1561,6 +1603,7 @@ function warmStatus() {
           open: e.total,
           refreshing: e.resetting,
           lastError: e.lastError,
+          retryAt: e.nextTryAt > Date.now() ? new Date(e.nextTryAt).toISOString() : "",
         },
       ]),
     ),

@@ -21,7 +21,7 @@ type BotStatus = {
   warm?: {
     enabled: boolean; startupDone: boolean; startedAt: string; pagesPerSession: number;
     hits: number; misses: number; replaced: number;
-    sessions: Array<{ slot: number; ready: number; open: number; refreshing: number; lastError: string }>;
+    sessions: Array<{ slot: number; ready: number; open: number; refreshing: number; lastError: string; retryAt: string }>;
   } | null;
   stats?: {
     jobs: number; jobsOk: number; jobsFailed: number; retries: number; attemptsRefused: number;
@@ -397,6 +397,11 @@ export default function BotStatusPanel() {
                         <p className="mt-0.5 text-xs text-[#7A6A50]" title={w?.lastError || undefined}>
                           রেডি পেজ <span className={`font-bold ${w && w.ready >= want ? "text-emerald-700" : "text-amber-700"}`}>{w?.ready ?? 0}/{want}</span>
                           {w && w.refreshing > 0 ? ` · ${w.refreshing}টা সাজানো হচ্ছে` : ""}
+                          {w && w.lastError && (
+                            <span className="mt-0.5 block font-semibold text-red-700">
+                              পেজ খুলছে না{w.retryAt ? `, ${dhakaShort(w.retryAt)} নাগাদ আবার চেষ্টা` : ""}
+                            </span>
+                          )}
                         </p>
                       );
                     })()}

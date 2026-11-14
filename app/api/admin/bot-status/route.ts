@@ -66,7 +66,7 @@ type Warm = {
   hits: number;
   misses: number;
   replaced: number;
-  sessions: Array<{ slot: number; ready: number; open: number; refreshing: number; lastError: string }>;
+  sessions: Array<{ slot: number; ready: number; open: number; refreshing: number; lastError: string; retryAt: string }>;
 };
 
 function cleanWarm(value: any): Warm | null {
@@ -87,7 +87,8 @@ function cleanWarm(value: any): Warm | null {
         ready: num(v?.ready),
         open: num(v?.open),
         refreshing: num(v?.refreshing),
-        lastError: text(v?.lastError, 200),
+        lastError: text(v?.lastError, 260),
+        retryAt: text(v?.retryAt, 40),
       }))
       .sort((a, b) => a.slot - b.slot),
   };
@@ -149,12 +150,12 @@ function buildProblems(report: any, runs: Run[] | null, detailed: boolean, warm:
     for (const s of report.sessions as any[]) {
       if (!(s.usable && s.healthy)) continue;
       const w = warm.sessions.find((x) => x.slot === s.slot);
-      if (!w || w.open === 0) {
+      if (w && w.lastError) {
         out.push({
           level: "warn",
-          title: `Session ${s.slot}: no ready Gemini page`,
-          cause: w?.lastError || "The bot could not open a Gemini page for this session at start-up.",
-          advice: "Images still work (the bot opens a page when needed) but they are slower. The bot tries again every minute.",
+          title: `Session ${s.slot}: the Gemini page does not open (${w.ready}/${warm.pagesPerSession} ready)`,
+          cause: w.lastError,
+          advice: `Images on this session may fail or be slow. Open gemini.google.com with this Google account and look for a popup, a consent or verification screen, or a sign-in page.${w.retryAt ? ` The bot tries again around ${dhakaTime(w.retryAt)} (Dhaka time).` : ""}`,
         });
       }
     }
