@@ -2,6 +2,7 @@
 import { BulkT, useBulkPhotoText } from "./components/bulkPhotoI18n";
 import { buildImageUploadRequest } from "@/lib/clientUpload";
 import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
+import useWarmPing from "@/app/ai-editor/_components/useWarmPing";
 import { PhotoCropWorkspace } from "../_components/PhotoCropWorkspace";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Crown, Info, Layers, X } from "lucide-react";
@@ -138,6 +139,8 @@ export default function BulkPhotoEditPage() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
     const [loading, setLoading] = useState<boolean>(false);
     const [photos, setPhotos] = useState<PhotoItem[]>([]);
+    // Tells the image server a visitor is here / has chosen photos, so it can get a Gemini page ready.
+    useWarmPing(photos.length > 0);
     const [expandedPreset, setExpandedPreset] = useState<string | null>("face-enhance");
     const [selectedTools, setSelectedTools] = useState<SelectedTools>(makeEmptyTools);
     // "all": one tool set for every photo. "each": guided, photo-by-photo tool choice.

@@ -32,6 +32,7 @@ import { FloatingTools } from "./components/FloatingTools";
 import AITemplateStyles from "./components/AITemplateStyles";
 import RetentionNotice from "@/app/_components/RetentionNotice";
 import { notifyMyFilesSaved } from "@/app/_lib/myFilesNotice";
+import useWarmPing from "@/app/ai-editor/_components/useWarmPing";
 
 // Same wording as the AI Editor page: never mention the AI provider to users.
 const FRIENDLY_GENERATION_ERROR =
@@ -107,6 +108,8 @@ export default function AITemplatePage() {
   const [userPhotoPreview2, setUserPhotoPreview2] = useState<string | null>(null);
   const [userPhoto, setUserPhoto] = useState<File | null>(null);
   const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null);
+  // Tells the image server a visitor is here / has chosen a photo, so it can get a Gemini page ready.
+  useWarmPing(Boolean(userPhoto || userPhoto2));
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
