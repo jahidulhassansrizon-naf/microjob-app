@@ -40,6 +40,15 @@ const GEMINI_BASE = (process.env.GEMINI_BASE_URL || "https://generativelanguage.
 const GEMINI_MODEL = process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 const CF_BASE = (process.env.CF_BASE_URL || "https://api.cloudflare.com").replace(/\/+$/, "");
 const CF_MODEL = process.env.CF_IMAGE_MODEL || "@cf/black-forest-labs/flux-2-klein-4b";
+// Added to every prompt sent to Cloudflare: pushes the small model away from the "cartoon" look.
+// Set CF_PROMPT_SUFFIX to your own text, or to "off" to send the prompt untouched.
+const CF_SUFFIX_RAW = process.env.CF_PROMPT_SUFFIX;
+const CF_PROMPT_SUFFIX =
+  CF_SUFFIX_RAW === undefined || CF_SUFFIX_RAW === ""
+    ? "Photorealistic photograph, shot on a DSLR camera, natural skin texture with visible pores, realistic lighting, sharp focus. Keep the exact same real face, identity, skin tone and hairstyle as the reference photo. Not a cartoon, not an illustration, not 3D render, no airbrushed or plastic skin."
+    : CF_SUFFIX_RAW.toLowerCase() === "off"
+      ? ""
+      : CF_SUFFIX_RAW;
 
 // Reads KEY, KEY_2, KEY_3 ... KEY_10 (several keys = more free quota)
 function readNumbered(name) {
@@ -165,7 +174,8 @@ async function cloudflareGenerate(cred, job) {
     const hint = inputs.map((_, i) => `image ${i} = ${names[i] || "extra photo"}`).join(", ");
     prompt = `${prompt}\n\nReference images: ${hint}.`;
   }
-  form.append("prompt", prompt.slice(0, 2000));
+  if (CF_PROMPT_SUFFIX) prompt = `${prompt}\n\n${CF_PROMPT_SUFFIX}`;
+  form.append("prompt", prompt.slice(0, 2400));
   form.append("width", String(width));
   form.append("height", String(height));
   inputs.forEach((img, i) => {
