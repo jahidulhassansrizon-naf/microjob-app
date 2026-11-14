@@ -50,39 +50,21 @@ jobs:
 
     env:
       BOT_PORT: "4000"
-      SKIP_DESKTOP: "1"
-      # Machine limit: about 20 headless Chromium pages fit on the 4 vCPU / 16 GB
-      # public runner. The jobs per Google account are worked out by the bot from
-      # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).
-      MAX_CONCURRENT_GENERATIONS: "20"
+      # How many images the bot makes at the same time (they only wait for the API).
+      MAX_CONCURRENT_GENERATIONS: "6"
       MAX_JOB_RETRIES: "2"
-      # Warm pages: at the start of every run the bot opens Gemini pages for all sessions,
-      # one session after the other, and keeps them open. Set PREWARM to "0" to go back
-      # to the old way (a fresh page for every image).
-      PREWARM: "1"
-      WARM_PAGES_PER_SESSION: "3"
-      # Demand mode: no page is opened at start. Pages open one by one when visitors
-      # arrive on the AI editor page (the website calls POST /warm-hint).
-      # To go back to the old "fresh page for every image" way, set PREWARM to "0".
-      WARM_DEMAND: "1"
-      WARM_MAX_PAGES: "8"
-      WARM_PER_SESSION_MAX: "2"
-      WARM_OPEN_STAGGER_MS: "5000"
-      # One steady browser identity for every session.
-      BROWSER_LOCALE: "en-US"
-      BROWSER_TIMEZONE: "Asia/Dhaka"
-      FRESH_SESSION_DIR: "fresh-sessions"
       ASK_KEY: ${{ secrets.ASK_KEY }}
-      GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
-      GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
-      GEMINI_SESSION_JSON_3: ${{ secrets.GEMINI_SESSION_JSON_3 }}
-      GEMINI_SESSION_JSON_4: ${{ secrets.GEMINI_SESSION_JSON_4 }}
-      GEMINI_SESSION_JSON_5: ${{ secrets.GEMINI_SESSION_JSON_5 }}
-      GEMINI_SESSION_JSON_6: ${{ secrets.GEMINI_SESSION_JSON_6 }}
-      GEMINI_SESSION_JSON_7: ${{ secrets.GEMINI_SESSION_JSON_7 }}
-      GEMINI_SESSION_JSON_8: ${{ secrets.GEMINI_SESSION_JSON_8 }}
-      GEMINI_SESSION_JSON_9: ${{ secrets.GEMINI_SESSION_JSON_9 }}
-      GEMINI_SESSION_JSON_10: ${{ secrets.GEMINI_SESSION_JSON_10 }}
+      # ---- Image providers (no Google login needed) ----
+      # Free: Cloudflare Workers AI. Add secrets CF_ACCOUNT_ID and CF_API_TOKEN.
+      # More free quota: also add CF_ACCOUNT_ID_2 + CF_API_TOKEN_2 (up to _10).
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_ID_2: ${{ secrets.CF_ACCOUNT_ID_2 }}
+      CF_API_TOKEN_2: ${{ secrets.CF_API_TOKEN_2 }}
+      # Optional: Gemini API key (only works for images if your Google project allows it).
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
+      IMAGE_PROVIDERS: "cloudflare,gemini"
       VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
       EDGE_CONFIG_ID: ${{ secrets.EDGE_CONFIG_ID }}
       # Email alerts are OFF (ALERT_WEBHOOK_URL is not set on purpose). The admin panel (Bot Status)
@@ -122,37 +104,7 @@ jobs:
           echo "::error::npm install failed 4 times."
           exit 1
 
-      - name: Install Chromium for Playwright
-        shell: bash
-        run: |
-          for attempt in 1 2 3 4; do
-            if node ./node_modules/playwright/cli.js install --with-deps chromium; then
-              exit 0
-            fi
-            echo "Chromium install failed (attempt $attempt/4), trying again in 20 seconds..."
-            sleep 20
-          done
-          echo "::error::Chromium install failed 4 times."
-          exit 1
 
-      - name: Restore Gemini sessions
-        shell: bash
-        run: |
-          # Secrets GEMINI_SESSION_JSON_1 ... GEMINI_SESSION_JSON_10.
-          # Slot 1 is required; slots 2 to 10 are used only if their secret exists.
-          for N in 1 2 3 4 5 6 7 8 9 10; do
-            VAR="GEMINI_SESSION_JSON_${N}"
-            VALUE="${!VAR}"
-            if [ -n "$VALUE" ]; then
-              printf '%s' "$VALUE" > "gemini-session-${N}.json"
-              chmod 600 "gemini-session-${N}.json"
-            fi
-          done
-          test -f gemini-session-1.json || {
-            echo "GEMINI_SESSION_JSON_1 secret is missing."
-            exit 1
-          }
-          ls gemini-session-*.json
 
       - name: Create notify token
         shell: bash
