@@ -22,6 +22,8 @@ try {
 }
 
 const AIMODE_URL = process.env.AIMODE_URL || "https://www.google.com/search?udm=50&hl=en";
+// Tried one after another when the first page shows no prompt box (not used when AIMODE_URL is set, e.g. in tests).
+const ALT_URLS = process.env.AIMODE_URL ? [] : ["https://www.google.com/search?udm=50&hl=en&gl=bd", "https://www.google.com/ai?hl=en"];
 const PER_SESSION = Number(process.env.AIMODE_PER_SESSION) || 2;
 const WAIT_IMAGE_MS = Number(process.env.AIMODE_WAIT_MS) || 150000;
 const FRESH_DIR = process.env.FRESH_SESSION_DIR || path.join(__dirname, "fresh-sessions");
@@ -89,9 +91,10 @@ async function snapshot(page, label) {
         .filter((i) => i.naturalWidth >= 200)
         .map((i) => `${i.naturalWidth}x${i.naturalHeight} ${i.src.slice(0, 60)}`)
         .slice(0, 10);
-      return { buttons, inputs, imgs };
+      const text = (document.body.innerText || "").replace(/\s+/g, " ").slice(0, 400);
+      return { buttons, inputs, imgs, text };
     });
-    console.log(`[aimode] debug(${label}) url=${page.url().slice(0, 120)} buttons=${JSON.stringify(info.buttons)} inputs=${JSON.stringify(info.inputs)} imgs=${JSON.stringify(info.imgs)} screenshot=${path.basename(file)}`);
+    console.log(`[aimode] debug(${label}) url=${page.url().slice(0, 120)} buttons=${JSON.stringify(info.buttons)} inputs=${JSON.stringify(info.inputs)} imgs=${JSON.stringify(info.imgs)} text=${JSON.stringify(info.text)} screenshot=${path.basename(file)}`);
   } catch (e) {
     console.log(`[aimode] debug(${label}) failed: ${e.message}`);
   }
@@ -122,6 +125,19 @@ async function findPromptBox(page) {
   throw err("bad", "prompt box not found");
 }
 
+
+// Waits (polling) for the prompt box instead of failing at once: Google's page can render slowly.
+async function waitForPromptBox(page, ms) {
+  const end = Date.now() + ms;
+  for (;;) {
+    try {
+      return await findPromptBox(page);
+    } catch (e) {
+      if (Date.now() >= end) throw e;
+      await page.waitForTimeout(700);
+    }
+  }
+}
 
 // Finds the "+" / attach button. 1) by label, 2) the left-most small button that lives in the same
 // box as the prompt field (the "+" in Google's input box has no useful text).
@@ -428,7 +444,27 @@ async function aiModeGenerate(sessionFile, job) {
       throw err("quota", "Google asked for a robot check (captcha)", { retryAt: Date.now() + 30 * 60e3 });
     }
 
-    await findPromptBox(page); // page is ready when the input box exists
+    // page is ready when the input box exists; if it never shows up, try other AI Mode addresses
+    try {
+      await waitForPromptBox(page, 10000);
+    } catch {
+      let ok = false;
+      for (const alt of ALT_URLS) {
+        console.log(`[aimode] no prompt box on the first page, trying ${alt}`);
+        await page.goto(alt, { waitUntil: "domcontentloaded", timeout: 45000 }).catch(() => {});
+        await page.waitForTimeout(2500);
+        await dismissPopups(page);
+        if (await waitForPromptBox(page, 8000).then(() => true).catch(() => false)) {
+          ok = true;
+          break;
+        }
+      }
+      if (!ok) {
+        await snapshot(page, "no-prompt-box");
+        // Rest this login for 15 minutes so the next jobs go straight to the next provider (Cloudflare).
+        throw err("quota", "Google AI Mode shows no prompt box from this server", { retryAt: Date.now() + 15 * 60e3 });
+      }
+    }
     // 1) attach the photos, in the order given
     for (let i = 0; i < job.images.length; i++) {
       const ext = /png/i.test(job.images[i].mime) ? "png" : "jpg";
