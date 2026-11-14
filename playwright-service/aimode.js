@@ -507,7 +507,14 @@ async function aiModeGenerate(sessionFile, job) {
     const out = await readImage(page, found.src);
 
     // Safety: if the "result" looks like the uploaded photo itself, it is not the generated image
-    if (await looksSame(out.buffer, job.images[0].buffer)) {
+    let gotInputBack = false;
+    for (const im of job.images) {
+      if (await looksSame(out.buffer, im.buffer)) {
+        gotInputBack = true;
+        break;
+      }
+    }
+    if (gotInputBack) {
       await snapshot(page, "got-input-back");
       throw err("transient", "got the uploaded photo back, not the generated image");
     }
