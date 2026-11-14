@@ -50,26 +50,29 @@ jobs:
 
     env:
       BOT_PORT: "4000"
-      # How many images the bot makes at the same time (they only wait for the API).
-      MAX_CONCURRENT_GENERATIONS: "6"
+      SKIP_DESKTOP: "1"
+      # Machine limit: about 20 headless Chromium pages fit on the 4 vCPU / 16 GB
+      # public runner. The jobs per Google account are worked out by the bot from
+      # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).
+      MAX_CONCURRENT_GENERATIONS: "20"
       MAX_JOB_RETRIES: "2"
-      ASK_KEY: ${{ secrets.ASK_KEY }}
-      # ---- Image providers (no Google login needed) ----
-      # Free: Cloudflare Workers AI. Add secrets CF_ACCOUNT_ID and CF_API_TOKEN.
-      # More free quota: also add CF_ACCOUNT_ID_2 + CF_API_TOKEN_2 (up to _10).
-      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-      CF_ACCOUNT_ID_2: ${{ secrets.CF_ACCOUNT_ID_2 }}
-      CF_API_TOKEN_2: ${{ secrets.CF_API_TOKEN_2 }}
-      # Optional: Gemini API key (only works for images if your Google project allows it).
-      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
-      IMAGE_PROVIDERS: "aimode,cloudflare,gemini"
-      # Google AI Mode uses the saved Google logins (same secrets as before). Optional: if none
-      # exist, the bot just uses Cloudflare.
-      FRESH_SESSION_DIR: "fresh-sessions"
+      # Warm pages: at the start of every run the bot opens Gemini pages for all sessions,
+      # one session after the other, and keeps them open. Set PREWARM to "0" to go back
+      # to the old way (a fresh page for every image).
+      PREWARM: "1"
+      WARM_PAGES_PER_SESSION: "3"
+      # Demand mode: no page is opened at start. Pages open one by one when visitors
+      # arrive on the AI editor page (the website calls POST /warm-hint).
+      # To go back to the old "fresh page for every image" way, set PREWARM to "0".
+      WARM_DEMAND: "1"
+      WARM_MAX_PAGES: "8"
+      WARM_PER_SESSION_MAX: "2"
+      WARM_OPEN_STAGGER_MS: "5000"
+      # One steady browser identity for every session.
       BROWSER_LOCALE: "en-US"
       BROWSER_TIMEZONE: "Asia/Dhaka"
+      FRESH_SESSION_DIR: "fresh-sessions"
+      ASK_KEY: ${{ secrets.ASK_KEY }}
       GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
       GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
       GEMINI_SESSION_JSON_3: ${{ secrets.GEMINI_SESSION_JSON_3 }}
@@ -119,8 +122,6 @@ jobs:
           echo "::error::npm install failed 4 times."
           exit 1
 
-
-
       - name: Install Chromium for Playwright
         shell: bash
         run: |
@@ -134,9 +135,11 @@ jobs:
           echo "::error::Chromium install failed 4 times."
           exit 1
 
-      - name: Restore Google sessions (optional)
+      - name: Restore Gemini sessions
         shell: bash
         run: |
+          # Secrets GEMINI_SESSION_JSON_1 ... GEMINI_SESSION_JSON_10.
+          # At least one slot is required; the others are used only if their secret exists.
           for N in 1 2 3 4 5 6 7 8 9 10; do
             VAR="GEMINI_SESSION_JSON_${N}"
             VALUE="${!VAR}"
@@ -145,7 +148,11 @@ jobs:
               chmod 600 "gemini-session-${N}.json"
             fi
           done
-          ls gemini-session-*.json 2>/dev/null || echo "No Google sessions: only Cloudflare will be used."
+          ls gemini-session-*.json >/dev/null 2>&1 || {
+            echo "No GEMINI_SESSION_JSON_N secret found (need at least one)."
+            exit 1
+          }
+          ls gemini-session-*.json
 
       - name: Create notify token
         shell: bash
@@ -531,15 +538,6 @@ jobs:
           cat bot.log || true
           echo "----- cloudflared.log (URL hidden) -----"
           sed -E 's#https://[-a-z0-9]+\.trycloudflare\.com#https://[hidden].trycloudflare.com#g' cloudflared.log || true
-
-      - name: Save debug screenshots
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: aimode-debug
-          path: playwright-service/debug/
-          if-no-files-found: ignore
-          retention-days: 3
 
       - name: Cleanup
         if: always()
