@@ -25,6 +25,7 @@ import { getClientSession } from "@/lib/clientAuth";
 import { CLOTHING_NAMES, CLOTHING_STYLES } from "./_components/clothingStyles";
 import ConfirmDeleteModal from "./_components/ConfirmDeleteModal";
 import GenerationLimitAlert from "./_components/GenerationLimitAlert";
+import useWarmPing from "./_components/useWarmPing";
 import usePageLoaderHold from "@/app/_components/usePageLoaderHold";
 import { AiEditorFetchError, getCachedAiEditorGenerations, isAiEditorStaticWarm, refreshAiEditorGenerations, setCachedAiEditorGenerations, waitForAiEditorFirstFold } from "./_components/aiEditorData";
 // Heavy parts (print studio + PDF, photo preview editor, crop tool) load in the background, so the
@@ -55,6 +56,8 @@ export default function PhotoEditorPage() {
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [leftImage, setLeftImage] = useState<string | null>(null);
     const [rightImage, setRightImage] = useState<string | null>(null);
+    // Tells the image server a visitor is here / has chosen a photo, so it can get a Gemini page ready.
+    useWarmPing(Boolean(uploadedImage || leftImage || rightImage));
     const [activeTarget, setActiveTarget] = useState<string | null>(null);
     // Keep the original cropped source separate from generated previews so
     // changing settings and generating again always starts from the source photo.

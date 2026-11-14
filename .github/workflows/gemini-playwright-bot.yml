@@ -61,6 +61,17 @@ jobs:
       # to the old way (a fresh page for every image).
       PREWARM: "1"
       WARM_PAGES_PER_SESSION: "3"
+      # Demand mode: no page is opened at start. Pages open one by one when visitors
+      # arrive on the AI editor page (the website calls POST /warm-hint).
+      # To go back to the old "fresh page for every image" way, set PREWARM to "0".
+      WARM_DEMAND: "1"
+      WARM_MAX_PAGES: "8"
+      WARM_PER_SESSION_MAX: "2"
+      WARM_OPEN_STAGGER_MS: "5000"
+      # One steady browser identity for every session.
+      BROWSER_LOCALE: "en-US"
+      BROWSER_TIMEZONE: "Asia/Dhaka"
+      FRESH_SESSION_DIR: "fresh-sessions"
       ASK_KEY: ${{ secrets.ASK_KEY }}
       GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
       GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
@@ -290,6 +301,9 @@ jobs:
           KEEP_MINUTES: ${{ inputs.keep_minutes }}
           GH_TOKEN: ${{ github.token }}
           VERCEL_TEAM_SLUG: ${{ vars.VERCEL_TEAM_SLUG }}
+          # Optional. A fine-grained token with "Secrets: Read and write" on this repo.
+          # Without it the renewed cookies are simply not saved back (nothing else changes).
+          SESSION_WRITE_TOKEN: ${{ secrets.SESSION_WRITE_TOKEN }}
         run: |
           MINUTES="${KEEP_MINUTES:-360}"
           case "$MINUTES" in
@@ -442,6 +456,28 @@ jobs:
             return 0
           }
 
+          # Copies the renewed Google cookies (written by the bot after good jobs)
+          # back into the GEMINI_SESSION_JSON_N secrets. Only files that really contain
+          # a logged-in state are copied, and only when they changed.
+          push_cookies() {
+            [ -n "$SESSION_WRITE_TOKEN" ] || return 0
+            [ -d fresh-sessions ] || return 0
+            local f N
+            for f in fresh-sessions/gemini-session-*.json; do
+              [ -f "$f" ] || continue
+              N="${f##*-}"; N="${N%.json}"
+              jq -e '.cookies | map(.name) | (index("SID") != null) and (index("__Secure-1PSID") != null)' "$f" > /dev/null 2>&1 || continue
+              if [ -f "pushed-${N}.json" ] && cmp -s "$f" "pushed-${N}.json"; then continue; fi
+              if GH_TOKEN="$SESSION_WRITE_TOKEN" gh secret set "GEMINI_SESSION_JSON_${N}" --repo "$GITHUB_REPOSITORY" < "$f" > /dev/null 2>&1; then
+                cp "$f" "pushed-${N}.json"
+                echo "Renewed Google cookies saved for session ${N}."
+              else
+                echo "::warning::Could not save renewed cookies for session ${N}."
+              fi
+            done
+          }
+          LAST_PUSH=$(date +%s)
+
           LOCAL_FAILS=0
           PUBLIC_FAILS=0
 
@@ -455,6 +491,12 @@ jobs:
               echo "Starting the replacement run now."
               gh workflow run gemini-playwright-bot.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" \
                 || echo "::warning::Could not start the replacement run; the 30-minute schedule will start it."
+            fi
+
+            # Every hour: save renewed cookies back into the secrets.
+            if [ $(( $(date +%s) - LAST_PUSH )) -ge 3600 ]; then
+              LAST_PUSH=$(date +%s)
+              push_cookies || true
             fi
 
             # 1) local bot server (3 failed checks in a row = about 90 seconds)
@@ -485,6 +527,7 @@ jobs:
             fi
           done
 
+          push_cookies || true
           echo "Watchdog finished."
 
       - name: Show logs
