@@ -1234,6 +1234,9 @@ async function getGenerationBrowser() {
           "--no-sandbox",
           "--disable-setuid-sandbox",
           "--disable-dev-shm-usage",
+          "--disable-renderer-backgrounding",
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
         ],
       })
       .then((browser) => {
@@ -1258,6 +1261,7 @@ async function getGenerationBrowser() {
 // generating, so no one's image is ever interrupted.
 async function recycleBrowserIfIdle() {
   if (
+    PREWARM ||
     activeJobs !== 0 ||
     waitingJobs.length !== 0 ||
     !generationBrowser ||
@@ -1273,6 +1277,336 @@ async function recycleBrowserIfIdle() {
   console.log("Recycling shared Chromium (idle, many jobs served).");
 
   await browser.close().catch(() => {});
+}
+
+// --------------------------------------------------
+// Warm page pool (PREWARM=1)
+//
+// At the start of every run, each Google session gets ONE browser context
+// (logged in once from its session file) and a few Gemini pages that are opened
+// ahead of time and kept open. A job then only takes a ready page, types the
+// prompt, attaches the image and sends. No page opening, no new login, no new
+// context per image. After the job the page goes back to a fresh "new chat"
+// state in the background (so the next visitor never waits for it).
+//
+// Safe fallbacks: if no ready page is free a job opens its own page in the same
+// context (the old speed), a broken page is closed and replaced, and
+// PREWARM=0 (or not set) brings back the old behaviour completely.
+//
+//   PREWARM                  1 = on, anything else = off
+//   WARM_PAGES_PER_SESSION   ready pages per session (0 = same as the jobs per session)
+//   WARM_OPEN_STAGGER_MS     pause between opening two pages (serial start)
+// --------------------------------------------------
+
+const PREWARM = process.env.PREWARM === "1";
+const WARM_PAGES_PER_SESSION = readIntEnv("WARM_PAGES_PER_SESSION", 0, 0, 10);
+const WARM_OPEN_STAGGER_MS = readIntEnv("WARM_OPEN_STAGGER_MS", 1000, 0, 10_000);
+const WARM_MAINTAIN_INTERVAL_MS = 60_000;
+const WARM_RESET_WAIT_MS = 20_000; // a job waits at most this long for a page that is being refreshed
+const GEMINI_APP_URL = "https://gemini.google.com/app";
+const GEMINI_PROMPT_BOX = '[data-test-id="textarea-wrapper"]';
+
+const warmPool = {}; // slot -> { slot, browser, context, total, idle, resetting, replenishing, dead, lastError }
+const warmEntryPending = {};
+let warmStartedAt = 0;
+let warmStartupDone = false;
+// For the admin panel: how often a job got a ready page, had to open its own, or a bad page was replaced.
+const warmStats = { hits: 0, misses: 0, replaced: 0 };
+
+function warmTarget() {
+  return WARM_PAGES_PER_SESSION || perSessionLimit();
+}
+
+async function createWarmEntry(slot, sessionFile) {
+  const browser = await getGenerationBrowser();
+
+  const context = await browser.newContext({
+    storageState: sessionFile,
+    viewport: {
+      width: 1440,
+      height: 900,
+    },
+    acceptDownloads: true,
+  });
+
+  const entry = {
+    slot,
+    browser,
+    context,
+    total: 0, // every page of this session: ready + in use + refreshing + opening
+    idle: [],
+    resetting: 0,
+    replenishing: false,
+    dead: false,
+    lastError: "",
+  };
+
+  warmPool[slot] = entry;
+
+  context.on("close", () => {
+    entry.dead = true;
+
+    if (warmPool[slot] === entry) {
+      delete warmPool[slot];
+    }
+  });
+
+  return entry;
+}
+
+function getWarmEntry(slot, sessionFile) {
+  const existing = warmPool[slot];
+
+  if (existing && !existing.dead && existing.browser.isConnected()) {
+    return Promise.resolve(existing);
+  }
+
+  if (!warmEntryPending[slot]) {
+    warmEntryPending[slot] = createWarmEntry(slot, sessionFile).finally(() => {
+      delete warmEntryPending[slot];
+    });
+  }
+
+  return warmEntryPending[slot];
+}
+
+// Opens one Gemini page and waits until the prompt box is there.
+async function openWarmPage(entry) {
+  entry.total += 1;
+
+  let page = null;
+
+  try {
+    page = await entry.context.newPage();
+
+    await page.goto(GEMINI_APP_URL, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.locator(GEMINI_PROMPT_BOX).waitFor({
+      state: "visible",
+      timeout: 45000,
+    });
+
+    return page;
+  } catch (error) {
+    entry.total = Math.max(0, entry.total - 1);
+
+    if (page) {
+      await page.close().catch(() => {});
+    }
+
+    throw error;
+  }
+}
+
+// Brings the session back up to its number of ready pages (one page at a time).
+async function replenishWarmPool(slot) {
+  const session = listSessions().find((s) => s.slot === slot);
+
+  // A session that hit its daily limit or keeps failing is left alone for now.
+  // The maintenance timer fills it up again once it is usable.
+  if (!session || !isSessionUsable(session) || isCooling(slot)) {
+    return;
+  }
+
+  const entry = await getWarmEntry(slot, session.file);
+
+  if (entry.replenishing) {
+    return;
+  }
+
+  entry.replenishing = true;
+
+  try {
+    while (!entry.dead && entry.total < warmTarget()) {
+      try {
+        const page = await openWarmPage(entry);
+
+        if (entry.dead) {
+          await page.close().catch(() => {});
+          break;
+        }
+
+        entry.idle.push(page);
+        entry.lastError = "";
+        console.log(`[warm] session ${slot}: page ready (${entry.idle.length} ready, ${entry.total}/${warmTarget()} open)`);
+      } catch (error) {
+        entry.lastError = String(error && error.message ? error.message : error)
+          .replace(/\s+/g, " ")
+          .slice(0, 200);
+        console.log(`[warm] session ${slot}: could not open a page (${entry.lastError}). Will try again later.`);
+        break;
+      }
+
+      if (WARM_OPEN_STAGGER_MS > 0) {
+        await sleep(WARM_OPEN_STAGGER_MS);
+      }
+    }
+  } finally {
+    entry.replenishing = false;
+  }
+}
+
+// A job takes a ready page. Returns { entry, page, warm }.
+async function acquireWarmPage(slot, sessionFile, signal) {
+  const entry = await getWarmEntry(slot, sessionFile);
+  const waitUntil = Date.now() + WARM_RESET_WAIT_MS;
+
+  while (true) {
+    throwIfAborted(signal);
+
+    while (entry.idle.length > 0) {
+      const page = entry.idle.pop();
+
+      if (!page.isClosed()) {
+        warmStats.hits += 1;
+        return { entry, page, warm: true };
+      }
+
+      entry.total = Math.max(0, entry.total - 1);
+    }
+
+    // A page is being refreshed or opened right now: it is ready in a few
+    // seconds, which is faster than opening one more from scratch.
+    if ((entry.resetting > 0 || entry.replenishing) && Date.now() < waitUntil) {
+      await sleep(300);
+      continue;
+    }
+
+    break;
+  }
+
+  // Nothing ready: open an extra page in the same logged-in context.
+  warmStats.misses += 1;
+  const page = await openWarmPage(entry);
+
+  return { entry, page, warm: false };
+}
+
+function discardWarmPage(entry, page) {
+  entry.total = Math.max(0, entry.total - 1);
+  page.close().catch(() => {});
+
+  if (!entry.dead) {
+    replenishWarmPool(entry.slot).catch(() => {});
+  }
+}
+
+// Back to a fresh "new chat" page, in the background.
+async function resetWarmPage(entry, page) {
+  entry.resetting += 1;
+
+  try {
+    await page.goto(GEMINI_APP_URL, {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
+
+    await page.locator(GEMINI_PROMPT_BOX).waitFor({
+      state: "visible",
+      timeout: 45000,
+    });
+
+    if (entry.dead || page.isClosed()) {
+      entry.total = Math.max(0, entry.total - 1);
+      return;
+    }
+
+    entry.idle.push(page);
+  } catch {
+    discardWarmPage(entry, page);
+  } finally {
+    entry.resetting -= 1;
+  }
+}
+
+// Called when a job is finished. A page that worked is refreshed and reused;
+// a page that failed or was cancelled is closed and replaced by a new one.
+function releaseWarmPage(lease, ok) {
+  const { entry, page } = lease;
+
+  if (entry.dead) {
+    page.close().catch(() => {});
+    return;
+  }
+
+  if (!ok) {
+    warmStats.replaced += 1;
+  }
+
+  if (!ok || page.isClosed() || entry.total > warmTarget()) {
+    discardWarmPage(entry, page);
+    return;
+  }
+
+  resetWarmPage(entry, page).catch(() => {});
+}
+
+function warmStatus() {
+  return {
+    enabled: PREWARM,
+    startupDone: warmStartupDone,
+    startedAt: warmStartedAt ? new Date(warmStartedAt).toISOString() : null,
+    pagesPerSession: warmTarget(),
+    hits: warmStats.hits,
+    misses: warmStats.misses,
+    replaced: warmStats.replaced,
+    sessions: Object.fromEntries(
+      Object.values(warmPool).map((e) => [
+        e.slot,
+        {
+          ready: e.idle.length,
+          open: e.total,
+          refreshing: e.resetting,
+          lastError: e.lastError,
+        },
+      ]),
+    ),
+  };
+}
+
+async function maintainWarmPool() {
+  for (const session of listSessions()) {
+    const entry = warmPool[session.slot];
+
+    if (entry) {
+      const before = entry.idle.length;
+      entry.idle = entry.idle.filter((p) => !p.isClosed());
+      entry.total = Math.max(0, entry.total - (before - entry.idle.length));
+    }
+
+    await replenishWarmPool(session.slot).catch((error) => {
+      console.log(`[warm] session ${session.slot}: maintenance error: ${error && error.message}`);
+    });
+  }
+}
+
+// Start of the run: open every session's pages one after the other.
+async function startWarmPool() {
+  warmStartedAt = Date.now();
+
+  console.log(
+    `[warm] opening ${warmTarget()} Gemini page(s) for each of ${listSessions().length} session(s), one after another...`,
+  );
+
+  for (const session of listSessions()) {
+    await replenishWarmPool(session.slot).catch((error) => {
+      console.log(`[warm] session ${session.slot}: start error: ${error && error.message}`);
+    });
+  }
+
+  warmStartupDone = true;
+
+  const ready = Object.values(warmPool).reduce((n, e) => n + e.idle.length, 0);
+  console.log(
+    `[warm] startup finished in ${Math.round((Date.now() - warmStartedAt) / 1000)}s: ${ready} page(s) ready.`,
+  );
+
+  setInterval(() => {
+    maintainWarmPool().catch(() => {});
+  }, WARM_MAINTAIN_INTERVAL_MS).unref();
 }
 
 // --------------------------------------------------
@@ -1300,46 +1634,76 @@ async function runGeminiWithSession({
   let context = null;
   let page = null;
   let onAbort = null;
+  let lease = null; // the warm page this job uses (PREWARM=1 only)
+  let jobOk = false;
 
   try {
-    const browser = await getGenerationBrowser();
+    if (PREWARM) {
+      // Take a ready, already logged-in Gemini page from the pool.
+      lease = await acquireWarmPage(slot, sessionFile, signal);
+      page = lease.page;
 
-    context = await browser.newContext({
-      storageState: sessionFile,
-      viewport: {
-        width: 1440,
-        height: 900,
-      },
-      acceptDownloads: true,
-    });
+      // If the job is cancelled, closing the page makes every pending
+      // Playwright call below fail right away (the page is replaced later).
+      if (signal) {
+        const activePage = page;
 
-    jobsOnCurrentBrowser += 1;
+        onAbort = () => {
+          activePage.close().catch(() => {});
+        };
 
-    // If the job is cancelled, closing the context makes every pending
-    // Playwright call below fail right away.
-    if (signal) {
-      const activeContext = context;
-
-      onAbort = () => {
-        activeContext.close().catch(() => {});
-      };
-
-      if (signal.aborted) {
-        onAbort();
-      } else {
-        signal.addEventListener("abort", onAbort, { once: true });
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener("abort", onAbort, { once: true });
+        }
       }
+
+      step(
+        lease.warm
+          ? "ready Gemini page taken from the pool"
+          : "no ready page was free, opened an extra Gemini page",
+      );
+    } else {
+      const browser = await getGenerationBrowser();
+
+      context = await browser.newContext({
+        storageState: sessionFile,
+        viewport: {
+          width: 1440,
+          height: 900,
+        },
+        acceptDownloads: true,
+      });
+
+      jobsOnCurrentBrowser += 1;
+
+      // If the job is cancelled, closing the context makes every pending
+      // Playwright call below fail right away.
+      if (signal) {
+        const activeContext = context;
+
+        onAbort = () => {
+          activeContext.close().catch(() => {});
+        };
+
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          signal.addEventListener("abort", onAbort, { once: true });
+        }
+      }
+
+      page = await context.newPage();
+
+      // 1. Open Gemini
+      await page.goto("https://gemini.google.com/app", {
+        waitUntil: "domcontentloaded",
+        timeout: 60000,
+      });
+
+      step("Gemini page opened");
     }
-
-    page = await context.newPage();
-
-    // 1. Open Gemini
-    await page.goto("https://gemini.google.com/app", {
-      waitUntil: "domcontentloaded",
-      timeout: 60000,
-    });
-
-    step("Gemini page opened");
 
     // 2. Type the prompt
     const promptWrapper = page.locator('[data-test-id="textarea-wrapper"]');
@@ -1528,6 +1892,8 @@ async function runGeminiWithSession({
       throw new Error("Gemini returned an empty image.");
     }
 
+    jobOk = true;
+
     return {
       buffer,
       mimeType: getMimeType(extension),
@@ -1581,6 +1947,11 @@ async function runGeminiWithSession({
   } finally {
     if (signal && onAbort) {
       signal.removeEventListener("abort", onAbort);
+    }
+
+    if (lease) {
+      // Warm page: refresh and reuse it (or replace it if the job failed).
+      releaseWarmPage(lease, jobOk);
     }
 
     if (context) {
@@ -2073,6 +2444,7 @@ function healthPayload() {
       maxQueue: MAX_QUEUE_LENGTH,
     },
     perSessionConcurrency: perSessionLimit(),
+    warmPool: warmStatus(),
     maxJobRetries: MAX_JOB_RETRIES,
     stats,
     imagesPerSession: Object.fromEntries(
@@ -2560,6 +2932,16 @@ const server = app.listen(PORT, "127.0.0.1", async () => {
   setInterval(() => {
     sweepStaleTempDirs().catch(() => {});
   }, TEMP_SWEEP_INTERVAL_MS).unref();
+
+  if (PREWARM) {
+    // Runs in the background: the server already answers /health and jobs
+    // that arrive during start-up simply open their own page.
+    startWarmPool().catch((error) => {
+      console.error("[warm] start-up failed:", error);
+    });
+  } else {
+    console.log("Warm page pool is off (set PREWARM=1 to turn it on).");
+  }
 
   if (process.env.SKIP_DESKTOP !== "1") {
     try {

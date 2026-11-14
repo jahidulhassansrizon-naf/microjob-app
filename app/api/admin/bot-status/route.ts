@@ -57,6 +57,42 @@ async function loadRuns(): Promise<Run[] | null> {
 
 type Problem = { level: "error" | "warn" | "info"; title: string; cause?: string; advice?: string };
 
+// Ready (pre-opened) Gemini pages, as the bot reports them.
+type Warm = {
+  enabled: boolean;
+  startupDone: boolean;
+  startedAt: string;
+  pagesPerSession: number;
+  hits: number;
+  misses: number;
+  replaced: number;
+  sessions: Array<{ slot: number; ready: number; open: number; refreshing: number; lastError: string }>;
+};
+
+function cleanWarm(value: any): Warm | null {
+  if (!value || typeof value !== "object") return null;
+  const sessions = value.sessions && typeof value.sessions === "object" ? value.sessions : {};
+  return {
+    enabled: value.enabled === true,
+    startupDone: value.startupDone === true,
+    startedAt: text(value.startedAt, 40),
+    pagesPerSession: num(value.pagesPerSession),
+    hits: num(value.hits),
+    misses: num(value.misses),
+    replaced: num(value.replaced),
+    sessions: Object.entries(sessions)
+      .slice(0, 30)
+      .map(([slot, v]: [string, any]) => ({
+        slot: num(slot),
+        ready: num(v?.ready),
+        open: num(v?.open),
+        refreshing: num(v?.refreshing),
+        lastError: text(v?.lastError, 200),
+      }))
+      .sort((a, b) => a.slot - b.slot),
+  };
+}
+
 // The bot writes "slot=N" / "_N": put the real session number in.
 function withSlot(value: string, slot: number): string {
   return slot > 0 ? value.replace(/slot=N/g, `slot=${slot}`).replace(/JSON_N/g, `JSON_${slot}`) : value;
@@ -69,7 +105,7 @@ function dhakaTime(iso: string): string {
 }
 
 // Turns the raw numbers into a short list: what is wrong, why, and what to do.
-function buildProblems(report: any, runs: Run[] | null, detailed: boolean): Problem[] {
+function buildProblems(report: any, runs: Run[] | null, detailed: boolean, warm: Warm | null): Problem[] {
   const out: Problem[] = [];
 
   for (const s of report.sessions as any[]) {
@@ -106,6 +142,22 @@ function buildProblems(report: any, runs: Run[] | null, detailed: boolean): Prob
       cause: "Every Google session is stopped or resting.",
       advice: "See the session problems below. Fix at least one session.",
     });
+  }
+
+  // Ready pages: only a problem once the start-up round is over and a working session has none.
+  if (warm && warm.enabled && warm.startupDone) {
+    for (const s of report.sessions as any[]) {
+      if (!(s.usable && s.healthy)) continue;
+      const w = warm.sessions.find((x) => x.slot === s.slot);
+      if (!w || w.open === 0) {
+        out.push({
+          level: "warn",
+          title: `Session ${s.slot}: no ready Gemini page`,
+          cause: w?.lastError || "The bot could not open a Gemini page for this session at start-up.",
+          advice: "Images still work (the bot opens a page when needed) but they are slower. The bot tries again every minute.",
+        });
+      }
+    }
   }
 
   const st = report.stats;
@@ -258,6 +310,7 @@ export async function GET(request: Request) {
   };
 
   const runs = await runsPromise;
+  const warm = cleanWarm(data.warmPool);
 
   return NextResponse.json(
     {
@@ -276,6 +329,7 @@ export async function GET(request: Request) {
       },
       perSessionConcurrency: num(data.perSessionConcurrency),
       maxJobRetries: num(data.maxJobRetries),
+      warm,
       ...report,
       recentErrors: (Array.isArray(data.recentErrors) ? data.recentErrors : []).slice(-8).map((e: any) => ({
         at: text(e?.at, 40),
@@ -307,7 +361,7 @@ export async function GET(request: Request) {
         text: text(l?.text, 300),
       })),
       runs,
-      problems: buildProblems(report, runs, detailed),
+      problems: buildProblems(report, runs, detailed, warm),
     },
     { headers: NO_STORE },
   );

@@ -18,6 +18,11 @@ type BotStatus = {
   generation?: { active: number; waiting: number; maxConcurrent: number; currentCapacity: number; maxQueue: number };
   perSessionConcurrency?: number;
   maxJobRetries?: number;
+  warm?: {
+    enabled: boolean; startupDone: boolean; startedAt: string; pagesPerSession: number;
+    hits: number; misses: number; replaced: number;
+    sessions: Array<{ slot: number; ready: number; open: number; refreshing: number; lastError: string }>;
+  } | null;
   stats?: {
     jobs: number; jobsOk: number; jobsFailed: number; retries: number; attemptsRefused: number;
     attemptsTimedOut: number; limitHits: number; loggedOutSessions: number; otherErrors: number;
@@ -195,6 +200,14 @@ export default function BotStatusPanel() {
   const handoff = Number.isNaN(startedMs) ? "" : new Date(startedMs + RUN_MINUTES * 60_000).toISOString();
   const runPct = Math.min(100, Math.max(2, ((data?.uptimeSeconds ?? 0) / (RUN_MINUTES * 60)) * 100));
 
+  const warm = data?.warm ?? null;
+  const warmOn = !!warm && warm.enabled;
+  const warmReady = warm ? warm.sessions.reduce((n, x) => n + x.ready, 0) : 0;
+  const warmWanted = warm ? sessions.filter((x) => x.usable && x.healthy).length * warm.pagesPerSession : 0;
+  const warmJobs = warm ? warm.hits + warm.misses : 0;
+  const warmHitPct = warmJobs > 0 && warm ? Math.round((warm.hits / warmJobs) * 100) : 0;
+  const warmTone: Tone = !warm || !warmOn ? "warn" : !warm.startupDone ? "warn" : warmWanted > 0 && warmReady < warmWanted ? "warn" : "ok";
+
   const offline = !!data && !data.online;
   const allDown = sessions.length > 0 && upSessions === 0;
   let tone: Tone = "ok";
@@ -319,6 +332,41 @@ export default function BotStatusPanel() {
             </div>
           </section>
 
+          {/* Ready pages */}
+          {warm && (
+            <section className={`${PANEL} p-5 sm:p-7`}>
+              <SectionTitle
+                title="আগে থেকে খোলা Gemini পেজ"
+                hint={
+                  !warmOn
+                    ? "এই সুবিধা এখন বন্ধ আছে, প্রতি ছবির জন্য নতুন পেজ খোলা হচ্ছে।"
+                    : "রান শুরুতে সব সেশনের পেজ খুলে রাখা হয়। ছবি এলে সরাসরি ওই পেজেই কাজ শুরু হয়।"
+                }
+              />
+              {warmOn ? (
+                <>
+                  <p className={`mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${TONE[warmTone].soft}`}>
+                    {!warm.startupDone
+                      ? "শুরুর পেজগুলো এখনো খোলা হচ্ছে (এক সেশনের পর আরেক সেশন)। এর মধ্যে ছবি এলে বট নিজে পেজ খুলে নেয়।"
+                      : warmWanted > 0 && warmReady < warmWanted
+                        ? `${warmReady}/${warmWanted}টা পেজ এখন রেডি। বাকিগুলো ব্যবহার হচ্ছে, নতুন করে সাজানো হচ্ছে বা খোলা যায়নি।`
+                        : `সব পেজ রেডি (${warmReady}/${warmWanted})। ছবি এলেই কাজ শুরু হবে।`}
+                  </p>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Fact label="এখন রেডি পেজ" value={warmReady} hint={warmWanted > 0 ? `মোট ${warmWanted}টা থাকার কথা (প্রতি সেশনে ${warm.pagesPerSession}টা)` : undefined} tone={warm.startupDone && warmWanted > 0 && warmReady < warmWanted ? "warn" : undefined} />
+                    <Fact label="রেডি পেজ থেকে শুরু" value={warm.hits} hint={warmJobs > 0 ? `${warmHitPct}% ছবি সঙ্গে সঙ্গে শুরু হয়েছে` : "এখনো কোনো ছবি আসেনি"} />
+                    <Fact label="নিজে পেজ খুলতে হয়েছে" value={warm.misses} hint="সব পেজ ব্যস্ত ছিল, তাই ধীর" tone={warm.misses > 0 ? "warn" : undefined} />
+                    <Fact label="নষ্ট পেজ বদলানো" value={warm.replaced} hint="ফেল হওয়া পেজ বন্ধ করে নতুন খোলা হয়েছে" />
+                  </div>
+                </>
+              ) : (
+                <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                  চালু করতে GitHub workflow-তে PREWARM: &quot;1&quot; দিন, তারপর বট নতুন করে চালু করুন।
+                </p>
+              )}
+            </section>
+          )}
+
           {/* Sessions */}
           <section className={`${PANEL} p-5 sm:p-7`}>
             <SectionTitle title="Google সেশন" hint={`${upSessions}/${sessions.length} ঠিক আছে`} />
@@ -342,6 +390,16 @@ export default function BotStatusPanel() {
                       <div className="h-full rounded-full bg-[#C98A1B]" style={{ width: `${pct}%` }} />
                     </div>
                     <p className="mt-1 text-xs text-[#7A6A50]">এখন কাজ করছে {x.active}/{cap}</p>
+                    {warmOn && warm && (() => {
+                      const w = warm.sessions.find((y) => y.slot === x.slot);
+                      const want = warm.pagesPerSession;
+                      return (
+                        <p className="mt-0.5 text-xs text-[#7A6A50]" title={w?.lastError || undefined}>
+                          রেডি পেজ <span className={`font-bold ${w && w.ready >= want ? "text-emerald-700" : "text-amber-700"}`}>{w?.ready ?? 0}/{want}</span>
+                          {w && w.refreshing > 0 ? ` · ${w.refreshing}টা সাজানো হচ্ছে` : ""}
+                        </p>
+                      );
+                    })()}
                   </li>
                 );
               })}
