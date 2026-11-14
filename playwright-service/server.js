@@ -20,6 +20,13 @@
 const http = require("http");
 const crypto = require("crypto");
 
+let aiModeGenerate = null;
+try {
+  ({ aiModeGenerate } = require("./aimode"));
+} catch (e) {
+  console.log("AI Mode provider not loaded:", e.message);
+}
+
 let sharp = null;
 try {
   sharp = require("sharp");
@@ -259,7 +266,7 @@ async function geminiGenerate(cred, job) {
 // Provider table. Each credential is one "slot" in the admin panel.
 const PROVIDERS = [];
 function buildProviders() {
-  const order = (process.env.IMAGE_PROVIDERS || "cloudflare,gemini")
+  const order = (process.env.IMAGE_PROVIDERS || "aimode,cloudflare,gemini")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
@@ -269,7 +276,25 @@ function buildProviders() {
   const cfCreds = cfIds.map((id, i) => (cfTokens[i] ? `${id}|${cfTokens[i]}` : null)).filter(Boolean);
   const gmCreds = readNumbered("GEMINI_API_KEY");
 
+  // Google AI Mode: one "slot" per saved Google login file (gemini-session-N.json)
+  const fs = require("fs");
+  const path = require("path");
+  const sessionFiles = [];
+  for (let n = 1; n <= 10; n++) {
+    for (const f of [`/etc/secrets/gemini-session-${n}.json`, path.join(__dirname, `gemini-session-${n}.json`)]) {
+      if (fs.existsSync(f)) {
+        sessionFiles.push(f);
+        break;
+      }
+    }
+  }
+
   const defs = {
+    aimode: {
+      label: "Google AI Mode",
+      creds: aiModeGenerate ? sessionFiles : [],
+      run: (cred, job) => aiModeGenerate(cred.secret, job),
+    },
     cloudflare: { label: "Cloudflare FLUX.2", creds: cfCreds, run: cloudflareGenerate },
     gemini: { label: "Gemini API", creds: gmCreds, run: geminiGenerate },
   };

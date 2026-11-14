@@ -1,35 +1,19 @@
-# EI neo bot v2 — Google লগইন ছাড়া
+# EI neo v3 — Google AI Mode + Cloudflare ব্যাকআপ
 
-আগের বট Gemini ওয়েবসাইটে Google কুকি দিয়ে ঢুকত, তাই বারবার লগআউট হত।
-এই ভার্সন কোনো লগইন/কুকি/Playwright ছাড়াই সরাসরি ইমেজ API ডাকে।
-রুট আগের মতোই (/edit-image, /template-edit, /edit-image-dual, /health ...), তাই ওয়েবসাইট বদলাতে হবে না।
+বট এখন প্রথমে google.com এর AI Mode (udm=50) দিয়ে ছবি বানাতে চেষ্টা করে (সেভ করা Google সেশন দিয়ে),
+ব্যর্থ হলে বা সেশন না থাকলে নিজে Cloudflare FLUX.2 তে চলে যায়। তাই সাইট কখনো পুরো বন্ধ হবে না।
 
-## ১) ফ্রি Cloudflare কী বানান (৫ মিনিট)
-1. https://dash.cloudflare.com এ ফ্রি অ্যাকাউন্ট খুলুন।
-2. ডানদিকে/Overview পেজে **Account ID** কপি করুন।
-3. My Profile → API Tokens → Create Token → "Workers AI" টেমপ্লেট (বা Workers AI: Read+Edit পারমিশন) → টোকেন কপি করুন।
+## বসানো
+1. repo-র playwright-service/ তে এই ফোল্ডারের সব ফাইল বদলান (server.js, aimode.js, package.json), আর workflow ফাইলটাও।
+2. Secrets: আগের CF_ACCOUNT_ID, CF_API_TOKEN থাকবে। নতুন করে সেভ করা Google সেশন GEMINI_SESSION_JSON_1..N নামে বসান
+   (নামটা আগের মতোই, ভিতরের কাজ এখন AI Mode)।
+3. বট চালান। লগে দেখুন: "Provider slot 1: Google AI Mode #1".
 
-## ২) GitHub Secrets (Settings → Secrets and variables → Actions)
-| Secret | মান |
-|---|---|
-| CF_ACCOUNT_ID | Cloudflare Account ID |
-| CF_API_TOKEN | উপরের টোকেন |
-| GEMINI_API_KEY | (ঐচ্ছিক) AI Studio key — ফ্রি টিয়ারে ইমেজ নাও চলতে পারে |
+## ফেল করলে
+লগে "[aimode] debug(...)" লাইন আসবে (পেজের বাটন/ইনপুটের তালিকা)। আর Actions রানের নিচে Artifacts এ
+"aimode-debug" নামে স্ক্রিনশট থাকবে। সেটা আর লগের লাইনগুলো পাঠালে selector ঠিক করা যাবে।
 
-আগের ASK_KEY, BOT_ALERT_KEY, VERCEL_API_TOKEN, EDGE_CONFIG_ID ঠিক যেমন ছিল তেমনই থাকবে।
-GEMINI_SESSION_JSON_* আর লাগবে না — মুছে ফেলতে পারেন।
-
-## ৩) ফাইল বদলান
-আপনার repo-র `playwright-service/` ফোল্ডারে `server.js` আর `package.json` বদলে দিন,
-আর `.github/workflows/gemini-playwright-bot.yml` বদলে দিন। (record.js আর লাগবে না।)
-তারপর Actions থেকে "Gemini Playwright Bot" রান করুন।
-
-## টেস্ট (ইন্টারনেট ছাড়াই)
-    npm install && npm run selftest
-
-## জেনে রাখুন
-- Cloudflare ফ্রি: দিনে ১০,০০০ neurons। এই কোডের হিসাবে ছবি প্রতি আনুমানিক ১২০–১৬০ neurons, মানে দিনে প্রায় ৬০–৮০টি ছবি।
-  লিমিট শেষ হলে (UTC ০০:০০ তে রিসেট) বট নিজে Gemini key (থাকলে) চেষ্টা করে, না থাকলে ইউজারকে "busy" দেখায়।
-- CF_ACCOUNT_ID_2 + CF_API_TOKEN_2 ... (_10 পর্যন্ত) দিলে বট সবগুলো ঘুরিয়ে ব্যবহার করে।
-- Cloudflare মডেল ইনপুট ছবি 512px-এর নিচে নেয়, তাই চেহারা Gemini-র মতো নিখুঁত মিলবে না — আগে কয়েকটা ছবি দিয়ে দেখে নিন।
-- মডেল বদলাতে: CF_IMAGE_MODEL / GEMINI_IMAGE_MODEL এনভায়রনমেন্ট ভ্যারিয়েবল।
+## টেস্ট
+    npm install
+    npm run selftest            # সার্ভার + Cloudflare/Gemini (নকল সার্ভার)
+    node selftest-aimode.js     # AI Mode এর ক্লিকের যুক্তি (নকল পেজে, আসল Google না)

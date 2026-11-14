@@ -64,7 +64,22 @@ jobs:
       # Optional: Gemini API key (only works for images if your Google project allows it).
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       GEMINI_API_KEY_2: ${{ secrets.GEMINI_API_KEY_2 }}
-      IMAGE_PROVIDERS: "cloudflare,gemini"
+      IMAGE_PROVIDERS: "aimode,cloudflare,gemini"
+      # Google AI Mode uses the saved Google logins (same secrets as before). Optional: if none
+      # exist, the bot just uses Cloudflare.
+      FRESH_SESSION_DIR: "fresh-sessions"
+      BROWSER_LOCALE: "en-US"
+      BROWSER_TIMEZONE: "Asia/Dhaka"
+      GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
+      GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
+      GEMINI_SESSION_JSON_3: ${{ secrets.GEMINI_SESSION_JSON_3 }}
+      GEMINI_SESSION_JSON_4: ${{ secrets.GEMINI_SESSION_JSON_4 }}
+      GEMINI_SESSION_JSON_5: ${{ secrets.GEMINI_SESSION_JSON_5 }}
+      GEMINI_SESSION_JSON_6: ${{ secrets.GEMINI_SESSION_JSON_6 }}
+      GEMINI_SESSION_JSON_7: ${{ secrets.GEMINI_SESSION_JSON_7 }}
+      GEMINI_SESSION_JSON_8: ${{ secrets.GEMINI_SESSION_JSON_8 }}
+      GEMINI_SESSION_JSON_9: ${{ secrets.GEMINI_SESSION_JSON_9 }}
+      GEMINI_SESSION_JSON_10: ${{ secrets.GEMINI_SESSION_JSON_10 }}
       VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
       EDGE_CONFIG_ID: ${{ secrets.EDGE_CONFIG_ID }}
       # Email alerts are OFF (ALERT_WEBHOOK_URL is not set on purpose). The admin panel (Bot Status)
@@ -105,6 +120,32 @@ jobs:
           exit 1
 
 
+
+      - name: Install Chromium for Playwright
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4; do
+            if node ./node_modules/playwright/cli.js install --with-deps chromium; then
+              exit 0
+            fi
+            echo "Chromium install failed (attempt $attempt/4), trying again in 20 seconds..."
+            sleep 20
+          done
+          echo "::error::Chromium install failed 4 times."
+          exit 1
+
+      - name: Restore Google sessions (optional)
+        shell: bash
+        run: |
+          for N in 1 2 3 4 5 6 7 8 9 10; do
+            VAR="GEMINI_SESSION_JSON_${N}"
+            VALUE="${!VAR}"
+            if [ -n "$VALUE" ]; then
+              printf '%s' "$VALUE" > "gemini-session-${N}.json"
+              chmod 600 "gemini-session-${N}.json"
+            fi
+          done
+          ls gemini-session-*.json 2>/dev/null || echo "No Google sessions: only Cloudflare will be used."
 
       - name: Create notify token
         shell: bash
@@ -490,6 +531,15 @@ jobs:
           cat bot.log || true
           echo "----- cloudflared.log (URL hidden) -----"
           sed -E 's#https://[-a-z0-9]+\.trycloudflare\.com#https://[hidden].trycloudflare.com#g' cloudflared.log || true
+
+      - name: Save debug screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aimode-debug
+          path: playwright-service/debug/
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Cleanup
         if: always()
