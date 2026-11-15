@@ -3,28 +3,20 @@ import { T as BaseT, useSebaLagbeToolsI18n, L as baseL } from "@/app/sohoj-tools
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Download, FileVideo, Film, Loader2, RotateCcw, Share, Star, Upload, Video, X, Zap, } from "lucide-react";
+import type { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile } from "@ffmpeg/util";
+import { getFFmpeg, terminateFFmpeg } from "./ffmpeg-singleton";
+import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Download, FileVideo, Loader2, RotateCcw, Share, Star, Upload, Video, X, Zap, } from "lucide-react";
 /* -------------------------------------------------------------------------- */
 /*                                  Constants                                 */
 /* -------------------------------------------------------------------------- */
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
-// Single-threaded core: works without SharedArrayBuffer / COOP+COEP headers.
-// Keep this version in sync with the major/minor of your installed @ffmpeg/ffmpeg (0.12.x).
-const FFMPEG_CORE_BASE = "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd";
 // Related tools in Video category
 const relatedTools = [
     {
-        title: "Video Converter",
-        description: "Convert video formats easily between MP4, WebM, AVI, and MKV.",
-        href: "/sohoj-tools/video-converter",
-        icon: Film,
-    },
-    {
-        title: "Trim Video",
-        description: "Cut and trim unwanted parts of your video quickly in browser.",
-        href: "/sohoj-tools/trim-video",
+        title: "Change Speed",
+        description: "Speed up or slow down a video right in your browser.",
+        href: "/sohoj-tools/change-speed",
         icon: Zap,
     },
 ];
@@ -72,36 +64,6 @@ const RESOLUTION_OPTIONS: {
     { key: "480", label: "480p", height: 480 },
 ];
 /* -------------------------------------------------------------------------- */
-/*                         FFmpeg singleton (module scope)                    */
-/* -------------------------------------------------------------------------- */
-let ffmpegSingleton: FFmpeg | null = null;
-let ffmpegLoadPromise: Promise<FFmpeg> | null = null;
-async function getFFmpeg(): Promise<FFmpeg> {
-    if (ffmpegSingleton?.loaded)
-        return ffmpegSingleton;
-    if (!ffmpegLoadPromise) {
-        ffmpegLoadPromise = (async () => {
-            const ffmpeg = new FFmpeg();
-            const [coreURL, wasmURL] = await Promise.all([
-                toBlobURL(`${FFMPEG_CORE_BASE}/ffmpeg-core.js`, "text/javascript"),
-                toBlobURL(`${FFMPEG_CORE_BASE}/ffmpeg-core.wasm`, "application/wasm"),
-            ]);
-            await ffmpeg.load({ coreURL, wasmURL });
-            ffmpegSingleton = ffmpeg;
-            return ffmpeg;
-        })().catch((err) => {
-            ffmpegLoadPromise = null;
-            ffmpegSingleton = null;
-            throw err;
-        });
-    }
-    return ffmpegLoadPromise;
-}
-function resetFFmpegSingleton() {
-    ffmpegSingleton = null;
-    ffmpegLoadPromise = null;
-}
-/* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
 /* -------------------------------------------------------------------------- */
 function formatBytes(bytes: number, locale: string = "en"): string {
@@ -126,6 +88,7 @@ function getBaseName(name: string): string {
     return name.replace(/\.[^/.]+$/, "") || "video";
 }
 type EngineState = "loading" | "ready" | "error";
+const EMPTY_OUTPUT = "EMPTY_OUTPUT";
 interface CompressionResult {
     url: string;
     size: number;
@@ -135,10 +98,12 @@ interface CompressionResult {
 /*                     English / Bangla UI translations                       */
 /* -------------------------------------------------------------------------- */
 const REDUCE_VIDEO_BN: Record<string, string> = {
-    "Video Converter": "ভিডিও কনভার্টার",
-    "Convert video formats easily between MP4, WebM, AVI, and MKV.": "সহজেই MP4, WebM, AVI ও MKV ফরম্যাটের মধ্যে ভিডিও রূপান্তর করুন।",
-    "Trim Video": "ভিডিও ট্রিম করুন",
-    "Cut and trim unwanted parts of your video quickly in browser.": "ব্রাউজারেই দ্রুত ভিডিওর অপ্রয়োজনীয় অংশ কেটে বাদ দিন।",
+    "Change Speed": "ভিডিওর গতি পরিবর্তন",
+    "Speed up or slow down a video right in your browser.": "আপনার ব্রাউজারেই ভিডিওর গতি বাড়ান বা কমান।",
+    "Tool link copied to clipboard.": "টুলটির লিংক ক্লিপবোর্ডে কপি হয়েছে।",
+    "Copy the page link from your browser to share this tool.": "টুলটি শেয়ার করতে ব্রাউজার থেকে পেজের লিংক কপি করুন।",
+    "This video couldn't be converted. It may be corrupted or use an unsupported codec.": "ভিডিওটি রূপান্তর করা যায়নি। ফাইলটি নষ্ট হতে পারে অথবা এর কোডেক সমর্থিত নয়।",
+    "The compressed file came back empty. Please try another video.": "সংকুচিত ফাইলটি খালি এসেছে। অন্য একটি ভিডিও দিয়ে চেষ্টা করুন।",
     "High quality": "উচ্চ মান",
     "Larger file": "ফাইলের আকার বেশি হবে",
     "Balanced": "ভারসাম্যপূর্ণ",
@@ -266,25 +231,43 @@ export default function ReduceVideoFileSize() {
     const [isCompressing, setIsCompressing] = useState(false);
     const [progress, setProgress] = useState(0); // 0 - 100
     const [error, setError] = useState<string | null>(null);
-    const cancelledRef = useRef(false);
+    const jobRef = useRef(0); // bumps on every start / cancel / unmount so stale async work never touches the UI
+    const engineLoadRef = useRef(0);
+    const [notice, setNotice] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
     const inputUrlRef = useRef<string | null>(null);
     const resultUrlRef = useRef<string | null>(null);
     /* ------------------------------ Engine loading ----------------------------- */
     const loadEngine = useCallback(async () => {
+        const id = ++engineLoadRef.current;
         setEngineState("loading");
         try {
             await getFFmpeg();
-            setEngineState("ready");
+            if (id === engineLoadRef.current)
+                setEngineState("ready");
         }
         catch (err) {
+            if (id !== engineLoadRef.current)
+                return; // superseded (cancel / unmount / React strict-mode remount)
             console.error("FFmpeg failed to load:", err);
             setEngineState("error");
         }
     }, []);
     useEffect(() => {
         void loadEngine();
+        return () => {
+            // Leaving the page: stop any job and free the WASM worker + cached core.
+            engineLoadRef.current++;
+            jobRef.current++;
+            terminateFFmpeg({ releaseAssets: true });
+        };
     }, [loadEngine]);
+    useEffect(() => {
+        if (!notice)
+            return;
+        const timer = setTimeout(() => setNotice(""), 3500);
+        return () => clearTimeout(timer);
+    }, [notice]);
     useEffect(() => {
         return () => {
             if (inputUrlRef.current)
@@ -353,44 +336,68 @@ export default function ReduceVideoFileSize() {
     const handleCompress = async () => {
         if (!file || isCompressing)
             return;
+        const jobId = ++jobRef.current;
+        const isStale = () => jobId !== jobRef.current;
         setError(null);
         clearResult();
         setProgress(0);
         setIsCompressing(true);
-        cancelledRef.current = false;
         const inputName = `input.${getExtension(file.name)}`;
         const outputName = "output.mp4";
-        const logTail: string[] = [];
         let ffmpeg: FFmpeg | null = null;
+        let detachListeners: () => void = () => undefined;
         const onProgress = ({ progress: p }: {
             progress: number;
         }) => {
-            if (Number.isFinite(p)) {
-                setProgress(Math.min(99, Math.max(0, Math.round(p * 100))));
-            }
-        };
-        const onLog = ({ message }: {
-            message: string;
-        }) => {
-            logTail.push(message);
-            if (logTail.length > 8)
-                logTail.shift();
+            if (isStale() || !Number.isFinite(p))
+                return;
+            const next = Math.min(99, Math.max(0, Math.round(p * 100)));
+            setProgress((previous) => Math.max(previous, next)); // never move backwards
         };
         try {
-            ffmpeg = await getFFmpeg();
+            try {
+                ffmpeg = await getFFmpeg();
+            }
+            catch (loadError) {
+                if (isStale())
+                    return;
+                console.error("FFmpeg failed to load:", loadError);
+                setEngineState("error");
+                setProgress(0);
+                return;
+            }
+            if (!ffmpeg || isStale())
+                return;
             setEngineState("ready");
             ffmpeg.on("progress", onProgress);
-            ffmpeg.on("log", onLog);
+            const attached = ffmpeg;
+            detachListeners = () => {
+                try {
+                    attached.off("progress", onProgress);
+                }
+                catch {
+                    // Worker already terminated.
+                }
+            };
             await ffmpeg.writeFile(inputName, await fetchFile(file));
+            if (isStale())
+                return;
             const q = QUALITY_PRESETS[quality];
             const targetHeight = RESOLUTION_OPTIONS.find((r) => r.key === resolution)?.height;
-            const videoFilter = targetHeight
-                ? ["-vf", `scale=-2:'min(${targetHeight},ih)'`]
-                : [];
+            // libx264 + yuv420p needs even dimensions, so even "Original" must go through a scale step.
+            // Height is rounded down to even before min() so a 1079px-tall source can't produce an odd size.
+            const scaleFilter = targetHeight
+                ? `scale=-2:'min(${targetHeight},trunc(ih/2)*2)'`
+                : "scale=trunc(iw/2)*2:trunc(ih/2)*2";
             const args = [
                 "-i",
                 inputName,
-                ...videoFilter,
+                "-map",
+                "0:v:0",
+                "-map",
+                "0:a:0?", // optional: videos without audio still work
+                "-vf",
+                scaleFilter,
                 "-c:v",
                 "libx264",
                 "-crf",
@@ -403,17 +410,24 @@ export default function ReduceVideoFileSize() {
                 "aac",
                 "-b:a",
                 q.audioBitrate,
+                "-sn",
+                "-dn", // subtitle / data streams (common in MKV and phone MOV files) can break MP4 output
                 "-movflags",
                 "+faststart",
+                "-y",
                 outputName,
             ];
             const exitCode = await ffmpeg.exec(args);
+            if (isStale())
+                return;
             if (exitCode !== 0) {
-                throw new Error(`FFmpeg exited with code ${exitCode}. ${logTail.slice(-2).join(" ")}`.trim());
+                throw new Error(`FFmpeg exited with code ${exitCode}`);
             }
             const data = await ffmpeg.readFile(outputName);
+            if (isStale())
+                return;
             if (typeof data === "string" || data.length === 0) {
-                throw new Error("The compressed file came back empty.");
+                throw new Error(EMPTY_OUTPUT);
             }
             const blob = new Blob([data as BlobPart], { type: "video/mp4" });
             const url = URL.createObjectURL(blob);
@@ -426,35 +440,55 @@ export default function ReduceVideoFileSize() {
             setProgress(100);
         }
         catch (err) {
-            if (cancelledRef.current)
+            if (isStale())
                 return;
             console.error("Compression failed:", err);
-            const message = err instanceof Error ? err.message : "Unknown error";
-            const outOfMemory = /memory|abort|out of bounds/i.test(message);
-            setError(outOfMemory
+            const message = err instanceof Error ? err.message : "";
+            // Raw ffmpeg log text is never shown to people; it stays in the console.
+            setError(/memory|abort|out of bounds/i.test(message)
                 ? "The browser ran out of memory. Try a smaller file, a lower resolution, or close other tabs."
-                : `Compression failed. ${message}`);
+                : message === EMPTY_OUTPUT
+                    ? "The compressed file came back empty. Please try another video."
+                    : "This video couldn't be converted. It may be corrupted or use an unsupported codec.");
             setProgress(0);
         }
         finally {
-            if (ffmpeg && !cancelledRef.current) {
-                ffmpeg.off("progress", onProgress);
-                ffmpeg.off("log", onLog);
-                await ffmpeg.deleteFile(inputName).catch(() => undefined);
-                await ffmpeg.deleteFile(outputName).catch(() => undefined);
+            detachListeners();
+            if (!isStale()) {
+                setIsCompressing(false);
+                // WASM memory never shrinks: discard the worker after every job so repeat runs stay fast.
+                // The core files stay cached, so the next run only pays a short re-init.
+                terminateFFmpeg();
             }
-            setIsCompressing(false);
         }
     };
     const handleCancel = () => {
         if (!isCompressing)
             return;
-        cancelledRef.current = true;
-        ffmpegSingleton?.terminate();
-        resetFFmpegSingleton();
+        jobRef.current++; // any in-flight work from this job is now stale
+        terminateFFmpeg();
         setIsCompressing(false);
         setProgress(0);
         void loadEngine();
+    };
+    const share = async () => {
+        const url = window.location.href;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: L("Reduce Video File Size"), url });
+            }
+            catch {
+                // User dismissed the share sheet.
+            }
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(url);
+            setNotice("Tool link copied to clipboard.");
+        }
+        catch {
+            setNotice("Copy the page link from your browser to share this tool.");
+        }
     };
     const handleReset = () => {
         if (isCompressing)
@@ -582,7 +616,7 @@ export default function ReduceVideoFileSize() {
               </button>
               <Link href="/sohoj-tools" className="hover:text-[#3B2F1E]"><T>{"Seba Lagbe Tools\n              "}</T></Link>
               <span><T>{"/"}</T></span>
-              <span className="hover:text-[#3B2F1E] cursor-pointer"><T>{"Video Tools\n              "}</T></span>
+              <span><T>{"Video Tools\n              "}</T></span>
               <span><T>{"/"}</T></span>
               <span className="text-[#3B2F1E] font-semibold"><T>{"Reduce Video File Size\n              "}</T></span>
             </div>
@@ -601,7 +635,7 @@ export default function ReduceVideoFileSize() {
             <button onClick={() => setIsFavorite(!isFavorite)} aria-label={L("Toggle favorite")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#DC2626] hover:border-[#DC2626]/50 transition-all shadow-2xs">
               <Star size={16} className={isFavorite ? "fill-[#DC2626] text-[#DC2626]" : ""}/>
             </button>
-            <button aria-label={L("Share")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#3B2F1E] transition-all shadow-2xs">
+            <button onClick={() => void share()} aria-label={L("Share")} className="p-2 bg-[#FBF6E8] rounded-lg border border-[#E3D6B8] text-[#5A4A32] hover:text-[#3B2F1E] transition-all shadow-2xs">
               <Share size={16}/>
             </button>
           </div>
@@ -622,7 +656,7 @@ export default function ReduceVideoFileSize() {
         {engineState === "loading" && (<div className="flex items-center gap-2 bg-[#FEE9E9] border border-[#FBB6B6] text-[#DC2626] rounded-2xl px-4 py-3 text-sm font-medium">
             <Loader2 size={14} className="animate-spin"/><T>{"Loading the video engine (about 30 MB, only downloaded once)\u2026\n          "}</T></div>)}
         {engineState === "error" && (<div className="flex items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-800 rounded-2xl px-4 py-3 text-sm font-medium">
-            <span><T>{"Couldn&apos;t download the video engine. Check your connection and\n              try again.\n            "}</T></span>
+            <span><T>{"Couldn't download the video engine. Check your connection and\n              try again.\n            "}</T></span>
             <button onClick={() => void loadEngine()} className="px-3 py-1.5 bg-[#FBF6E8] border border-red-200 hover:bg-red-100 rounded-lg font-bold transition-colors"><T>{"Retry\n            "}</T></button>
           </div>)}
 
@@ -772,7 +806,7 @@ export default function ReduceVideoFileSize() {
                       <div className="flex items-start gap-2">
                         {gotLarger ? (<AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0"/>) : (<CheckCircle2 size={16} className="text-[#10B981] mt-0.5 shrink-0"/>)}
                         <div className="text-sm font-medium leading-relaxed">
-                          {gotLarger ? (<p className="text-amber-900"><T>{"This video was already well compressed, so the\n                              result isn&apos;t smaller. Try &quot;Smallest\n                              file&quot; or a lower resolution.\n                            "}</T></p>) : (<p className="text-[#3B2F1E]">
+                          {gotLarger ? (<p className="text-amber-900"><T>{"This video was already well compressed, so the\n                              result isn't smaller. Try \"Smallest\n                              file\" or a lower resolution.\n                            "}</T></p>) : (<p className="text-[#3B2F1E]">
                               <span className="font-bold text-[#10B981]">
                                 {savedPercent.toLocaleString(locale === "bn" ? "bn-BD" : "en-US")}<T>{"% smaller.\n                              "}</T></span>{<T>{" "}</T>}
                               {formatBytes(file.size, locale)}<T>{"\u2192"}</T>{<T>{" "}</T>}
@@ -793,7 +827,7 @@ export default function ReduceVideoFileSize() {
         <div className="bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
           <div className="text-sm font-medium text-[#5A4A32] flex items-center gap-2" aria-live="polite">
             <span className={`w-2 h-2 rounded-full ${statusDot}`}></span>
-            <span><T>{statusText}</T></span>
+            <span><T>{notice || statusText}</T></span>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -822,7 +856,7 @@ export default function ReduceVideoFileSize() {
           {showHowToUse && (<div className="p-4 pt-4 text-sm text-[#5A4A32] space-y-2 border-t border-[#E3D6B8] font-medium leading-relaxed">
               <p><T>{"1. Upload or drag and drop your video file into the input box on\n                the left.\n              "}</T></p>
               <p><T>{"2. Preview the original file details and select your target\n                quality and resolution.\n              "}</T></p>
-              <p><T>{"3. Click &quot;Compress video&quot; to process, then download\n                your reduced file.\n              "}</T></p>
+              <p><T>{"3. Click \"Compress video\" to process, then download\n                your reduced file.\n              "}</T></p>
             </div>)}
         </div>
 

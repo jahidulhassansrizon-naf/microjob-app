@@ -21,11 +21,24 @@ import {
   RotateCcw,
   Share2,
   ShieldCheck,
-  Star,
   Upload,
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
+import { Hind_Siliguri, Plus_Jakarta_Sans } from "next/font/google";
+
+const jakartaFont = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-govt-jakarta",
+});
+const hindFont = Hind_Siliguri({
+  subsets: ["bengali", "latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-govt-hind",
+});
 /* -------------------------------------------------------------------------- */
 /* Page-specific, hydration-safe English ↔ Bangla translation                */
 /* -------------------------------------------------------------------------- */
@@ -51,15 +64,15 @@ const GOVT_JOB_BN: Record<string, string> = {
   Change: "পরিবর্তন",
   "· Click to replace": "· পরিবর্তন করতে ক্লিক করুন",
   "Upload passport photo": "পাসপোর্ট সাইজের ছবি আপলোড করুন",
-  "JPG, PNG, or WebP · up to 10 MB": "JPG, PNG বা WebP · সর্বোচ্চ ১০ MB",
+  "JPG, PNG, or WebP · up to 25 MB": "JPG, PNG বা WebP · সর্বোচ্চ ২৫ MB",
   Zoom: "জুম",
   Horizontal: "অনুভূমিক",
   Vertical: "উল্লম্ব",
   "Reset crop": "ক্রপ পুনরায় সেট করুন",
   "Signature 300×80 px": "স্বাক্ষর ৩০০×৮০ পিক্সেল",
   "Upload signature": "স্বাক্ষর আপলোড করুন",
-  "JPG, PNG, or WebP · or create one on the right":
-    "JPG, PNG বা WebP · অথবা ডান পাশে নতুন তৈরি করুন",
+  "JPG, PNG, or WebP · or create one in the signature studio":
+    "JPG, PNG বা WebP · অথবা স্বাক্ষর স্টুডিও থেকে তৈরি করুন",
   "Create a new signature instead": "এর পরিবর্তে নতুন স্বাক্ষর তৈরি করুন",
   "Create a signature without uploading": "আপলোড না করে স্বাক্ষর তৈরি করুন",
   "Output specs": "আউটপুটের মাপ",
@@ -67,8 +80,8 @@ const GOVT_JOB_BN: Record<string, string> = {
     "ছবি: ৩০০×৩০০ পিক্সেল, JPEG সর্বোচ্চ ১০০ KB",
   "Signature: 300×80 pixels, max 60 KB JPEG":
     "স্বাক্ষর: ৩০০×৮০ পিক্সেল, JPEG সর্বোচ্চ ৬০ KB",
-  "PNG and WebP keep the same exact dimensions. JPEG/WebP are compressed to the target byte limit.":
-    "PNG ও WebP-তে একই নির্ভুল মাপ বজায় থাকে। JPEG/WebP নির্ধারিত বাইট সীমার মধ্যে সংকুচিত করা হয়।",
+  "All formats keep the exact pixel size. JPEG and WebP are automatically compressed to fit the size limit. PNG keeps full quality and may be larger.":
+    "সব ফরম্যাটেই পিক্সেল মাপ নির্ভুল থাকে। JPEG ও WebP স্বয়ংক্রিয়ভাবে নির্ধারিত আকারসীমার মধ্যে সংকুচিত হয়। PNG সম্পূর্ণ মান বজায় রাখে, তাই ফাইল বড় হতে পারে।",
   "Output preview": "আউটপুটের পূর্বরূপ",
   Ready: "প্রস্তুত",
   Empty: "খালি",
@@ -115,8 +128,8 @@ const GOVT_JOB_BN: Record<string, string> = {
     "২. জুম ও অবস্থান নিয়ন্ত্রণ ব্যবহার করে ছবির ক্রপ ঠিক করুন।",
   "3. Replace either image anytime with Change.":
     "৩. ‘পরিবর্তন’ ব্যবহার করে যেকোনো ছবি যেকোনো সময় বদলান।",
-  "4. Without a signature image, draw or type one on the right and choose “Use this signature”.":
-    "৪. স্বাক্ষরের ছবি না থাকলে ডান পাশে স্বাক্ষর আঁকুন বা লিখুন এবং ‘এই স্বাক্ষর ব্যবহার করুন’ নির্বাচন করুন।",
+  "4. Without a signature image, draw or type one in the signature studio and choose “Use this signature”.":
+    "৪. স্বাক্ষরের ছবি না থাকলে স্বাক্ষর স্টুডিওতে স্বাক্ষর আঁকুন বা লিখুন এবং ‘এই স্বাক্ষর ব্যবহার করুন’ নির্বাচন করুন।",
   "5. Click Export, choose JPG, PNG, or WebP, then choose separate files or one ZIP package.":
     "৫. ‘এক্সপোর্ট’ ক্লিক করুন, JPG, PNG অথবা WebP নির্বাচন করুন, তারপর আলাদা ফাইল বা একটি ZIP প্যাকেজ বেছে নিন।",
 
@@ -133,8 +146,8 @@ const GOVT_JOB_BN: Record<string, string> = {
 
   "Please choose a JPG, PNG, or WebP image.":
     "অনুগ্রহ করে JPG, PNG অথবা WebP ছবি নির্বাচন করুন।",
-  "Please choose an image smaller than 10 MB.":
-    "অনুগ্রহ করে ১০ MB-এর কম আকারের ছবি নির্বাচন করুন।",
+  "Please choose an image smaller than 25 MB.":
+    "অনুগ্রহ করে ২৫ MB-এর কম আকারের ছবি নির্বাচন করুন।",
   "Photo updated.": "ছবি আপডেট হয়েছে।",
   "Signature updated.": "স্বাক্ষর আপডেট হয়েছে।",
   "Type your name first.": "প্রথমে আপনার নাম লিখুন।",
@@ -157,6 +170,19 @@ const GOVT_JOB_BN: Record<string, string> = {
     "ফাইল লোড হয়েছে — প্রস্তুত হলে এক্সপোর্ট নির্বাচন করুন",
   "Add a photo or signature to get started":
     "শুরু করতে একটি ছবি বা স্বাক্ষর যোগ করুন",
+  "The selected image could not be loaded.":
+    "নির্বাচিত ছবিটি লোড করা যায়নি।",
+  "Could not create the image file.": "ছবির ফাইল তৈরি করা যায়নি।",
+  "Could not export the files.": "ফাইল এক্সপোর্ট করা যায়নি।",
+  "Could not prepare the print preview.":
+    "প্রিন্ট প্রিভিউ প্রস্তুত করা যায়নি।",
+  Photo: "ছবি",
+  Signature: "স্বাক্ষর",
+  "Final file size": "চূড়ান্ত ফাইলের আকার",
+  "Some browsers ask permission to download multiple files. If it is blocked, choose One ZIP.":
+    "কিছু ব্রাউজার একসাথে একাধিক ফাইল ডাউনলোডে অনুমতি চায়। বন্ধ হয়ে গেলে ‘একটি ZIP’ বেছে নিন।",
+  "PNG files are usually larger than the application size limit. Choose JPG for job applications.":
+    "PNG ফাইল সাধারণত আবেদনের আকারসীমার চেয়ে বড় হয়। চাকরির আবেদনের জন্য JPG বেছে নিন।",
 };
 
 function normalizeGovtJobText(value: string) {
@@ -182,7 +208,7 @@ function translateGovtDynamicText(value: string) {
   const key = normalizeGovtJobText(value);
 
   const overLimitMatch = key.match(
-    /^(ZIP package ready\.|Files ready\.)\s+(.+)\.\s+Dimensions and maximum export quality were preserved\.$/i,
+    /^(ZIP package ready\.|Files ready\.)\s+(.+)\.\s+Try JPG format or a less detailed image\.$/i,
   );
   if (overLimitMatch) {
     const prefix =
@@ -198,7 +224,7 @@ function translateGovtDynamicText(value: string) {
         match[1].toLowerCase() === "photo" ? "ছবির আকার" : "স্বাক্ষরের আকার";
       return `${kind} ${match[2]} (আবেদনপত্রের নির্ধারিত ${match[3]} সীমার চেয়ে বেশি)`;
     });
-    return `${prefix} ${items.join("; ")}। ছবির মাপ ও সর্বোচ্চ এক্সপোর্ট মান অপরিবর্তিত রাখা হয়েছে।`;
+    return `${prefix} ${items.join("; ")}। JPG ফরম্যাট বা কম বিস্তারিত ছবি ব্যবহার করে দেখুন।`;
   }
 
   return null;
@@ -241,7 +267,14 @@ function useGovtJobText() {
     (value: string) => translateGovtJobText(value, locale, baseL),
     [locale, baseL],
   );
-  return { t, locale };
+  const isBn = String(locale ?? "")
+    .toLowerCase()
+    .startsWith("bn");
+  const d = useCallback(
+    (value: string) => (isBn ? toBanglaDigits(value) : value),
+    [isBn],
+  );
+  return { t, d, locale };
 }
 
 function GovtT({ children }: { children: ReactNode }) {
@@ -256,8 +289,17 @@ const PHOTO_MAX_BYTES = 100 * 1024; // advisory application target
 const SIGNATURE_WIDTH = 300;
 const SIGNATURE_HEIGHT = 80;
 const SIGNATURE_MAX_BYTES = 60 * 1024; // advisory application target
-const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
+const MAX_SOURCE_BYTES = 25 * 1024 * 1024;
+const SIGNATURE_CANVAS_WIDTH = 600;
+const SIGNATURE_CANVAS_HEIGHT = 160;
+const MIN_COMPRESSED_QUALITY = 0.25;
 const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const ACCEPTED_EXTENSIONS = /\.(jpe?g|png|webp)$/i;
+function isAcceptedImage(file: File) {
+  if (ACCEPTED_TYPES.has(file.type)) return true;
+  // Some Android file managers hand over an empty MIME type.
+  return file.type === "" && ACCEPTED_EXTENSIONS.test(file.name);
+}
 type ExportFormat = "jpg" | "png" | "webp";
 type ExportMode = "separate" | "zip";
 type SignatureMode = "draw" | "type";
@@ -321,7 +363,7 @@ function canvasToBlob(
     canvas.toBlob(
       (blob) => {
         if (!blob) {
-          reject(new Error(`Could not create ${mimeType} output.`));
+          reject(new Error("Could not create the image file."));
           return;
         }
         resolve(blob);
@@ -334,6 +376,7 @@ function canvasToBlob(
 async function encodeCanvasToFormat(
   canvas: HTMLCanvasElement,
   format: ExportFormat,
+  maxBytes: number,
 ): Promise<Blob> {
   const mimeType =
     format === "jpg"
@@ -341,10 +384,26 @@ async function encodeCanvasToFormat(
       : format === "png"
         ? "image/png"
         : "image/webp";
-  // Export exactly once at maximum browser-supported quality.
-  // Do not quantize, palette-reduce, threshold, or run a second compression
-  // pass: those were the source of posterization/banding artifacts.
-  return canvasToBlob(canvas, mimeType, 1.0);
+  // Always start from the best quality. Dimensions never change.
+  const best = await canvasToBlob(canvas, mimeType, 1.0);
+  // PNG is lossless and cannot be compressed through the canvas API.
+  if (format === "png" || best.size <= maxBytes) return best;
+  // JPEG/WebP: search for the highest quality that fits inside the limit.
+  let low = MIN_COMPRESSED_QUALITY;
+  let high = 1.0;
+  let fitting = await canvasToBlob(canvas, mimeType, low);
+  if (fitting.size > maxBytes) return fitting; // cannot fit; caller warns
+  for (let step = 0; step < 7; step += 1) {
+    const mid = (low + high) / 2;
+    const candidate = await canvasToBlob(canvas, mimeType, mid);
+    if (candidate.size <= maxBytes) {
+      fitting = candidate;
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+  return fitting;
 }
 function drawPhotoToCanvas(
   image: CanvasImageSource & {
@@ -535,8 +594,52 @@ function extensionFor(format: ExportFormat) {
   if (format === "png") return "png";
   return "webp";
 }
+async function buildOutputAssets(input: {
+  photo: File | null;
+  signature: File | null;
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
+  format: ExportFormat;
+}): Promise<OutputAsset[]> {
+  const assets: OutputAsset[] = [];
+  const extension = extensionFor(input.format);
+  if (input.photo) {
+    const image = await loadImageFromFile(input.photo);
+    const canvas = document.createElement("canvas");
+    drawPhotoToCanvas(image, canvas, input.zoom, input.offsetX, input.offsetY);
+    const blob = await encodeCanvasToFormat(
+      canvas,
+      input.format,
+      PHOTO_MAX_BYTES,
+    );
+    assets.push({
+      name: `govt-job-photo-300x300.${extension}`,
+      blob,
+      kind: "photo",
+      sizeLimit: PHOTO_MAX_BYTES,
+    });
+  }
+  if (input.signature) {
+    const image = await loadImageFromFile(input.signature);
+    const canvas = document.createElement("canvas");
+    drawSignatureToCanvas(image, canvas);
+    const blob = await encodeCanvasToFormat(
+      canvas,
+      input.format,
+      SIGNATURE_MAX_BYTES,
+    );
+    assets.push({
+      name: `govt-job-signature-300x80.${extension}`,
+      blob,
+      kind: "signature",
+      sizeLimit: SIGNATURE_MAX_BYTES,
+    });
+  }
+  return assets;
+}
 export default function GovtJobPhotoSignResizer() {
-  const { t } = useGovtJobText();
+  const { t, d } = useGovtJobText();
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [signature, setSignature] = useState<File | null>(null);
@@ -548,12 +651,11 @@ export default function GovtJobPhotoSignResizer() {
   const [isSignatureStudioOpen, setIsSignatureStudioOpen] = useState(false);
   const [signatureMode, setSignatureMode] = useState<SignatureMode>("draw");
   const [typedSignature, setTypedSignature] = useState("");
-  const [strokeWidth, setStrokeWidth] = useState(3);
-  const [signatureCanvasReady, setSignatureCanvasReady] = useState(false);
+  const [strokeWidth, setStrokeWidth] = useState(5);
+  const [signatureHasInk, setSignatureHasInk] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [favorite, setFavorite] = useState(false);
   const [showExportOptions, setShowExportOptions] = useState(false);
   const [exportFormat, setExportFormat] = useState<ExportFormat>("jpg");
   const [exportMode, setExportMode] = useState<ExportMode>("separate");
@@ -565,6 +667,13 @@ export default function GovtJobPhotoSignResizer() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+  const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null);
+  const [sizeInfo, setSizeInfo] = useState<{
+    photo?: number;
+    signature?: number;
+  } | null>(null);
+  const photoPreviewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const strokeWidthRef = useRef(5);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const signatureInputRef = useRef<HTMLInputElement | null>(null);
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -588,40 +697,107 @@ export default function GovtJobPhotoSignResizer() {
     window.addEventListener("afterprint", handleAfterPrint);
     return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, []);
-  useEffect(() => {
+  const isStudioVisible = !signature || isSignatureStudioOpen;
+  const resetSignatureCanvas = useCallback(() => {
     const canvas = signatureCanvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    canvas.width = 600;
-    canvas.height = 160;
-    canvas.style.width = "100%";
-    canvas.style.height = "160px";
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    canvas.width = SIGNATURE_CANVAS_WIDTH;
+    canvas.height = SIGNATURE_CANVAS_HEIGHT;
     context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, 600, 160);
+    context.fillRect(0, 0, canvas.width, canvas.height);
     context.strokeStyle = "#111827";
-    context.lineWidth = strokeWidth;
+    context.lineWidth = strokeWidthRef.current;
     context.lineCap = "round";
     context.lineJoin = "round";
-    setSignatureCanvasReady(true);
-  }, [signatureMode]);
+    setSignatureHasInk(false);
+  }, []);
+  // (Re)initialise the canvas whenever it is mounted or the mode changes.
   useEffect(() => {
+    if (isStudioVisible) resetSignatureCanvas();
+  }, [isStudioVisible, signatureMode, resetSignatureCanvas]);
+  useEffect(() => {
+    strokeWidthRef.current = strokeWidth;
     const context = signatureCanvasRef.current?.getContext("2d");
-    if (!context) return;
-    context.lineWidth = strokeWidth;
+    if (context) context.lineWidth = strokeWidth;
   }, [strokeWidth]);
   const hasInput = photo !== null || signature !== null;
+  // Decode the photo once for the exact crop preview.
+  useEffect(() => {
+    if (!photo) {
+      setPhotoImage(null);
+      return;
+    }
+    let cancelled = false;
+    loadImageFromFile(photo)
+      .then((image) => {
+        if (!cancelled) setPhotoImage(image);
+      })
+      .catch((error) => {
+        console.error(error);
+        if (!cancelled) {
+          setPhotoImage(null);
+          setStatusMessage("The selected image could not be loaded.");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [photo]);
+  // The preview uses the same drawing code as the export, so they always match.
+  useEffect(() => {
+    const canvas = photoPreviewCanvasRef.current;
+    if (!canvas || !photoImage) return;
+    try {
+      drawPhotoToCanvas(photoImage, canvas, photoZoom, photoOffsetX, photoOffsetY);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [photoImage, photoZoom, photoOffsetX, photoOffsetY, hasInput]);
+  // Show the real final file sizes (debounced) for the selected format.
+  useEffect(() => {
+    if (!photo && !signature) {
+      setSizeInfo(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const assets = await buildOutputAssets({
+          photo,
+          signature,
+          zoom: photoZoom,
+          offsetX: photoOffsetX,
+          offsetY: photoOffsetY,
+          format: exportFormat,
+        });
+        if (cancelled) return;
+        setSizeInfo({
+          photo: assets.find((asset) => asset.kind === "photo")?.blob.size,
+          signature: assets.find((asset) => asset.kind === "signature")?.blob
+            .size,
+        });
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) setSizeInfo(null);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [photo, signature, photoZoom, photoOffsetX, photoOffsetY, exportFormat]);
   const canExport = hasInput && !isProcessing;
   const handlePhotoUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    if (!ACCEPTED_TYPES.has(file.type)) {
+    if (!isAcceptedImage(file)) {
       setStatusMessage("Please choose a JPG, PNG, or WebP image.");
       return;
     }
     if (file.size > MAX_SOURCE_BYTES) {
-      setStatusMessage("Please choose an image smaller than 10 MB.");
+      setStatusMessage("Please choose an image smaller than 25 MB.");
       return;
     }
     const nextPreview = URL.createObjectURL(file);
@@ -637,12 +813,12 @@ export default function GovtJobPhotoSignResizer() {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
-    if (!ACCEPTED_TYPES.has(file.type)) {
+    if (!isAcceptedImage(file)) {
       setStatusMessage("Please choose a JPG, PNG, or WebP image.");
       return;
     }
     if (file.size > MAX_SOURCE_BYTES) {
-      setStatusMessage("Please choose an image smaller than 10 MB.");
+      setStatusMessage("Please choose an image smaller than 25 MB.");
       return;
     }
     const nextPreview = URL.createObjectURL(file);
@@ -668,16 +844,7 @@ export default function GovtJobPhotoSignResizer() {
     setStatusMessage(null);
   };
   const clearSignatureCanvas = () => {
-    const canvas = signatureCanvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = "#111827";
-    context.lineWidth = strokeWidth;
-    context.lineCap = "round";
-    context.lineJoin = "round";
-    setSignatureCanvasReady(false);
+    resetSignatureCanvas();
   };
   const handleReset = () => {
     clearPhoto();
@@ -692,20 +859,34 @@ export default function GovtJobPhotoSignResizer() {
     setStatusMessage(null);
     clearSignatureCanvas();
   };
+  const getCanvasPoint = (
+    event: ReactPointerEvent<HTMLCanvasElement>,
+    canvas: HTMLCanvasElement,
+  ) => {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
+      y: ((event.clientY - rect.top) / rect.height) * canvas.height,
+    };
+  };
   const beginDrawing = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (signatureMode !== "draw") return;
     const canvas = signatureCanvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext("2d");
     if (!context) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+    const { x, y } = getCanvasPoint(event, canvas);
+    context.lineWidth = strokeWidthRef.current;
+    // A single tap leaves a dot.
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x + 0.01, y);
+    context.stroke();
     context.beginPath();
     context.moveTo(x, y);
     canvas.setPointerCapture(event.pointerId);
     setIsDrawing(true);
-    setSignatureCanvasReady(true);
+    setSignatureHasInk(true);
   };
   const drawSignature = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (!isDrawing || signatureMode !== "draw") return;
@@ -713,9 +894,7 @@ export default function GovtJobPhotoSignResizer() {
     if (!canvas) return;
     const context = canvas.getContext("2d");
     if (!context) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+    const { x, y } = getCanvasPoint(event, canvas);
     context.lineTo(x, y);
     context.stroke();
   };
@@ -726,36 +905,51 @@ export default function GovtJobPhotoSignResizer() {
     }
     setIsDrawing(false);
   };
-  const renderTypedSignature = () => {
+  const renderTypedSignature = async () => {
+    const text = typedSignature.trim();
+    if (!text) return false;
+    // Bangla names need a font that has Bangla glyphs; Latin names keep the
+    // cursive look.
+    const isBangla = /[ঀ-৿]/.test(text);
+    const family = isBangla
+      ? `${hindFont.style.fontFamily}, "Noto Sans Bengali", sans-serif`
+      : `"Brush Script MT", "Segoe Script", "Comic Sans MS", cursive`;
+    const fontFor = (size: number) =>
+      isBangla ? `600 ${size}px ${family}` : `italic ${size}px ${family}`;
+    try {
+      await document.fonts?.load(fontFor(48), text);
+    } catch {
+      // Fall back to whatever font the browser already has.
+    }
     const canvas = signatureCanvasRef.current;
     if (!canvas) return false;
     const context = canvas.getContext("2d");
     if (!context) return false;
-    const text = typedSignature.trim();
-    if (!text) return false;
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, canvas.width, canvas.height);
     let fontSize = 84;
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillStyle = "#111827";
-    context.font = `italic ${fontSize}px "Brush Script MT", "Segoe Script", "Comic Sans MS", cursive`;
+    context.font = fontFor(fontSize);
     while (context.measureText(text).width > 540 && fontSize > 34) {
       fontSize -= 2;
-      context.font = `italic ${fontSize}px "Brush Script MT", "Segoe Script", "Comic Sans MS", cursive`;
+      context.font = fontFor(fontSize);
     }
     context.fillText(text, canvas.width / 2, canvas.height / 2 + 5);
-    setSignatureCanvasReady(true);
+    setSignatureHasInk(true);
     return true;
   };
-  const useCreatedSignature = async () => {
+  const handleUseSignature = async () => {
     const canvas = signatureCanvasRef.current;
     if (!canvas) return;
-    if (signatureMode === "type" && !renderTypedSignature()) {
-      setStatusMessage("Type your name first.");
-      return;
-    }
-    if (signatureMode === "draw" && !signatureCanvasReady) {
+    if (signatureMode === "type") {
+      const rendered = await renderTypedSignature();
+      if (!rendered) {
+        setStatusMessage("Type your name first.");
+        return;
+      }
+    } else if (!signatureHasInk) {
       setStatusMessage("Draw your signature first.");
       return;
     }
@@ -833,35 +1027,15 @@ export default function GovtJobPhotoSignResizer() {
       setIsProcessing(false);
     }
   };
-  const buildAssets = async (): Promise<OutputAsset[]> => {
-    const assets: OutputAsset[] = [];
-    const extension = extensionFor(exportFormat);
-    if (photo) {
-      const image = await loadImageFromFile(photo);
-      const canvas = document.createElement("canvas");
-      drawPhotoToCanvas(image, canvas, photoZoom, photoOffsetX, photoOffsetY);
-      const blob = await encodeCanvasToFormat(canvas, exportFormat);
-      assets.push({
-        name: `govt-job-photo-300x300.${extension}`,
-        blob,
-        kind: "photo",
-        sizeLimit: PHOTO_MAX_BYTES,
-      });
-    }
-    if (signature) {
-      const image = await loadImageFromFile(signature);
-      const canvas = document.createElement("canvas");
-      drawSignatureToCanvas(image, canvas);
-      const blob = await encodeCanvasToFormat(canvas, exportFormat);
-      assets.push({
-        name: `govt-job-signature-300x80.${extension}`,
-        blob,
-        kind: "signature",
-        sizeLimit: SIGNATURE_MAX_BYTES,
-      });
-    }
-    return assets;
-  };
+  const buildAssets = () =>
+    buildOutputAssets({
+      photo,
+      signature,
+      zoom: photoZoom,
+      offsetX: photoOffsetX,
+      offsetY: photoOffsetY,
+      format: exportFormat,
+    });
   const performExport = async () => {
     if (!canExport) return;
     setIsProcessing(true);
@@ -899,7 +1073,7 @@ export default function GovtJobPhotoSignResizer() {
               )
               .join(
                 "; ",
-              )}. Dimensions and maximum export quality were preserved.`,
+              )}. Try JPG format or a less detailed image.`,
         );
       } else {
         setStatusMessage(
@@ -938,10 +1112,8 @@ export default function GovtJobPhotoSignResizer() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
         .page-font.page-font, .page-font.page-font *:not(.font-mono):not(svg):not(svg *) {
-          font-family: "Plus Jakarta Sans", "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-family: var(--font-govt-jakarta), var(--font-govt-hind), "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
           font-optical-sizing: auto;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
@@ -1103,7 +1275,7 @@ export default function GovtJobPhotoSignResizer() {
 
       <div
         id="govt-job-tool"
-        className="page-font w-full space-y-6 bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] pb-16 text-[#3B2F1E]"
+        className={`page-font ${jakartaFont.variable} ${hindFont.variable} w-full space-y-6 bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] pb-16 text-[#3B2F1E]`}
       >
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
@@ -1158,20 +1330,6 @@ export default function GovtJobPhotoSignResizer() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setFavorite((value) => !value)}
-              className={`rounded-xl border bg-[#FBF6E8] p-2 shadow-sm transition-colors hover:bg-[#EFE3C8] ${
-                favorite
-                  ? "border-[#DC2626] bg-[#F6D9A8] text-[#B91C1C] ring-2 ring-[#DC2626]/40"
-                  : "border-[#E3D6B8] text-[#5A4A32]"
-              }`}
-              title={t("Favorite")}
-              aria-pressed={favorite}
-            >
-              <Star size={16} fill={favorite ? "currentColor" : "none"} />
-            </button>
-
             <button
               type="button"
               onClick={handleShare}
@@ -1264,7 +1422,7 @@ export default function GovtJobPhotoSignResizer() {
                       <div className="mt-0.5 text-[12px] text-[#6B5A40]">
                         <GovtT>
                           {
-                            "JPG, PNG, or WebP \u00B7 up to 10 MB\n                      "
+                            "JPG, PNG, or WebP \u00B7 up to 25 MB\n                      "
                           }
                         </GovtT>
                       </div>
@@ -1291,6 +1449,7 @@ export default function GovtJobPhotoSignResizer() {
                         min="1"
                         max="2.5"
                         step="0.1"
+                        aria-label={t("Zoom")}
                         value={photoZoom}
                         onChange={(event) =>
                           setPhotoZoom(Number(event.target.value))
@@ -1417,7 +1576,7 @@ export default function GovtJobPhotoSignResizer() {
                       <div className="mt-0.5 text-[12px] text-[#6B5A40]">
                         <GovtT>
                           {
-                            "JPG, PNG, or WebP \u00B7 or create one on the right\n                      "
+                            "JPG, PNG, or WebP \u00B7 or create one in the signature studio\n                      "
                           }
                         </GovtT>
                       </div>
@@ -1464,7 +1623,7 @@ export default function GovtJobPhotoSignResizer() {
               <p className="pt-1 text-[13px] leading-relaxed text-[#6B5A40]">
                 <GovtT>
                   {
-                    "PNG and WebP keep the same exact dimensions. JPEG/WebP are\n                compressed to the target byte limit.\n              "
+                    "All formats keep the exact pixel size. JPEG and WebP are automatically compressed to fit the size limit. PNG keeps full quality and may be larger."
                   }
                 </GovtT>
               </p>
@@ -1505,14 +1664,12 @@ export default function GovtJobPhotoSignResizer() {
 
                       <div className="flex h-44 w-44 items-center justify-center overflow-hidden rounded-xl border border-[#D8C9A6] bg-white shadow-sm">
                         {photoPreview ? (
-                          <img
-                            src={photoPreview}
-                            alt={t("Photo crop preview")}
-                            className="h-full w-full object-cover"
-                            style={{
-                              objectPosition: `${50 + photoOffsetX * 25}% ${50 + photoOffsetY * 25}%`,
-                              transform: `scale(${photoZoom})`,
-                            }}
+                          <canvas
+                            ref={photoPreviewCanvasRef}
+                            role="img"
+                            aria-label={t("Photo crop preview")}
+                            className="h-full w-full"
+                            style={{ cursor: "default" }}
                           />
                         ) : (
                           <div className="text-sm text-[#6B5A40]">
@@ -1570,6 +1727,38 @@ export default function GovtJobPhotoSignResizer() {
                   </div>
                 )}
               </div>
+
+              {sizeInfo ? (
+                <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[13px] font-semibold text-[#5A4A32]">
+                  <span className="text-[#6B5A40]">
+                    <GovtT>{"Final file size"}</GovtT> ({exportFormat.toUpperCase()})
+                  </span>
+                  {sizeInfo.photo !== undefined ? (
+                    <span
+                      className={
+                        sizeInfo.photo > PHOTO_MAX_BYTES
+                          ? "text-[#B91C1C]"
+                          : "text-emerald-700"
+                      }
+                    >
+                      {t("Photo")}: {d(formatBytes(sizeInfo.photo))} /{" "}
+                      {d(formatBytes(PHOTO_MAX_BYTES))}
+                    </span>
+                  ) : null}
+                  {sizeInfo.signature !== undefined ? (
+                    <span
+                      className={
+                        sizeInfo.signature > SIGNATURE_MAX_BYTES
+                          ? "text-[#B91C1C]"
+                          : "text-emerald-700"
+                      }
+                    >
+                      {t("Signature")}: {d(formatBytes(sizeInfo.signature))} /{" "}
+                      {d(formatBytes(SIGNATURE_MAX_BYTES))}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
 
               {statusMessage ? (
                 <div className="rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] px-3 py-2 text-[13px] font-semibold text-[#DC2626]">
@@ -1657,8 +1846,8 @@ export default function GovtJobPhotoSignResizer() {
                       <GovtT>{"Pen width\n                      "}</GovtT>
                       <input
                         type="range"
-                        min="1"
-                        max="7"
+                        min="2"
+                        max="10"
                         step="1"
                         value={strokeWidth}
                         onChange={(event) =>
@@ -1687,6 +1876,9 @@ export default function GovtJobPhotoSignResizer() {
                     onPointerUp={finishDrawing}
                     onPointerCancel={finishDrawing}
                     className="block w-full touch-none"
+                    style={{
+                      aspectRatio: `${SIGNATURE_CANVAS_WIDTH} / ${SIGNATURE_CANVAS_HEIGHT}`,
+                    }}
                     aria-label={t("Signature drawing area")}
                   />
                 </div>
@@ -1714,7 +1906,7 @@ export default function GovtJobPhotoSignResizer() {
 
                   <button
                     type="button"
-                    onClick={useCreatedSignature}
+                    onClick={handleUseSignature}
                     className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#D42020] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#AE1717]"
                   >
                     <Check size={14} />
@@ -1809,6 +2001,26 @@ export default function GovtJobPhotoSignResizer() {
                     </div>
                   </div>
                 </div>
+
+                {exportFormat === "png" ? (
+                  <p className="mt-3 text-[12px] font-semibold text-[#B91C1C]">
+                    <GovtT>
+                      {
+                        "PNG files are usually larger than the application size limit. Choose JPG for job applications."
+                      }
+                    </GovtT>
+                  </p>
+                ) : null}
+
+                {exportMode === "separate" && photo && signature ? (
+                  <p className="mt-3 text-[12px] text-[#6B5A40]">
+                    <GovtT>
+                      {
+                        "Some browsers ask permission to download multiple files. If it is blocked, choose One ZIP."
+                      }
+                    </GovtT>
+                  </p>
+                ) : null}
 
                 <div className="mt-4 flex flex-col items-start justify-between gap-3 rounded-xl border border-[#E3D6B8] bg-[#F6EEDB] p-3 sm:flex-row sm:items-center">
                   <div className="text-[12px] font-semibold text-[#6B5A40]">
@@ -1950,7 +2162,7 @@ export default function GovtJobPhotoSignResizer() {
               <p>
                 <GovtT>
                   {
-                    "4. Without a signature image, draw or type one on the right and\n                choose \u201CUse this signature\u201D.\n              "
+                    "4. Without a signature image, draw or type one in the signature studio and choose \u201CUse this signature\u201D."
                   }
                 </GovtT>
               </p>

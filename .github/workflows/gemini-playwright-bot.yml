@@ -70,7 +70,6 @@ jobs:
       WARM_OPEN_STAGGER_MS: "5000"
       # One steady browser identity for every session.
       BROWSER_LOCALE: "en-US"
-      BROWSER_TIMEZONE: "Asia/Dhaka"
       FRESH_SESSION_DIR: "fresh-sessions"
       ASK_KEY: ${{ secrets.ASK_KEY }}
       GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}

@@ -1320,7 +1320,9 @@ const warmStats = { hits: 0, misses: 0, replaced: 0 };
 // default "HeadlessChrome / UTC / no locale" identity of a bare Playwright.
 // --------------------------------------------------
 const BROWSER_LOCALE = process.env.BROWSER_LOCALE || "en-US";
-const BROWSER_TIMEZONE = process.env.BROWSER_TIMEZONE || "Asia/Dhaka";
+// Timezone is NOT forced any more: the browser uses the runner's own timezone,
+// so it matches the runner's IP location. Set BROWSER_TIMEZONE only to force one.
+const BROWSER_TIMEZONE = (process.env.BROWSER_TIMEZONE || "").trim();
 const BROWSER_USER_AGENT_ENV = (process.env.BROWSER_USER_AGENT || "").trim();
 
 function browserUserAgent(browser) {
@@ -1342,8 +1344,11 @@ function contextOptions(sessionFile, browser) {
     viewport: { width: 1440, height: 900 },
     acceptDownloads: true,
     locale: BROWSER_LOCALE,
-    timezoneId: BROWSER_TIMEZONE,
   };
+
+  if (BROWSER_TIMEZONE) {
+    options.timezoneId = BROWSER_TIMEZONE;
+  }
   const userAgent = browserUserAgent(browser);
 
   if (userAgent) {
