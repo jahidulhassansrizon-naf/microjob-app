@@ -1,0 +1,19 @@
+{
+  "id": "50-loan-receipt",
+  "title": "Loan (Haolat) Receipt",
+  "category": "Business Forms",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/50-loan-receipt.svg",
+  "preview": "previews/50-loan-receipt.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

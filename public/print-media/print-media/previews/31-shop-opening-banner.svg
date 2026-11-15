@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" width="914.4mm" height="609.6mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="300" height="200" fill="#c1121f" data-layer-name="Background"/>
+<rect x="8" y="8" width="284" height="184" fill="none" rx="6" stroke="#ffd60a" stroke-width="2.5" data-layer-name="Border"/>
+<rect x="8" y="8" width="284" height="36" fill="#ffd60a" rx="6" data-layer-name="Top ribbon"/>
+<text x="150" y="33" font-size="26" fill="#c1121f" font-weight="700" text-anchor="middle">শুভ উদ্বোধন</text>
+<text x="150" y="76" font-size="28" fill="#ffffff" font-weight="700" text-anchor="middle">আপনার দোকানের নাম</text>
+<text x="150" y="90" font-size="8" fill="#ffd60a" font-weight="600" text-anchor="middle" letter-spacing="1.5">YOUR SHOP NAME</text>
+<rect x="20" y="98" width="260" height="36" fill="#8f0d17" rx="6" data-layer-name="Offer box"/>
+<text x="150" y="112" font-size="10" fill="#ffd60a" font-weight="700" text-anchor="middle">উদ্বোধনী অফার</text>
+<text x="150" y="127" font-size="14" fill="#ffffff" font-weight="700" text-anchor="middle">সকল পণ্যে ১০% – ২০% পর্যন্ত ছাড়!</text>
+<text x="150" y="150" font-size="9.5" fill="#ffffff" font-weight="600" text-anchor="middle">উদ্বোধন: ২০ নভেম্বর ২০২৬, শুক্রবার, সকাল ১০টায়</text>
+<text x="150" y="163" font-size="8" fill="#ffd60a" font-weight="500" text-anchor="middle">ঠিকানা: বাজার রোড, থানা, জেলা</text>
+<rect x="60" y="169" width="180" height="17" fill="#ffd60a" rx="8.5" data-layer-name="Phone pill"/>
+<text x="150" y="181" font-size="10.5" fill="#c1121f" font-weight="700" text-anchor="middle" data-layer-name="ফোন নম্বর">০১৭০০-০০০০০০</text>
+<g display="none" id="safe-area-guide" data-print="false"><rect x="8" y="8" width="284" height="184" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

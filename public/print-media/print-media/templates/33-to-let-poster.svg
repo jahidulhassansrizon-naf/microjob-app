@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#fffdf8" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="72" fill="#b91c1c" data-layer-name="Header"/>
+<rect x="0" y="72" width="210" height="3" fill="#fde68a" data-layer-name="Accent"/>
+<text x="105" y="44" font-size="42" fill="#ffffff" font-weight="800" text-anchor="middle">টু-লেট</text>
+<text x="105" y="61" font-size="13" fill="#fde68a" font-weight="700" text-anchor="middle">ভাড়া দেওয়া হবে</text>
+<rect x="15" y="84" width="180" height="96" fill="#ffffff" rx="3" stroke="#e7d9c3" stroke-width="0.4" data-layer-name="Details card"/>
+<text x="22" y="99" font-size="5" fill="#333" font-weight="600">ঠিকানা: </text>
+<line x1="36.5" y1="99.9" x2="188" y2="99.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="114" font-size="5" fill="#333" font-weight="600">তলা ও ফ্ল্যাট নং: </text>
+<line x1="52.1" y1="114.9" x2="188" y2="114.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="129" font-size="5" fill="#333" font-weight="600">রুম সংখ্যা: </text>
+<line x1="41.7" y1="129.9" x2="188" y2="129.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="144" font-size="5" fill="#333" font-weight="600">মাসিক ভাড়া (৳): </text>
+<line x1="57.300000000000004" y1="144.9" x2="188" y2="144.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="159" font-size="5" fill="#333" font-weight="600">ভাড়া দেওয়া হবে: (তারিখ) </text>
+<line x1="72.9" y1="159.9" x2="188" y2="159.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="15" y="192" font-size="5.5" fill="#b91c1c" font-weight="700">বিশেষ সুবিধা</text>
+<rect x="15" y="197.48" width="3.74" height="3.74" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="20.28" y="201" font-size="4.4" fill="#333" font-weight="500">গ্যাস সংযোগ</text>
+<rect x="77" y="197.48" width="3.74" height="3.74" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="82.28" y="201" font-size="4.4" fill="#333" font-weight="500">বিদ্যুৎ (২৪ ঘণ্টা)</text>
+<rect x="139" y="197.48" width="3.74" height="3.74" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="144.28" y="201" font-size="4.4" fill="#333" font-weight="500">পানি</text>
+<rect x="15" y="206.48" width="3.74" height="3.74" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="20.28" y="210" font-size="4.4" fill="#333" font-weight="500">লিফট</text>
+<rect x="77" y="206.48" width="3.74" height="3.74" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="82.28" y="210" font-size="4.4" fill="#333" font-weight="500">পার্কিং</text>
+<rect x="139" y="206.48" width="3.74" height="3.74" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="144.28" y="210" font-size="4.4" fill="#333" font-weight="500">নিরাপত্তা / সিসি ক্যামেরা</text>
+<rect x="15" y="219" width="180" height="20" fill="#fde68a" rx="3" data-layer-name="Contact box"/>
+<text x="105" y="232" font-size="12" fill="#7f1d1d" font-weight="800" text-anchor="middle">যোগাযোগ: ০১৭০০-০০০০০০</text>
+<line x1="0" y1="247" x2="210" y2="247" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="105" y="245" font-size="3.2" fill="#999" font-weight="500" text-anchor="middle">✂ ছিঁড়ে নিন</text>
+<text x="24" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 24 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="33" y1="247" x2="33" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="42" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 42 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="51" y1="247" x2="51" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="60" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 60 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="69" y1="247" x2="69" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="78" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 78 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="87" y1="247" x2="87" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="96" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 96 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="105" y1="247" x2="105" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="114" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 114 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="123" y1="247" x2="123" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="132" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 132 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="141" y1="247" x2="141" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="150" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 150 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="159" y1="247" x2="159" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="168" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 168 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="177" y1="247" x2="177" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="186" y="272" font-size="4.4" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 186 272)">টু-লেট  ০১৭০০-০০০০০০</text>
+<line x1="15" y1="295" x2="195" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+</svg>

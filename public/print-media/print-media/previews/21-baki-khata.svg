@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#fffdf5" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="30" fill="#7a2e12" data-layer-name="Header"/>
+<rect x="0" y="30" width="210" height="2" fill="#e0a458" data-layer-name="Accent"/>
+<text x="105" y="15" font-size="11" fill="#ffffff" font-weight="700" text-anchor="middle">বাকির হিসাব খাতা</text>
+<text x="105" y="23.5" font-size="4" fill="#f6d9a8" font-weight="500" text-anchor="middle">আপনার দোকানের নাম • মোবাইল: ০১৭০০-০০০০০০</text>
+<text x="15" y="44" font-size="4" fill="#333" font-weight="500">গ্রাহকের নাম: </text>
+<line x1="41" y1="44.8" x2="135" y2="44.8" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="140" y="44" font-size="4" fill="#333" font-weight="500">খাতা নং: </text>
+<line x1="156" y1="44.8" x2="195" y2="44.8" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="15" y="53" font-size="4" fill="#333" font-weight="500">ঠিকানা: </text>
+<line x1="31" y1="53.8" x2="135" y2="53.8" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="140" y="53" font-size="4" fill="#333" font-weight="500">মোবাইল: </text>
+<line x1="156" y1="53.8" x2="195" y2="53.8" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="15" y="60" width="180" height="10" fill="#7a2e12" data-layer-name="Table header"/>
+<text x="28.0" y="66.26666666666667" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">তারিখ</text>
+<text x="73.0" y="66.26666666666667" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">বিবরণ</text>
+<text x="120.0" y="66.26666666666667" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">বাকি (৳)</text>
+<text x="150.0" y="66.26666666666667" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">জমা (৳)</text>
+<text x="180.0" y="66.26666666666667" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">অবশিষ্ট (৳)</text>
+<line x1="15" y1="81" x2="195" y2="81" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="81" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="92" x2="195" y2="92" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="103" x2="195" y2="103" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="103" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="114" x2="195" y2="114" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="125" x2="195" y2="125" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="125" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="136" x2="195" y2="136" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="147" x2="195" y2="147" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="147" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="158" x2="195" y2="158" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="169" x2="195" y2="169" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="169" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="180" x2="195" y2="180" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="191" x2="195" y2="191" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="191" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="202" x2="195" y2="202" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="213" x2="195" y2="213" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="213" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="224" x2="195" y2="224" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="235" x2="195" y2="235" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="235" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="246" x2="195" y2="246" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="257" x2="195" y2="257" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="257" width="180" height="11" fill="#faf0dc" data-layer-name="Row shade"/>
+<line x1="15" y1="268" x2="195" y2="268" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="60" width="180" height="208" fill="none" stroke="#aaa" stroke-width="0.3" data-layer-name="Table border"/>
+<line x1="41" y1="60" x2="41" y2="268" stroke="#aaa" stroke-width="0.2"/>
+<line x1="105" y1="60" x2="105" y2="268" stroke="#aaa" stroke-width="0.2"/>
+<line x1="135" y1="60" x2="135" y2="268" stroke="#aaa" stroke-width="0.2"/>
+<line x1="165" y1="60" x2="165" y2="268" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="268" width="180" height="11" fill="#faf0dc" rx="1.5" stroke="#7a2e12" stroke-width="0.4" data-layer-name="Total box"/>
+<text x="20" y="275.2" font-size="4.4" fill="#7a2e12" font-weight="700">মোট অবশিষ্ট বাকি:</text>
+<line x1="65" y1="276" x2="190" y2="276" stroke="#7a2e12" stroke-width="0.3" stroke-dasharray="0.6 0.8"/>
+<line x1="20" y1="289" x2="70" y2="289" stroke="#555" stroke-width="0.3"/>
+<text x="45.0" y="293.2" font-size="3.2" fill="#444" font-weight="500" text-anchor="middle">গ্রাহকের স্বাক্ষর</text>
+<line x1="140" y1="289" x2="190" y2="289" stroke="#555" stroke-width="0.3"/>
+<text x="165.0" y="293.2" font-size="3.2" fill="#444" font-weight="500" text-anchor="middle">দোকানদারের স্বাক্ষর</text>
+<g display="none" id="safe-area-guide" data-print="false"><rect x="5" y="5" width="200" height="287" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 210" width="148mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="148" height="210" fill="#5e0f24" data-layer-name="Background"/>
+<rect x="7" y="7" width="134" height="196" fill="none" rx="3" stroke="#e8c26a" stroke-width="0.8" data-layer-name="Outer gold border"/>
+<rect x="11" y="11" width="126" height="188" fill="none" rx="2" stroke="#e8c26a" stroke-width="0.3" data-layer-name="Inner gold border"/>
+<circle cx="11" cy="11" r="3.2" fill="#e8c26a" data-layer-name="Corner dot"/>
+<circle cx="137" cy="11" r="3.2" fill="#e8c26a" data-layer-name="Corner dot"/>
+<circle cx="11" cy="199" r="3.2" fill="#e8c26a" data-layer-name="Corner dot"/>
+<circle cx="137" cy="199" r="3.2" fill="#e8c26a" data-layer-name="Corner dot"/>
+<text x="74" y="30" font-size="6" fill="#e8c26a" font-weight="600" text-anchor="middle">بسم الله الرحمن الرحيم</text>
+<text x="74" y="40" font-size="4" fill="#f6e2ab" font-weight="500" text-anchor="middle">বিসমিল্লাহির রাহমানির রাহিম</text>
+<text x="74" y="62" font-size="14" fill="#ffffff" font-weight="700" text-anchor="middle">শুভ বিবাহ</text>
+<line x1="44" y1="68" x2="104" y2="68" stroke="#e8c26a" stroke-width="0.5"/>
+<circle cx="74" cy="68" r="1.6" fill="#e8c26a" data-layer-name="Divider dot"/>
+<text x="74" y="84" font-size="8" fill="#f6e2ab" font-weight="700" text-anchor="middle">বরের নাম</text>
+<text x="74" y="94" font-size="7" fill="#e8c26a" font-weight="600" text-anchor="middle">&amp;</text>
+<text x="74" y="106" font-size="8" fill="#f6e2ab" font-weight="700" text-anchor="middle">কনের নাম</text>
+<text x="74" y="120" font-size="3.8" fill="#ffffff" font-weight="400" text-anchor="middle">আপনাকে আন্তরিকভাবে দাওয়াত জানাচ্ছি</text>
+<rect x="20" y="128" width="108" height="38" fill="#7a1a34" rx="3" stroke="#e8c26a" stroke-width="0.4" data-layer-name="Details box"/>
+<text x="74" y="138" font-size="4" fill="#ffffff" font-weight="600" text-anchor="middle">তারিখ: ১৮ ডিসেম্বর ২০২৬, শুক্রবার</text>
+<text x="74" y="147" font-size="3.8" fill="#f6e2ab" font-weight="500" text-anchor="middle">সময়: দুপুর ১২টা থেকে বিকাল ৪টা</text>
+<text x="74" y="156" font-size="3.8" fill="#ffffff" font-weight="500" text-anchor="middle">স্থান: কমিউনিটি সেন্টার / বাড়ির ঠিকানা</text>
+<text x="74" y="162" font-size="3.4" fill="#f6e2ab" font-weight="400" text-anchor="middle">গ্রাম, থানা, জেলা</text>
+<text x="74" y="178" font-size="4" fill="#e8c26a" font-weight="700" text-anchor="middle">আপনার সদয় উপস্থিতি ও দোয়া কাম্য</text>
+<text x="74" y="187" font-size="3.4" fill="#ffffff" font-weight="400" text-anchor="middle">বিনীত — আপনার পরিবারের পক্ষে</text>
+<text x="74" y="193" font-size="3.2" fill="#f6e2ab" font-weight="400" text-anchor="middle">যোগাযোগ: ০১৭০০-০০০০০০</text>
+<g id="safe-area-guide" data-print="false"><rect x="5" y="5" width="138" height="200" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

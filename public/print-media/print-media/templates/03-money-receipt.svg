@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="03-money-receipt" width="148mm" height="210mm" viewBox="0 0 148 210" overflow="visible" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif" data-template="03-money-receipt" data-platform="SebaLagbe.com" data-unit="mm" data-bleed-mm="3" text-rendering="optimizeLegibility" font-kerning="normal">
+<title>Premium Money Receipt A5</title>
+<desc>SebaLagbe.com print-media template. Real SVG text/shapes; all objects with data-editable="true" are user-editable. 1 user unit = 1 mm.</desc>
+<g id="background_layer" data-layer-name="Background" data-editable="false">
+<rect id="bg_page" data-editable="true" data-object-type="shape" data-layer-name="Page Background" x="-3" y="-3" width="154" height="216" fill="#FBFCFF"/>
+<rect id="bg_header_tint" data-editable="true" data-object-type="shape" data-layer-name="Header Tint" x="11" y="11" width="126" height="36" rx="1" fill="#EEF2FC"/>
+</g>
+<g id="border_layer" data-layer-name="Borders" data-editable="false">
+<rect id="border_outer" data-editable="true" data-object-type="shape" data-layer-name="Outer Royal Border" x="6" y="6" width="136" height="198" fill="none" stroke="#1B3FA0" stroke-width="1.4"/>
+<rect id="border_inner" data-editable="true" data-object-type="shape" data-layer-name="Inner Gold Border" x="8.6" y="8.6" width="130.8" height="192.8" fill="none" stroke="#B8932A" stroke-width="0.45"/>
+</g>
+<g id="decorative_shapes" data-layer-name="Decorative Shapes" data-editable="false">
+<polygon id="corner_star_01" data-editable="true" data-object-type="shape" data-layer-name="Corner Star 1" points="8.6,4.4 9.6,6.19 11.57,5.63 11.01,7.6 12.8,8.6 11.01,9.6 11.57,11.57 9.6,11.01 8.6,12.8 7.6,11.01 5.63,11.57 6.19,9.6 4.4,8.6 6.19,7.6 5.63,5.63 7.6,6.19" fill="#B8932A"/>
+<polygon id="corner_star_02" data-editable="true" data-object-type="shape" data-layer-name="Corner Star 2" points="139.4,4.4 140.4,6.19 142.37,5.63 141.81,7.6 143.6,8.6 141.81,9.6 142.37,11.57 140.4,11.01 139.4,12.8 138.4,11.01 136.43,11.57 136.99,9.6 135.2,8.6 136.99,7.6 136.43,5.63 138.4,6.19" fill="#B8932A"/>
+<polygon id="corner_star_03" data-editable="true" data-object-type="shape" data-layer-name="Corner Star 3" points="8.6,197.2 9.6,198.99 11.57,198.43 11.01,200.4 12.8,201.4 11.01,202.4 11.57,204.37 9.6,203.81 8.6,205.6 7.6,203.81 5.63,204.37 6.19,202.4 4.4,201.4 6.19,200.4 5.63,198.43 7.6,198.99" fill="#B8932A"/>
+<polygon id="corner_star_04" data-editable="true" data-object-type="shape" data-layer-name="Corner Star 4" points="139.4,197.2 140.4,198.99 142.37,198.43 141.81,200.4 143.6,201.4 141.81,202.4 142.37,204.37 140.4,203.81 139.4,205.6 138.4,203.81 136.43,204.37 136.99,202.4 135.2,201.4 136.99,200.4 136.43,198.43 138.4,198.99" fill="#B8932A"/>
+<path id="deco_diamonds" data-editable="true" data-object-type="shape" data-layer-name="Header Diamond Row" d="M46.32 41.4L47.27 40.2L48.23 41.4L47.27 42.6ZM48.86 41.4L49.82 40.2L50.77 41.4L49.82 42.6ZM51.41 41.4L52.36 40.2L53.32 41.4L52.36 42.6ZM53.95 41.4L54.91 40.2L55.86 41.4L54.91 42.6ZM56.5 41.4L57.45 40.2L58.41 41.4L57.45 42.6ZM59.05 41.4L60 40.2L60.95 41.4L60 42.6ZM61.59 41.4L62.55 40.2L63.5 41.4L62.55 42.6ZM64.14 41.4L65.09 40.2L66.05 41.4L65.09 42.6ZM66.68 41.4L67.64 40.2L68.59 41.4L67.64 42.6ZM69.23 41.4L70.18 40.2L71.14 41.4L70.18 42.6ZM71.77 41.4L72.73 40.2L73.68 41.4L72.73 42.6ZM74.32 41.4L75.27 40.2L76.23 41.4L75.27 42.6ZM76.86 41.4L77.82 40.2L78.77 41.4L77.82 42.6ZM79.41 41.4L80.36 40.2L81.32 41.4L80.36 42.6ZM81.95 41.4L82.91 40.2L83.86 41.4L82.91 42.6ZM84.5 41.4L85.45 40.2L86.41 41.4L85.45 42.6ZM87.05 41.4L88 40.2L88.95 41.4L88 42.6ZM89.59 41.4L90.55 40.2L91.5 41.4L90.55 42.6ZM92.14 41.4L93.09 40.2L94.05 41.4L93.09 42.6ZM94.68 41.4L95.64 40.2L96.59 41.4L95.64 42.6ZM97.23 41.4L98.18 40.2L99.14 41.4L98.18 42.6ZM99.77 41.4L100.73 40.2L101.68 41.4L100.73 42.6Z" fill="#B8932A"/>
+</g>
+<g id="logo_placeholder" data-layer-name="Logo Placeholder" data-editable="false">
+<g id="logo_image_placeholder_group" data-editable="false" data-layer-name="Organization Logo Group">
+<circle id="logo_image_placeholder" data-editable="true" data-object-type="image" data-layer-name="Organization Logo" cx="28" cy="27" r="13" fill="#FFFFFF" stroke="#1B3FA0" stroke-width="0.35" stroke-dasharray="1.4 1.05" data-placeholder="true"/>
+<g id="logo_image_placeholder_hint" class="placeholder-hint" data-editable="false" data-placeholder-hint="true" pointer-events="none">
+<g transform="translate(24.62 21.93) scale(0.28)" fill="none" stroke="#1B3FA0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></g>
+<text x="28" y="32.76" font-size="3.4" fill="#1B3FA0" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif">লোগো</text>
+</g></g>
+</g>
+<g id="title_text" data-layer-name="Organization Name" data-editable="false">
+<text id="org_name_text" data-editable="true" data-object-type="text" data-layer-name="Organization Name" x="92" y="23.5" font-size="8" font-weight="800" fill="#1B3FA0" text-anchor="middle" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="92">প্রতিষ্ঠানের নাম</tspan></text>
+</g>
+<g id="contact_information" data-layer-name="Contact Information" data-editable="false">
+<text id="org_address_text" data-editable="true" data-object-type="text" data-layer-name="Organization Address" x="92" y="30.5" font-size="3.3" font-weight="500" fill="#16275E" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="92">ঠিকানা: রোড, এলাকা, জেলা</tspan></text>
+<text id="org_phone_text" data-editable="true" data-object-type="text" data-layer-name="Organization Phone" x="92" y="35.5" font-size="3.3" font-weight="600" fill="#16275E" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="92">মোবাইল: ০১XXX-XXXXXX</tspan></text>
+</g>
+<g id="receipt_title" data-layer-name="Receipt Title Ribbon" data-editable="false">
+<polygon id="ribbon_tail_left" data-editable="true" data-object-type="shape" data-layer-name="Ribbon Tail Left" points="20,48 34,48 30,54 34,60 20,60 24,54" fill="#112B78"/>
+<polygon id="ribbon_tail_right" data-editable="true" data-object-type="shape" data-layer-name="Ribbon Tail Right" points="128,48 114,48 118,54 114,60 128,60 124,54" fill="#112B78"/>
+<rect id="ribbon_body" data-editable="true" data-object-type="shape" data-layer-name="Ribbon Body" x="30" y="45.5" width="88" height="17" rx="1.5" fill="#1B3FA0"/>
+<rect id="ribbon_gold_line" data-editable="true" data-object-type="shape" data-layer-name="Ribbon Gold Line" x="33" y="47.5" width="82" height="0.5" fill="#B8932A"/>
+<text id="receipt_title_text" data-editable="true" data-object-type="text" data-layer-name="Receipt Title" x="74" y="56.2" font-size="7" font-weight="800" fill="#FFFFFF" text-anchor="middle" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="74">মানি রিসিপ্ট</tspan></text>
+<text id="receipt_subtitle_text" data-editable="true" data-object-type="text" data-layer-name="Receipt Subtitle" x="74" y="60.3" font-size="2.6" font-weight="600" fill="#F1D77A" text-anchor="middle" letter-spacing="1.2" font-family="&quot;Plus Jakarta Sans&quot;, &quot;Inter&quot;, Arial, sans-serif"><tspan x="74">MONEY RECEIPT</tspan></text>
+</g>
+<g id="receipt_fields" data-layer-name="Receipt Fields" data-editable="false">
+<text id="rcpt_no_label" data-editable="true" data-object-type="text" data-layer-name="Receipt No Label" x="14" y="72" font-size="3.7" font-weight="600" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">রশিদ নং:</tspan></text>
+<line id="rcpt_no_line" data-editable="true" data-object-type="shape" data-layer-name="Receipt No Line" x1="29.45" y1="72.8" x2="72" y2="72.8" stroke="#8A9AC8" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="rcpt_date_label" data-editable="true" data-object-type="text" data-layer-name="Date Label" x="82" y="72" font-size="3.7" font-weight="600" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="82">তারিখ:</tspan></text>
+<line id="rcpt_date_line" data-editable="true" data-object-type="shape" data-layer-name="Date Line" x1="93.24" y1="72.8" x2="134" y2="72.8" stroke="#8A9AC8" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="from_label" data-editable="true" data-object-type="text" data-layer-name="Received From Label" x="14" y="83" font-size="3.7" font-weight="600" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">প্রাপ্ত হয়েছে (নাম):</tspan></text>
+<line id="from_line" data-editable="true" data-object-type="shape" data-layer-name="Received From Line" x1="46.33" y1="83.8" x2="134" y2="83.8" stroke="#8A9AC8" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="words1_label" data-editable="true" data-object-type="text" data-layer-name="Amount In Words Label" x="14" y="94" font-size="3.7" font-weight="600" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">টাকার পরিমাণ (কথায়):</tspan></text>
+<line id="words1_line" data-editable="true" data-object-type="shape" data-layer-name="Amount In Words Line" x1="48.43" y1="94.8" x2="134" y2="94.8" stroke="#8A9AC8" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<line id="words_line_2" data-editable="true" data-object-type="shape" data-layer-name="Amount In Words Line 2" x1="14" y1="103.8" x2="134" y2="103.8" stroke="#8A9AC8" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray="1.2 1"/>
+<text id="purpose_label" data-editable="true" data-object-type="text" data-layer-name="Payment Purpose Label" x="14" y="114.5" font-size="3.7" font-weight="600" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">কী বাবদ:</tspan></text>
+<line id="purpose_line" data-editable="true" data-object-type="shape" data-layer-name="Payment Purpose Line" x1="29.45" y1="115.3" x2="134" y2="115.3" stroke="#8A9AC8" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+<text id="method_label" data-editable="true" data-object-type="text" data-layer-name="Payment Method Label" x="14" y="125.5" font-size="3.7" font-weight="600" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">পেমেন্ট পদ্ধতি:</tspan></text>
+<rect id="method_box_01" data-editable="true" data-object-type="shape" data-layer-name="Method Checkbox 1" x="45" y="122.4" width="3.6" height="3.6" fill="none" stroke="#1B3FA0" stroke-width="0.35"/>
+<text id="method_text_01" data-editable="true" data-object-type="text" data-layer-name="Method Label 1" x="50" y="125.5" font-size="3.3" font-weight="500" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="50">নগদ</tspan></text>
+<rect id="method_box_02" data-editable="true" data-object-type="shape" data-layer-name="Method Checkbox 2" x="63" y="122.4" width="3.6" height="3.6" fill="none" stroke="#1B3FA0" stroke-width="0.35"/>
+<text id="method_text_02" data-editable="true" data-object-type="text" data-layer-name="Method Label 2" x="68" y="125.5" font-size="3.3" font-weight="500" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="68">চেক</tspan></text>
+<rect id="method_box_03" data-editable="true" data-object-type="shape" data-layer-name="Method Checkbox 3" x="80" y="122.4" width="3.6" height="3.6" fill="none" stroke="#1B3FA0" stroke-width="0.35"/>
+<text id="method_text_03" data-editable="true" data-object-type="text" data-layer-name="Method Label 3" x="85" y="125.5" font-size="3.3" font-weight="500" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="85">মোবাইল ব্যাংকিং</tspan></text>
+<rect id="method_box_04" data-editable="true" data-object-type="shape" data-layer-name="Method Checkbox 4" x="118" y="122.4" width="3.6" height="3.6" fill="none" stroke="#1B3FA0" stroke-width="0.35"/>
+<text id="method_text_04" data-editable="true" data-object-type="text" data-layer-name="Method Label 4" x="123" y="125.5" font-size="3.3" font-weight="500" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="123">ব্যাংক</tspan></text>
+<text id="ref_label" data-editable="true" data-object-type="text" data-layer-name="Reference Label" x="14" y="136.5" font-size="3.7" font-weight="600" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">রেফারেন্স / ট্রানজ্যাকশন আইডি:</tspan></text>
+<line id="ref_line" data-editable="true" data-object-type="shape" data-layer-name="Reference Line" x1="61.09" y1="137.3" x2="134" y2="137.3" stroke="#8A9AC8" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray=".9 .8"/>
+</g>
+<g id="amount_box" data-layer-name="Amount Box" data-editable="false">
+<rect id="amount_box_frame" data-editable="true" data-object-type="shape" data-layer-name="Amount Box" x="14" y="146.5" width="58" height="20" rx="1.5" fill="#FFF9E3" stroke="#B8932A" stroke-width="0.6"/>
+<text id="amount_label" data-editable="true" data-object-type="text" data-layer-name="Amount Label" x="17" y="151.6" font-size="3.3" font-weight="600" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="17">টাকা (অংকে)</tspan></text>
+<text id="amount_symbol" data-editable="true" data-object-type="text" data-layer-name="Taka Symbol" x="17" y="162.6" font-size="8" font-weight="800" fill="#1B3FA0" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="17">৳</tspan></text>
+<line id="amount_line" data-editable="true" data-object-type="shape" data-layer-name="Amount Line" x1="27" y1="163" x2="69" y2="163" stroke="#8A9AC8" stroke-width="0.25" stroke-linecap="butt" stroke-dasharray="1.2 1"/>
+</g>
+<g id="seal_placeholder" data-layer-name="Seal Placeholder" data-editable="false">
+<g id="seal_image_placeholder_group" data-editable="false" data-layer-name="Seal / Stamp Area Group">
+<circle id="seal_image_placeholder" data-editable="true" data-object-type="image" data-layer-name="Seal / Stamp Area" cx="95" cy="156.5" r="10" fill="none" stroke="#8A9AC8" stroke-width="0.3" stroke-dasharray="1.2 0.9" data-placeholder="true"/>
+<g id="seal_image_placeholder_hint" class="placeholder-hint" data-editable="false" data-placeholder-hint="true" pointer-events="none">
+<g transform="translate(92.4 152.6) scale(0.22)" fill="none" stroke="#8A9AC8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></g>
+<text x="95" y="161.16" font-size="3" fill="#8A9AC8" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif">সিল</text>
+</g></g>
+</g>
+<g id="signature_area" data-layer-name="Signatures" data-editable="false">
+<line id="sig_receiver_line" data-editable="true" data-object-type="shape" data-layer-name="Receiver Signature Line" x1="14" y1="178" x2="62" y2="178" stroke="#16275E" stroke-width="0.3" stroke-linecap="butt"/>
+<text id="sig_receiver_label" data-editable="true" data-object-type="text" data-layer-name="Receiver Signature Label" x="14" y="182.2" font-size="3.1" font-weight="500" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="14">প্রাপকের স্বাক্ষর</tspan></text>
+<line id="sig_auth_line" data-editable="true" data-object-type="shape" data-layer-name="Authorised Signature Line" x1="90" y1="178" x2="134" y2="178" stroke="#16275E" stroke-width="0.3" stroke-linecap="butt"/>
+<text id="sig_auth_label" data-editable="true" data-object-type="text" data-layer-name="Authorised Signature Label" x="90" y="182.2" font-size="3.1" font-weight="500" fill="#16275E" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="90">অনুমোদিত স্বাক্ষর</tspan></text>
+</g>
+<g id="footer_layer" data-layer-name="Footer" data-editable="false">
+<rect id="footer_band" data-editable="true" data-object-type="shape" data-layer-name="Footer Band" x="8.6" y="187" width="130.8" height="9.6" fill="#1B3FA0"/>
+<text id="footer_text" data-editable="true" data-object-type="text" data-layer-name="Footer Note" x="74" y="193.6" font-size="3.5" font-weight="600" fill="#FFFFFF" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="74">আপনার সহযোগিতার জন্য ধন্যবাদ</tspan></text>
+</g>
+<g id="print_guides" data-layer-name="Print Guides (hidden - non-printing)" data-editable="false">
+<g id="print_guides_group" display="none" data-editable="false" data-print="false" pointer-events="none"><rect id="guide_trim" x="0" y="0" width="148" height="210" fill="none" stroke="#E5007D" stroke-width="0.3"/><rect id="guide_safe" x="8" y="8" width="132" height="194" fill="none" stroke="#00A3E0" stroke-width="0.3" stroke-dasharray="1.49 1.37"/><rect id="guide_bleed" x="-3" y="-3" width="154" height="216" fill="none" stroke="#FF6A00" stroke-width="0.3" stroke-dasharray="1.49 1.37"/></g>
+</g>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "id": "56-lost-notice",
+  "title": "Lost / Missing Notice with Tear-off Tabs",
+  "category": "Events & Invitations",
+  "aspectRatio": "210:297",
+  "physicalWidth": 210,
+  "physicalHeight": 297,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 portrait",
+  "file": "templates/56-lost-notice.svg",
+  "preview": "previews/56-lost-notice.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 297",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

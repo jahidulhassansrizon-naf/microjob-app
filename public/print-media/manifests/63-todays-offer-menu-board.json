@@ -1,0 +1,19 @@
+{
+  "id": "63-todays-offer-menu-board",
+  "title": "Today's Offer & Tea-Snacks Menu Board",
+  "category": "Shop & Business",
+  "aspectRatio": "210:297",
+  "physicalWidth": 210,
+  "physicalHeight": 297,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 portrait",
+  "file": "templates/63-todays-offer-menu-board.svg",
+  "preview": "previews/63-todays-offer-menu-board.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 297",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

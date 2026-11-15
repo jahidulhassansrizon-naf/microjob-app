@@ -1,0 +1,19 @@
+{
+  "id": "30-admission-open-poster",
+  "title": "Admission Open Poster",
+  "category": "Education & Institution",
+  "aspectRatio": "210:297",
+  "physicalWidth": 210,
+  "physicalHeight": 297,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 portrait",
+  "file": "templates/30-admission-open-poster.svg",
+  "preview": "previews/30-admission-open-poster.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 297",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

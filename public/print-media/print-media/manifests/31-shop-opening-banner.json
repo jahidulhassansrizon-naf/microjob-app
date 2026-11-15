@@ -1,0 +1,19 @@
+{
+  "id": "31-shop-opening-banner",
+  "title": "Shop Opening Banner",
+  "category": "Banner & Signboard",
+  "aspectRatio": "3:2",
+  "physicalWidth": 914.4,
+  "physicalHeight": 609.6,
+  "unit": "mm",
+  "physicalSizeLabel": "3 ft x 2 ft",
+  "file": "templates/31-shop-opening-banner.svg",
+  "preview": "previews/31-shop-opening-banner.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 300 200",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#0b1d3a" data-layer-name="Background"/>
+<circle cx="-10" cy="20" r="45" fill="#12305f" data-layer-name="Decor circle"/>
+<circle cx="222" cy="270" r="55" fill="#12305f" data-layer-name="Decor circle"/>
+<text x="105" y="20" font-size="11" fill="#ffc233" font-weight="700" text-anchor="middle">আপনার দোকানের নাম</text>
+<text x="105" y="27.5" font-size="4.2" fill="#ffffff" font-weight="500" text-anchor="middle" letter-spacing="1.5" opacity="0.8">YOUR SHOP NAME</text>
+<polygon points="105.0,40.0 112.83,52.51 123.63,42.45 127.96,56.57 141.0,49.65 141.53,64.4 155.91,61.09 152.6,75.47 167.35,76.0 160.43,89.04 174.55,93.37 164.49,104.17 177.0,112.0 164.49,119.83 174.55,130.63 160.43,134.96 167.35,148.0 152.6,148.53 155.91,162.91 141.53,159.6 141.0,174.35 127.96,167.43 123.63,181.55 112.83,171.49 105.0,184.0 97.17,171.49 86.37,181.55 82.04,167.43 69.0,174.35 68.47,159.6 54.09,162.91 57.4,148.53 42.65,148.0 49.57,134.96 35.45,130.63 45.51,119.83 33.0,112.0 45.51,104.17 35.45,93.37 49.57,89.04 42.65,76.0 57.4,75.47 54.09,61.09 68.47,64.4 69.0,49.65 82.04,56.57 86.37,42.45 97.17,52.51" fill="#ffc233" data-layer-name="Starburst"/>
+<circle cx="105" cy="112" r="53" fill="#e11d2e" data-layer-name="Offer circle"/>
+<text x="105" y="92" font-size="9" fill="#ffffff" font-weight="600" text-anchor="middle">সর্বোচ্চ</text>
+<text x="105" y="125" font-size="42" fill="#ffffff" font-weight="800" text-anchor="middle">৫০%</text>
+<text x="105" y="145" font-size="14" fill="#ffc233" font-weight="800" text-anchor="middle">ছাড়!</text>
+<text x="105" y="206" font-size="26" fill="#ffffff" font-weight="800" text-anchor="middle">মেগা সেল</text>
+<text x="105" y="217" font-size="7" fill="#ffc233" font-weight="600" text-anchor="middle">সীমিত সময়ের জন্য বিশেষ অফার</text>
+<rect x="28" y="224" width="154" height="12" fill="#ffc233" rx="6" data-layer-name="Date strip"/>
+<text x="105" y="232.3" font-size="6.5" fill="#0b1d3a" font-weight="700" text-anchor="middle">অফার চলবে: ০১ – ১৫ ডিসেম্বর ২০২৬</text>
+<rect x="15" y="243" width="58" height="28" fill="#16315f" rx="4" stroke="#ffc233" stroke-width="0.4" data-layer-name="Offer card"/>
+<text x="44" y="253" font-size="5.5" fill="#ffffff" font-weight="600" text-anchor="middle">ইলেকট্রনিক্স</text>
+<text x="44" y="265" font-size="9" fill="#ffc233" font-weight="800" text-anchor="middle">২০% ছাড়</text>
+<rect x="77" y="243" width="58" height="28" fill="#16315f" rx="4" stroke="#ffc233" stroke-width="0.4" data-layer-name="Offer card"/>
+<text x="106" y="253" font-size="5.5" fill="#ffffff" font-weight="600" text-anchor="middle">পোশাক</text>
+<text x="106" y="265" font-size="9" fill="#ffc233" font-weight="800" text-anchor="middle">৩০% ছাড়</text>
+<rect x="139" y="243" width="58" height="28" fill="#16315f" rx="4" stroke="#ffc233" stroke-width="0.4" data-layer-name="Offer card"/>
+<text x="168" y="253" font-size="5.5" fill="#ffffff" font-weight="600" text-anchor="middle">গৃহস্থালি</text>
+<text x="168" y="265" font-size="9" fill="#ffc233" font-weight="800" text-anchor="middle">১৫% ছাড়</text>
+<line x1="15" y1="278" x2="195" y2="278" stroke="#ffc233" stroke-width="0.4"/>
+<text x="105" y="285" font-size="5" fill="#ffffff" font-weight="600" text-anchor="middle">মোবাইল: ০১৭০০-০০০০০০  |  ঠিকানা: বাজার রোড, থানা, জেলা</text>
+<text x="105" y="291" font-size="3.4" fill="#9fb3d1" font-weight="500" text-anchor="middle">* শর্ত প্রযোজ্য। স্টক থাকা পর্যন্ত অফার বহাল থাকবে।</text>
+</svg>

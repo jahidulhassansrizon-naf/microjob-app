@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="8" y="8" width="194" height="281" fill="none" stroke="#7c2d12" stroke-width="0.8" data-layer-name="Border"/>
+<rect x="10.5" y="10.5" width="189" height="276" fill="none" stroke="#7c2d12" stroke-width="0.25" data-layer-name="Inner border"/>
+<circle cx="30" cy="28" r="10" fill="none" stroke="#bbb" stroke-width="0.4" stroke-dasharray="1.5 1" data-layer-name="Logo placeholder"/>
+<text x="30" y="29" font-size="3.4" fill="#bbb" font-weight="500" text-anchor="middle">লোগো</text>
+<text x="112" y="25" font-size="14" fill="#7c2d12" font-weight="800" text-anchor="middle">বিদ্যালয়ের নাম</text>
+<text x="112" y="32" font-size="4.4" fill="#555" font-weight="500" text-anchor="middle">ঠিকানা: বাজার রোড, থানা, জেলা</text>
+<text x="112" y="38" font-size="4" fill="#555" font-weight="500" text-anchor="middle">মোবাইল: ০১৭০০-০০০০০০</text>
+<rect x="60" y="46" width="90" height="11" fill="#7c2d12" rx="5.5" data-layer-name="Title pill"/>
+<text x="105" y="53.5" font-size="7.5" fill="#fff" font-weight="700" text-anchor="middle">একাডেমিক রেজাল্ট কার্ড</text>
+<text x="18" y="68" font-size="4.4" fill="#333" font-weight="600">শিক্ষার্থীর নাম: </text>
+<line x1="40.092" y1="68.9" x2="120" y2="68.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="125" y="68" font-size="4.4" fill="#333" font-weight="600">রোল: </text>
+<line x1="135.652" y1="68.9" x2="192" y2="68.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="18" y="77" font-size="4.4" fill="#333" font-weight="600">পিতার নাম: </text>
+<line x1="37.804" y1="77.9" x2="120" y2="77.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="125" y="77" font-size="4.4" fill="#333" font-weight="600">শ্রেণি: </text>
+<line x1="135.652" y1="77.9" x2="192" y2="77.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="18" y="86" font-size="4.4" fill="#333" font-weight="600">মাতার নাম: </text>
+<line x1="37.804" y1="86.9" x2="120" y2="86.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="125" y="86" font-size="4.4" fill="#333" font-weight="600">শাখা: </text>
+<line x1="135.652" y1="86.9" x2="192" y2="86.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="18" y="95" font-size="4.4" fill="#333" font-weight="600">পরীক্ষার নাম: </text>
+<line x1="40.092" y1="95.9" x2="120" y2="95.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="125" y="95" font-size="4.4" fill="#333" font-weight="600">সাল: </text>
+<line x1="135.652" y1="95.9" x2="192" y2="95.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="18" y="102" width="174" height="9" fill="#7c2d12" data-layer-name="Table header"/>
+<text x="24.0" y="108" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">ক্রম</text>
+<text x="65.0" y="108" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">বিষয়</text>
+<text x="113.0" y="108" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">পূর্ণমান</text>
+<text x="139.0" y="108" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">প্রাপ্ত নম্বর</text>
+<text x="163.5" y="108" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">গ্রেড</text>
+<text x="183.5" y="108" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">GPA</text>
+<rect x="18" y="111" width="174" height="9" fill="#fff7ed" data-layer-name="Row shade"/>
+<line x1="18" y1="120" x2="192" y2="120" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="117" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">১</text>
+<text x="32" y="117" font-size="4" fill="#333" font-weight="500">বাংলা</text>
+<line x1="18" y1="129" x2="192" y2="129" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="126" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">২</text>
+<text x="32" y="126" font-size="4" fill="#333" font-weight="500">ইংরেজি</text>
+<rect x="18" y="129" width="174" height="9" fill="#fff7ed" data-layer-name="Row shade"/>
+<line x1="18" y1="138" x2="192" y2="138" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="135" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">৩</text>
+<text x="32" y="135" font-size="4" fill="#333" font-weight="500">গণিত</text>
+<line x1="18" y1="147" x2="192" y2="147" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="144" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">৪</text>
+<text x="32" y="144" font-size="4" fill="#333" font-weight="500">বিজ্ঞান</text>
+<rect x="18" y="147" width="174" height="9" fill="#fff7ed" data-layer-name="Row shade"/>
+<line x1="18" y1="156" x2="192" y2="156" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="153" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">৫</text>
+<text x="32" y="153" font-size="4" fill="#333" font-weight="500">বাংলাদেশ ও বিশ্বপরিচয়</text>
+<line x1="18" y1="165" x2="192" y2="165" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="162" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">৬</text>
+<text x="32" y="162" font-size="4" fill="#333" font-weight="500">ধর্ম ও নৈতিক শিক্ষা</text>
+<rect x="18" y="165" width="174" height="9" fill="#fff7ed" data-layer-name="Row shade"/>
+<line x1="18" y1="174" x2="192" y2="174" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="171" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">৭</text>
+<text x="32" y="171" font-size="4" fill="#333" font-weight="500">তথ্য ও যোগাযোগ প্রযুক্তি</text>
+<line x1="18" y1="183" x2="192" y2="183" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="180" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">৮</text>
+<text x="32" y="180" font-size="4" fill="#333" font-weight="500">শারীরিক শিক্ষা</text>
+<rect x="18" y="183" width="174" height="9" fill="#fff7ed" data-layer-name="Row shade"/>
+<line x1="18" y1="192" x2="192" y2="192" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="189" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">৯</text>
+<text x="32" y="189" font-size="4" fill="#333" font-weight="500">কারু ও চারুকলা</text>
+<line x1="18" y1="201" x2="192" y2="201" stroke="#e5c5ae" stroke-width="0.2"/>
+<text x="24" y="198" font-size="3.6" fill="#b08a72" font-weight="500" text-anchor="middle">১০</text>
+<text x="32" y="198" font-size="4" fill="#333" font-weight="500">অন্যান্য</text>
+<line x1="30" y1="111" x2="30" y2="201" stroke="#e5c5ae" stroke-width="0.2"/>
+<line x1="100" y1="111" x2="100" y2="201" stroke="#e5c5ae" stroke-width="0.2"/>
+<line x1="126" y1="111" x2="126" y2="201" stroke="#e5c5ae" stroke-width="0.2"/>
+<line x1="152" y1="111" x2="152" y2="201" stroke="#e5c5ae" stroke-width="0.2"/>
+<line x1="175" y1="111" x2="175" y2="201" stroke="#e5c5ae" stroke-width="0.2"/>
+<rect x="18" y="111" width="174" height="90" fill="none" stroke="#7c2d12" stroke-width="0.4" data-layer-name="Table border"/>
+<rect x="18" y="208" width="43" height="15" fill="#fff" rx="2.5" stroke="#7c2d12" stroke-width="0.4" data-layer-name="Summary card"/>
+<text x="39.5" y="213.5" font-size="3.7" fill="#7c2d12" font-weight="700" text-anchor="middle">মোট নম্বর</text>
+<line x1="22" y1="219.5" x2="57" y2="219.5" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="65" y="208" width="43" height="15" fill="#fff" rx="2.5" stroke="#7c2d12" stroke-width="0.4" data-layer-name="Summary card"/>
+<text x="86.5" y="213.5" font-size="3.7" fill="#7c2d12" font-weight="700" text-anchor="middle">জিপিএ</text>
+<line x1="69" y1="219.5" x2="104" y2="219.5" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="112" y="208" width="36" height="15" fill="#fff" rx="2.5" stroke="#7c2d12" stroke-width="0.4" data-layer-name="Summary card"/>
+<text x="130.0" y="213.5" font-size="3.7" fill="#7c2d12" font-weight="700" text-anchor="middle">চূড়ান্ত ফল</text>
+<line x1="116" y1="219.5" x2="144" y2="219.5" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="152" y="208" width="40" height="15" fill="#fff" rx="2.5" stroke="#7c2d12" stroke-width="0.4" data-layer-name="Summary card"/>
+<text x="172.0" y="213.5" font-size="3.7" fill="#7c2d12" font-weight="700" text-anchor="middle">মেধাক্রম</text>
+<line x1="156" y1="219.5" x2="188" y2="219.5" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="18" y="231" font-size="3.3" fill="#666" font-weight="500">গ্রেডিং: A+ (৮০–১০০) = ৫.০০,  A (৭০–৭৯) = ৪.০০,  A- (৬০–৬৯) = ৩.৫০,</text>
+<text x="18" y="236" font-size="3.3" fill="#666" font-weight="500">B (৫০–৫৯) = ৩.০০,  C (৪০–৪৯) = ২.০০,  D (৩৩–৩৯) = ১.০০,  F (০–৩২) = ০</text>
+<text x="18" y="247" font-size="4.2" fill="#333" font-weight="600">মন্তব্য: </text>
+<line x1="30.42" y1="247.9" x2="192" y2="247.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="20" y1="272" x2="68" y2="272" stroke="#555" stroke-width="0.3"/>
+<text x="44" y="277" font-size="3.9" fill="#555" font-weight="600" text-anchor="middle">শ্রেণি শিক্ষক</text>
+<line x1="80" y1="272" x2="128" y2="272" stroke="#555" stroke-width="0.3"/>
+<text x="104" y="277" font-size="3.9" fill="#555" font-weight="600" text-anchor="middle">অভিভাবক</text>
+<line x1="140" y1="272" x2="188" y2="272" stroke="#555" stroke-width="0.3"/>
+<text x="164" y="277" font-size="3.9" fill="#555" font-weight="600" text-anchor="middle">প্রধান শিক্ষক</text>
+</svg>

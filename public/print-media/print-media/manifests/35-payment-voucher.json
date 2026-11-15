@@ -1,0 +1,19 @@
+{
+  "id": "35-payment-voucher",
+  "title": "Payment Voucher",
+  "category": "Business Forms",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/35-payment-voucher.svg",
+  "preview": "previews/35-payment-voucher.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

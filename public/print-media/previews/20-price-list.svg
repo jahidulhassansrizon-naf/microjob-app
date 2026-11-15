@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="48" fill="#146c43" data-layer-name="Header band"/>
+<rect x="0" y="48" width="210" height="3" fill="#f2b705" data-layer-name="Accent"/>
+<circle cx="26.0" cy="23.0" r="14.0" fill="#1c8556" stroke="#ffffff" stroke-width="0.35" stroke-dasharray="1.5 1" id="logo_placeholder" data-object-type="image" data-layer-name="লোগো"/>
+<text x="26.0" y="24.0" font-size="3" fill="#777" font-weight="500" text-anchor="middle" id="logo_placeholder_hint" data-layer-name="লোগো hint">লোগো</text>
+<text x="48" y="22" font-size="11" fill="#ffffff" font-weight="700">আপনার দোকানের নাম</text>
+<text x="48" y="30" font-size="4" fill="#f2b705" font-weight="500">এখানে আপনার দোকানের স্লোগান লিখুন</text>
+<text x="48" y="38" font-size="3.6" fill="#e8f5ee" font-weight="400">ঠিকানা: বাজার রোড, থানা, জেলা  |  মোবাইল: ০১৭০০-০০০০০০</text>
+<text x="105" y="64" font-size="10" fill="#146c43" font-weight="700" text-anchor="middle">মূল্য তালিকা</text>
+<text x="105" y="70" font-size="3.4" fill="#555" font-weight="400" text-anchor="middle">১৫ নভেম্বর ২০২৬ থেকে কার্যকর</text>
+<rect x="15" y="78" width="180" height="11" fill="#146c43" data-layer-name="Table header"/>
+<text x="23.0" y="84.83333333333333" font-size="4" fill="#fff" font-weight="700" text-anchor="middle">ক্রমিক</text>
+<text x="73.0" y="84.83333333333333" font-size="4" fill="#fff" font-weight="700" text-anchor="middle">পণ্যের নাম</text>
+<text x="135.0" y="84.83333333333333" font-size="4" fill="#fff" font-weight="700" text-anchor="middle">একক</text>
+<text x="175.0" y="84.83333333333333" font-size="4" fill="#fff" font-weight="700" text-anchor="middle">দাম (৳)</text>
+<line x1="15" y1="100.4" x2="195" y2="100.4" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="100.4" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="111.80000000000001" x2="195" y2="111.80000000000001" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="123.2" x2="195" y2="123.2" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="123.2" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="134.6" x2="195" y2="134.6" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="146.0" x2="195" y2="146.0" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="146.0" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="157.4" x2="195" y2="157.4" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="168.8" x2="195" y2="168.8" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="168.8" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="180.20000000000002" x2="195" y2="180.20000000000002" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="191.6" x2="195" y2="191.6" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="191.60000000000002" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="203.00000000000003" x2="195" y2="203.00000000000003" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="214.4" x2="195" y2="214.4" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="214.4" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="225.8" x2="195" y2="225.8" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="237.20000000000002" x2="195" y2="237.20000000000002" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="237.20000000000002" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="248.60000000000002" x2="195" y2="248.60000000000002" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="260.0" x2="195" y2="260.0" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="260.0" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="271.4" x2="195" y2="271.4" stroke="#aaa" stroke-width="0.2"/>
+<line x1="15" y1="282.79999999999995" x2="195" y2="282.79999999999995" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="282.8" width="180" height="11.4" fill="#eef7f1" data-layer-name="Row shade"/>
+<line x1="15" y1="294.2" x2="195" y2="294.2" stroke="#aaa" stroke-width="0.2"/>
+<rect x="15" y="78" width="180" height="216.20000000000002" fill="none" stroke="#aaa" stroke-width="0.3" data-layer-name="Table border"/>
+<line x1="31" y1="78" x2="31" y2="294.20000000000005" stroke="#aaa" stroke-width="0.2"/>
+<line x1="115" y1="78" x2="115" y2="294.20000000000005" stroke="#aaa" stroke-width="0.2"/>
+<line x1="155" y1="78" x2="155" y2="294.20000000000005" stroke="#aaa" stroke-width="0.2"/>
+<text x="23.0" y="96.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">1</text>
+<text x="32.5" y="96.03333333333333" font-size="4" fill="#333" font-weight="400">মিনিকেট চাল</text>
+<text x="135.0" y="96.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">কেজি</text>
+<text x="175.0" y="96.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="107.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">2</text>
+<text x="32.5" y="107.43333333333334" font-size="4" fill="#333" font-weight="400">মসুর ডাল</text>
+<text x="135.0" y="107.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">কেজি</text>
+<text x="175.0" y="107.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="118.83333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">3</text>
+<text x="32.5" y="118.83333333333333" font-size="4" fill="#333" font-weight="400">সয়াবিন তেল</text>
+<text x="135.0" y="118.83333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">লিটার</text>
+<text x="175.0" y="118.83333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="130.23333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">4</text>
+<text x="32.5" y="130.23333333333335" font-size="4" fill="#333" font-weight="400">চিনি</text>
+<text x="135.0" y="130.23333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">কেজি</text>
+<text x="175.0" y="130.23333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="141.63333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">5</text>
+<text x="32.5" y="141.63333333333333" font-size="4" fill="#333" font-weight="400">আটা</text>
+<text x="135.0" y="141.63333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">কেজি</text>
+<text x="175.0" y="141.63333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="153.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">6</text>
+<text x="32.5" y="153.03333333333333" font-size="4" fill="#333" font-weight="400">লবণ</text>
+<text x="135.0" y="153.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">কেজি</text>
+<text x="175.0" y="153.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="164.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">7</text>
+<text x="32.5" y="164.43333333333334" font-size="4" fill="#333" font-weight="400">পেঁয়াজ</text>
+<text x="135.0" y="164.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">কেজি</text>
+<text x="175.0" y="164.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="175.83333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">8</text>
+<text x="32.5" y="175.83333333333334" font-size="4" fill="#333" font-weight="400">রসুন</text>
+<text x="135.0" y="175.83333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">কেজি</text>
+<text x="175.0" y="175.83333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="187.23333333333332" font-size="4" fill="#333" font-weight="400" text-anchor="middle">9</text>
+<text x="32.5" y="187.23333333333332" font-size="4" fill="#333" font-weight="400">হলুদ গুঁড়া</text>
+<text x="135.0" y="187.23333333333332" font-size="4" fill="#333" font-weight="400" text-anchor="middle">২০০ গ্রাম</text>
+<text x="175.0" y="187.23333333333332" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="198.63333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">10</text>
+<text x="32.5" y="198.63333333333335" font-size="4" fill="#333" font-weight="400">মরিচ গুঁড়া</text>
+<text x="135.0" y="198.63333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">২০০ গ্রাম</text>
+<text x="175.0" y="198.63333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="210.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">11</text>
+<text x="32.5" y="210.03333333333333" font-size="4" fill="#333" font-weight="400">চা পাতা</text>
+<text x="135.0" y="210.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">২৫০ গ্রাম</text>
+<text x="175.0" y="210.03333333333333" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="221.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">12</text>
+<text x="32.5" y="221.43333333333334" font-size="4" fill="#333" font-weight="400">ডিম</text>
+<text x="135.0" y="221.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">ডজন</text>
+<text x="175.0" y="221.43333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="232.83333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">13</text>
+<text x="32.5" y="232.83333333333334" font-size="4" fill="#333" font-weight="400">সাবান</text>
+<text x="135.0" y="232.83333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">পিস</text>
+<text x="175.0" y="232.83333333333334" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<text x="23.0" y="244.23333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">14</text>
+<text x="32.5" y="244.23333333333335" font-size="4" fill="#333" font-weight="400">গুঁড়া দুধ</text>
+<text x="135.0" y="244.23333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">কেজি</text>
+<text x="175.0" y="244.23333333333335" font-size="4" fill="#333" font-weight="400" text-anchor="middle">৳ ০০</text>
+<rect x="15" y="277" width="180" height="10" fill="#f2b705" rx="2" data-layer-name="Footer note"/>
+<text x="105" y="283.4" font-size="3.6" fill="#146c43" font-weight="700" text-anchor="middle">দাম পরিবর্তনযোগ্য • পাইকারি ক্রেতাদের জন্য বিশেষ ছাড় • হোম ডেলিভারি আছে</text>
+<g display="none" id="safe-area-guide" data-print="false"><rect x="5" y="5" width="200" height="287" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

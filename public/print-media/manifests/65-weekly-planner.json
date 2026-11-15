@@ -1,0 +1,19 @@
+{
+  "id": "65-weekly-planner",
+  "title": "Weekly Chore List & Planner",
+  "category": "Home & Family",
+  "aspectRatio": "297:210",
+  "physicalWidth": 297,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 landscape",
+  "file": "templates/65-weekly-planner.svg",
+  "preview": "previews/65-weekly-planner.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 297 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

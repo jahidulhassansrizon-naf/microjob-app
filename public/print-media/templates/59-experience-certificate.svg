@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#fffdf6" data-layer-name="Background"/>
+<rect x="6" y="6" width="198" height="285" fill="none" stroke="#0f5132" stroke-width="1.4" data-layer-name="Outer border"/>
+<rect x="9" y="9" width="192" height="279" fill="none" stroke="#c8a24a" stroke-width="0.4" data-layer-name="Inner border"/>
+<circle cx="6" cy="6" r="3.2" fill="#0f5132" data-layer-name="Corner ornament"/>
+<circle cx="6" cy="6" r="1.4" fill="#ffffff" data-layer-name="Corner ornament dot"/>
+<circle cx="204" cy="6" r="3.2" fill="#0f5132" data-layer-name="Corner ornament"/>
+<circle cx="204" cy="6" r="1.4" fill="#ffffff" data-layer-name="Corner ornament dot"/>
+<circle cx="6" cy="291" r="3.2" fill="#0f5132" data-layer-name="Corner ornament"/>
+<circle cx="6" cy="291" r="1.4" fill="#ffffff" data-layer-name="Corner ornament dot"/>
+<circle cx="204" cy="291" r="3.2" fill="#0f5132" data-layer-name="Corner ornament"/>
+<circle cx="204" cy="291" r="1.4" fill="#ffffff" data-layer-name="Corner ornament dot"/>
+<circle cx="105" cy="38" r="12" fill="none" stroke="#0f5132" stroke-width="0.5" stroke-dasharray="1.6 1.2" data-layer-name="Logo placeholder"/>
+<text x="105" y="39.2" font-size="3.4" fill="#0f5132" font-weight="500" text-anchor="middle">লোগো</text>
+<text x="105" y="63" font-size="12" fill="#0f5132" font-weight="800" text-anchor="middle" data-layer-name="Company name">প্রতিষ্ঠানের নাম</text>
+<text x="105" y="70" font-size="3.8" fill="#555" font-weight="500" text-anchor="middle">ঠিকানা: বাজার রোড, থানা, জেলা  |  মোবাইল: ০১৭০০-০০০০০০</text>
+<line x1="55" y1="76" x2="155" y2="76" stroke="#c8a24a" stroke-width="0.5"/>
+<polygon points="105,73.8 107.2,76 105,78.2 102.8,76" fill="#c8a24a" data-layer-name="Divider diamond"/>
+<text x="105" y="96" font-size="16" fill="#0f5132" font-weight="800" text-anchor="middle" data-layer-name="Title">অভিজ্ঞতার সনদ</text>
+<text x="105" y="104" font-size="3.6" fill="#8a6d1f" font-weight="700" text-anchor="middle" letter-spacing="2">EXPERIENCE CERTIFICATE</text>
+<text x="22" y="120" font-size="4.2" fill="#333" font-weight="600">সনদ নং:</text>
+<line x1="33.2" y1="120.9" x2="90" y2="120.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="125" y="120" font-size="4.2" fill="#333" font-weight="600">তারিখ:</text>
+<line x1="134.82" y1="120.9" x2="188" y2="120.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="138" font-size="4.6" fill="#333" font-weight="600">এই মর্মে প্রত্যয়ন করা যাচ্ছে যে,</text>
+<text x="22" y="149" font-size="4.6" fill="#333" font-weight="600">জনাব / জনাবা</text>
+<line x1="41.72" y1="149.9" x2="188" y2="149.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="159" font-size="4.6" fill="#333" font-weight="600">পিতা:</text>
+<line x1="31.09" y1="159.9" x2="105" y2="159.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="112" y="159" font-size="4.6" fill="#333" font-weight="600">মাতা:</text>
+<line x1="121.09" y1="159.9" x2="188" y2="159.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="169" font-size="4.6" fill="#333" font-weight="600">ঠিকানা:</text>
+<line x1="34.13" y1="169.9" x2="188" y2="169.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="183" font-size="4.6" fill="#333" font-weight="600">আমাদের প্রতিষ্ঠানে নিম্নোক্ত সময়ে কর্মরত ছিলেন:</text>
+<text x="22" y="194" font-size="4.6" fill="#333" font-weight="600">পদবি:</text>
+<line x1="31.09" y1="194.9" x2="105" y2="194.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="112" y="194" font-size="4.6" fill="#333" font-weight="600">বিভাগ:</text>
+<line x1="122.61" y1="194.9" x2="188" y2="194.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="204" font-size="4.6" fill="#333" font-weight="600">কাজের শুরু:</text>
+<line x1="40.2" y1="204.9" x2="105" y2="204.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="112" y="204" font-size="4.6" fill="#333" font-weight="600">কাজের শেষ:</text>
+<line x1="128.68" y1="204.9" x2="188" y2="204.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="214" font-size="4.6" fill="#333" font-weight="600">মোট সময়কাল:</text>
+<line x1="41.72" y1="214.9" x2="188" y2="214.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="22" y="230.0" font-size="4.4" fill="#333" font-weight="500">তাঁর কাজের মান সন্তোষজনক এবং আচরণ ভালো ছিল। কর্মকালে তিনি সততা,</text>
+<text x="22" y="238.5" font-size="4.4" fill="#333" font-weight="500">নিষ্ঠা ও দক্ষতার সঙ্গে দায়িত্ব পালন করেছেন। আমরা তাঁর ভবিষ্যৎ</text>
+<text x="22" y="247.0" font-size="4.4" fill="#333" font-weight="500">কর্মজীবনের সাফল্য ও মঙ্গল কামনা করি।</text>
+<circle cx="105" cy="262" r="10" fill="none" stroke="#0f5132" stroke-width="0.4" stroke-dasharray="1.6 1.2" data-layer-name="Seal placeholder"/>
+<text x="105" y="263" font-size="3.4" fill="#0f5132" font-weight="500" text-anchor="middle">সিল</text>
+<line x1="24" y1="270" x2="84" y2="270" stroke="#555" stroke-width="0.3"/>
+<text x="54.0" y="275" font-size="3.8" fill="#0f5132" font-weight="600" text-anchor="middle">প্রস্তুতকারী</text>
+<line x1="126" y1="270" x2="186" y2="270" stroke="#555" stroke-width="0.3"/>
+<text x="156.0" y="275" font-size="3.8" fill="#0f5132" font-weight="600" text-anchor="middle">কর্তৃপক্ষের স্বাক্ষর ও সিল</text>
+</svg>

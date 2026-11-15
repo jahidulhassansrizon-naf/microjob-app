@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="28" fill="#334155" data-layer-name="Header"/>
+<rect x="0" y="28" width="210" height="2" fill="#f59e0b" data-layer-name="Accent"/>
+<text x="15" y="15" font-size="13" fill="#ffffff" font-weight="700">স্টক / মজুত রেজিস্টার</text>
+<text x="15" y="22" font-size="4" fill="#cbd5e1" font-weight="600" letter-spacing="2">STOCK REGISTER</text>
+<text x="195" y="15" font-size="7" fill="#ffffff" font-weight="700" text-anchor="end">আপনার দোকানের নাম</text>
+<text x="195" y="21" font-size="3.8" fill="#cbd5e1" font-weight="500" text-anchor="end">মোবাইল: ০১৭০০-০০০০০০</text>
+<text x="15" y="40" font-size="4.4" fill="#333" font-weight="600">মাস / সপ্তাহ: </text>
+<line x1="39.38" y1="40.9" x2="90" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="100" y="40" font-size="4.4" fill="#333" font-weight="600">পণ্য বিভাগ: </text>
+<line x1="119.804" y1="40.9" x2="195" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="15" y="46" width="180" height="11" fill="#334155" data-layer-name="Table header"/>
+<text x="19.5" y="52.8" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">ক্রম</text>
+<text x="48.0" y="52.8" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">পণ্যের নাম</text>
+<text x="81.5" y="52.8" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">আগের মজুত</text>
+<text x="100.5" y="52.8" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">নতুন আসা</text>
+<text x="119.5" y="52.8" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">বিক্রি</text>
+<text x="139.5" y="52.8" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">বর্তমান মজুত</text>
+<text x="161.0" y="52.8" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">ক্রয়মূল্য</text>
+<text x="183.5" y="52.8" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">বিক্রয়মূল্য</text>
+<rect x="15" y="57" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="67" x2="195" y2="67" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="63.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১</text>
+<line x1="15" y1="77" x2="195" y2="77" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="73.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">২</text>
+<rect x="15" y="77" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="87" x2="195" y2="87" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="83.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">৩</text>
+<line x1="15" y1="97" x2="195" y2="97" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="93.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">৪</text>
+<rect x="15" y="97" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="107" x2="195" y2="107" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="103.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">৫</text>
+<line x1="15" y1="117" x2="195" y2="117" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="113.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">৬</text>
+<rect x="15" y="117" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="127" x2="195" y2="127" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="123.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">৭</text>
+<line x1="15" y1="137" x2="195" y2="137" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="133.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">৮</text>
+<rect x="15" y="137" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="147" x2="195" y2="147" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="143.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">৯</text>
+<line x1="15" y1="157" x2="195" y2="157" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="153.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১০</text>
+<rect x="15" y="157" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="167" x2="195" y2="167" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="163.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১১</text>
+<line x1="15" y1="177" x2="195" y2="177" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="173.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১২</text>
+<rect x="15" y="177" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="187" x2="195" y2="187" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="183.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১৩</text>
+<line x1="15" y1="197" x2="195" y2="197" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="193.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১৪</text>
+<rect x="15" y="197" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="207" x2="195" y2="207" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="203.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১৫</text>
+<line x1="15" y1="217" x2="195" y2="217" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="213.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১৬</text>
+<rect x="15" y="217" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="227" x2="195" y2="227" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="223.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১৭</text>
+<line x1="15" y1="237" x2="195" y2="237" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="233.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১৮</text>
+<rect x="15" y="237" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="247" x2="195" y2="247" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="243.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">১৯</text>
+<line x1="15" y1="257" x2="195" y2="257" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="253.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">২০</text>
+<rect x="15" y="257" width="180" height="10" fill="#f1f5f9" data-layer-name="Row shade"/>
+<line x1="15" y1="267" x2="195" y2="267" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="263.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">২১</text>
+<line x1="15" y1="277" x2="195" y2="277" stroke="#cbd5e1" stroke-width="0.2"/>
+<text x="19.5" y="273.4" font-size="3.3" fill="#94a3b8" font-weight="500" text-anchor="middle">২২</text>
+<line x1="24" y1="57" x2="24" y2="277" stroke="#cbd5e1" stroke-width="0.2"/>
+<line x1="72" y1="57" x2="72" y2="277" stroke="#cbd5e1" stroke-width="0.2"/>
+<line x1="91" y1="57" x2="91" y2="277" stroke="#cbd5e1" stroke-width="0.2"/>
+<line x1="110" y1="57" x2="110" y2="277" stroke="#cbd5e1" stroke-width="0.2"/>
+<line x1="129" y1="57" x2="129" y2="277" stroke="#cbd5e1" stroke-width="0.2"/>
+<line x1="150" y1="57" x2="150" y2="277" stroke="#cbd5e1" stroke-width="0.2"/>
+<line x1="172" y1="57" x2="172" y2="277" stroke="#cbd5e1" stroke-width="0.2"/>
+<rect x="15" y="57" width="180" height="220" fill="none" stroke="#334155" stroke-width="0.4" data-layer-name="Table border"/>
+<text x="15" y="286" font-size="3.8" fill="#555" font-weight="600">প্রস্তুতকারী: </text>
+<line x1="36" y1="286.9" x2="80" y2="286.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="195" y="286" font-size="3.8" fill="#555" font-weight="600" text-anchor="end">যাচাইকারীর স্বাক্ষর: </text>
+<line x1="135" y1="288" x2="195" y2="288" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+</svg>

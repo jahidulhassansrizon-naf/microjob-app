@@ -1,0 +1,19 @@
+{
+  "id": "40-daily-income-expense",
+  "title": "Daily Income & Expense Register",
+  "category": "Shop & Business",
+  "aspectRatio": "210:297",
+  "physicalWidth": 210,
+  "physicalHeight": 297,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 portrait",
+  "file": "templates/40-daily-income-expense.svg",
+  "preview": "previews/40-daily-income-expense.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 297",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

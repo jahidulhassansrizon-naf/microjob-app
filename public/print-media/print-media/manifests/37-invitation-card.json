@@ -1,0 +1,19 @@
+{
+  "id": "37-invitation-card",
+  "title": "Invitation Card",
+  "category": "Events & Invitations",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/37-invitation-card.svg",
+  "preview": "previews/37-invitation-card.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

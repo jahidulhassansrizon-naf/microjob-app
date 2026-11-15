@@ -1,0 +1,19 @@
+{
+  "id": "27-leave-application",
+  "title": "Leave Application Letter",
+  "category": "Personal & Applications",
+  "aspectRatio": "210:297",
+  "physicalWidth": 210,
+  "physicalHeight": 297,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 portrait",
+  "file": "templates/27-leave-application.svg",
+  "preview": "previews/27-leave-application.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 297",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

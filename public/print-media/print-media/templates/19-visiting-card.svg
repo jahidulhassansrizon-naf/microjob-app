@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 55" width="90mm" height="55mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="90" height="55" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="34" height="55" fill="#0f2a47" data-layer-name="Left panel"/>
+<rect x="34" y="0" width="1.6" height="55" fill="#d9a441" data-layer-name="Gold line"/>
+<circle cx="17.0" cy="18.0" r="10.0" fill="#16385e" stroke="#d9a441" stroke-width="0.35" stroke-dasharray="1.5 1" id="logo_placeholder" data-object-type="image" data-layer-name="লোগো"/>
+<text x="17.0" y="18.866666666666667" font-size="2.6" fill="#777" font-weight="500" text-anchor="middle" id="logo_placeholder_hint" data-layer-name="লোগো hint">লোগো</text>
+<text x="17" y="38" font-size="3.6" fill="#ffffff" font-weight="700" text-anchor="middle">আপনার দোকান</text>
+<text x="17" y="43" font-size="2.2" fill="#d9a441" font-weight="600" text-anchor="middle" letter-spacing="0.3">YOUR SHOP NAME</text>
+<text x="41" y="14" font-size="6" fill="#0f2a47" font-weight="700">মোঃ আপনার নাম</text>
+<text x="41" y="20.5" font-size="3.3" fill="#d9a441" font-weight="600">স্বত্বাধিকারী / ম্যানেজার</text>
+<line x1="41" y1="24" x2="84" y2="24" stroke="#d6d6d6" stroke-width="0.3"/>
+<circle cx="43" cy="30.2" r="1.6" fill="#0f2a47"/>
+<text x="47" y="31.5" font-size="3.6" fill="#222" font-weight="600">০১৭০০-০০০০০০</text>
+<circle cx="43" cy="36.4" r="1.6" fill="#0f2a47"/>
+<text x="47" y="37.7" font-size="3.2" fill="#222" font-weight="400">name@email.com</text>
+<circle cx="43" cy="42.6" r="1.6" fill="#0f2a47"/>
+<text x="47" y="43.9" font-size="3.2" fill="#222" font-weight="400">বাজার রোড, থানা, জেলা</text>
+<rect x="35.6" y="49" width="54.4" height="6" fill="#d9a441" data-layer-name="Bottom strip"/>
+<text x="62.8" y="53.2" font-size="2.8" fill="#0f2a47" font-weight="700" text-anchor="middle">সততা ও বিশ্বস্ততাই আমাদের পরিচয়</text>
+<g id="safe-area-guide" data-print="false"><rect x="5" y="5" width="80" height="45" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

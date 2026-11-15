@@ -1,0 +1,19 @@
+{
+  "id": "52-thank-you-card",
+  "title": "Order Thank-You Card",
+  "category": "Shop & Business",
+  "aspectRatio": "148:105",
+  "physicalWidth": 148,
+  "physicalHeight": 105,
+  "unit": "mm",
+  "physicalSizeLabel": "A6 landscape",
+  "file": "templates/52-thank-you-card.svg",
+  "preview": "previews/52-thank-you-card.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 105",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

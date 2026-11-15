@@ -1,0 +1,19 @@
+{
+  "id": "21-baki-khata",
+  "title": "Credit (Baki) Ledger Page",
+  "category": "Shop & Business",
+  "aspectRatio": "210:297",
+  "physicalWidth": 210,
+  "physicalHeight": 297,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 portrait",
+  "file": "templates/21-baki-khata.svg",
+  "preview": "previews/21-baki-khata.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 297",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

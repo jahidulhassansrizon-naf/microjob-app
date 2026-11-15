@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="6" height="297" fill="#1e293b" data-layer-name="Side bar"/>
+<rect x="150" y="18" width="40" height="46" fill="none" stroke="#94a3b8" stroke-width="0.4" stroke-dasharray="1.5 1" data-layer-name="Photo box"/>
+<text x="170" y="40" font-size="4" fill="#94a3b8" font-weight="500" text-anchor="middle">পাসপোর্ট</text>
+<text x="170" y="46" font-size="4" fill="#94a3b8" font-weight="500" text-anchor="middle">সাইজ ছবি</text>
+<text x="20" y="26" font-size="4.4" fill="#333" font-weight="600">তারিখ: </text>
+<line x1="32.94" y1="26.9" x2="100" y2="26.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="20" y="44.0" font-size="4.6" fill="#111" font-weight="700">বরাবর,</text>
+<text x="20" y="51.5" font-size="4.6" fill="#111" font-weight="500">ব্যবস্থাপনা পরিচালক / এইচআর ম্যানেজার</text>
+<text x="20" y="59.0" font-size="4.6" fill="#111" font-weight="500">প্রতিষ্ঠানের নাম</text>
+<text x="20" y="66.5" font-size="4.6" fill="#111" font-weight="500">ঠিকানা: বাজার রোড, থানা, জেলা</text>
+<text x="20" y="86" font-size="4.8" fill="#111" font-weight="700">বিষয়: </text>
+<line x1="32" y1="86.9" x2="190" y2="86.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="105" y="85.5" font-size="4.8" fill="#111" font-weight="700" text-anchor="middle">পদের জন্য চাকরির আবেদন</text>
+<text x="20" y="98" font-size="4.6" fill="#111" font-weight="500">জনাব,</text>
+<text x="20" y="106" font-size="4.4" fill="#222" font-weight="500">যথাবিনীত সম্মানের সহিত জানাচ্ছি যে, আমি আপনার প্রতিষ্ঠানের উল্লিখিত পদে নিয়োগের</text>
+<text x="20" y="113" font-size="4.4" fill="#222" font-weight="500">বিজ্ঞপ্তিটি দেখে আবেদন করছি। আমার শিক্ষাগত যোগ্যতা ও কাজের অভিজ্ঞতা নিম্নে উল্লেখ করা হলো।</text>
+<text x="20" y="120" font-size="4.4" fill="#222" font-weight="500">আমি আন্তরিকতা, দক্ষতা ও নিষ্ঠার সাথে দায়িত্ব পালনের আশ্বাস দিচ্ছি।</text>
+<rect x="20" y="130" width="170" height="62" fill="#f8fafc" rx="2" stroke="#cbd5e1" stroke-width="0.3" data-layer-name="Info card"/>
+<text x="25" y="137" font-size="4.6" fill="#1e293b" font-weight="700">আবেদনকারীর তথ্য</text>
+<text x="25" y="146" font-size="3.9" fill="#333" font-weight="600">নাম: </text>
+<line x1="34.612" y1="146.9" x2="102" y2="146.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="108" y="146" font-size="3.9" fill="#333" font-weight="600">পিতার নাম: </text>
+<line x1="125.724" y1="146.9" x2="186" y2="146.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="25" y="155" font-size="3.9" fill="#333" font-weight="600">মাতার নাম: </text>
+<line x1="42.724000000000004" y1="155.9" x2="102" y2="155.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="108" y="155" font-size="3.9" fill="#333" font-weight="600">জন্ম তারিখ: </text>
+<line x1="125.724" y1="155.9" x2="186" y2="155.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="25" y="164" font-size="3.9" fill="#333" font-weight="600">শিক্ষাগত যোগ্যতা: </text>
+<line x1="46.78" y1="164.9" x2="102" y2="164.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="108" y="164" font-size="3.9" fill="#333" font-weight="600">অভিজ্ঞতা: </text>
+<line x1="121.668" y1="164.9" x2="186" y2="164.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="25" y="173" font-size="3.9" fill="#333" font-weight="600">মোবাইল: </text>
+<line x1="38.668" y1="173.9" x2="102" y2="173.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="108" y="173" font-size="3.9" fill="#333" font-weight="600">ইমেইল: </text>
+<line x1="121.668" y1="173.9" x2="186" y2="173.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="25" y="182" font-size="3.9" fill="#333" font-weight="600">বর্তমান ঠিকানা: </text>
+<line x1="46.78" y1="182.9" x2="102" y2="182.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="108" y="182" font-size="3.9" fill="#333" font-weight="600">NID নং: </text>
+<line x1="123.696" y1="182.9" x2="186" y2="182.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="20" y="205" font-size="4.4" fill="#111" font-weight="700">সংযুক্তি:</text>
+<text x="20" y="212" font-size="4" fill="#333" font-weight="500">১. জীবনবৃত্তান্ত (CV)   ২. পাসপোর্ট সাইজ ছবি   ৩. শিক্ষাগত সনদের কপি   ৪. NID কপি</text>
+<text x="20" y="232" font-size="4.4" fill="#222" font-weight="500">অতএব, মহোদয়ের নিকট বিনীত প্রার্থনা, আমাকে উক্ত পদে নিয়োগ দানে বাধিত করবেন।</text>
+<text x="20" y="252" font-size="4.4" fill="#111" font-weight="500">বিনীত নিবেদক,</text>
+<line x1="20" y1="272" x2="85" y2="272" stroke="#555" stroke-width="0.3"/>
+<text x="20" y="277" font-size="3.9" fill="#555" font-weight="600">আবেদনকারীর স্বাক্ষর ও নাম</text>
+</svg>

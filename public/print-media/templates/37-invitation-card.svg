@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 210" width="148mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="148" height="210" fill="#fbf6ea" data-layer-name="Background"/>
+<rect x="6" y="6" width="136" height="198" fill="none" stroke="#b8893b" stroke-width="0.9" data-layer-name="Outer frame"/>
+<rect x="9" y="9" width="130" height="192" fill="none" stroke="#b8893b" stroke-width="0.3" data-layer-name="Inner frame"/>
+<polygon points="9,6 12,9 9,12 6,9" fill="#b8893b" data-layer-name="Corner diamond"/>
+<polygon points="139,6 142,9 139,12 136,9" fill="#b8893b" data-layer-name="Corner diamond"/>
+<polygon points="9,198 12,201 9,204 6,201" fill="#b8893b" data-layer-name="Corner diamond"/>
+<polygon points="139,198 142,201 139,204 136,201" fill="#b8893b" data-layer-name="Corner diamond"/>
+<circle cx="74" cy="34" r="11" fill="none" stroke="#b8893b" stroke-width="0.5" data-layer-name="Ornament ring"/>
+<circle cx="74" cy="34" r="8" fill="none" stroke="#b8893b" stroke-width="0.25" data-layer-name="Ornament ring"/>
+<polygon points="74,28 76,34 74,40 72,34" fill="#b8893b" data-layer-name="Ornament"/>
+<text x="74" y="58" font-size="6" fill="#b8893b" font-weight="700" text-anchor="middle" letter-spacing="1">সাদর আমন্ত্রণ</text>
+<text x="74" y="78" font-size="27" fill="#14532d" font-weight="800" text-anchor="middle">দাওয়াত</text>
+<line x1="40" y1="85" x2="108" y2="85" stroke="#b8893b" stroke-width="0.4"/>
+<polygon points="74,83 76,85 74,87 72,85" fill="#b8893b" data-layer-name="Divider diamond"/>
+<text x="74" y="95" font-size="4.6" fill="#444" font-weight="500" text-anchor="middle">আপনাকে ও আপনার পরিবারকে বিনীত আমন্ত্রণ</text>
+<text x="20" y="112" font-size="4.8" fill="#14532d" font-weight="600">অনুষ্ঠান: </text>
+<line x1="36.476" y1="112.9" x2="128" y2="112.9" stroke="#b8893b" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="20" y="125" font-size="4.8" fill="#14532d" font-weight="600">তারিখ ও বার: </text>
+<line x1="46.46" y1="125.9" x2="128" y2="125.9" stroke="#b8893b" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="20" y="138" font-size="4.8" fill="#14532d" font-weight="600">সময়: </text>
+<line x1="36.476" y1="138.9" x2="128" y2="138.9" stroke="#b8893b" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="20" y="151" font-size="4.8" fill="#14532d" font-weight="600">স্থান: </text>
+<line x1="31.484" y1="151.9" x2="128" y2="151.9" stroke="#b8893b" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="74" y="168" font-size="4.2" fill="#555" font-weight="500" text-anchor="middle">আপনার উপস্থিতি অনুষ্ঠানের আনন্দ বহুগুণ বাড়িয়ে দেবে।</text>
+<text x="74" y="179" font-size="4" fill="#555" font-weight="500" text-anchor="middle">বিনীত নিবেদক</text>
+<text x="74" y="187" font-size="7" fill="#14532d" font-weight="700" text-anchor="middle">আপনার নাম / পরিবারের নাম</text>
+<text x="74" y="195" font-size="3.8" fill="#555" font-weight="500" text-anchor="middle">যোগাযোগ: ০১৭০০-০০০০০০</text>
+</svg>

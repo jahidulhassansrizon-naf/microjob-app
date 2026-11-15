@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="56" fill="#b91c1c" data-layer-name="Header"/>
+<rect x="0" y="56" width="210" height="3" fill="#fde047" data-layer-name="Accent"/>
+<text x="105" y="15" font-size="9" fill="#fde68a" font-weight="700" text-anchor="middle" letter-spacing="2">নিখোঁজ বিজ্ঞপ্তি</text>
+<text x="105" y="47" font-size="27" fill="#ffffff" font-weight="800" text-anchor="middle">হারিয়ে গেছে</text>
+<rect x="60" y="66" width="90" height="76" fill="#f8fafc" rx="3" stroke="#94a3b8" stroke-width="0.5" stroke-dasharray="2 1.5" data-layer-name="Photo box"/>
+<text x="105" y="100" font-size="5" fill="#94a3b8" font-weight="600" text-anchor="middle">এখানে ছবি যুক্ত করুন</text>
+<text x="105" y="108" font-size="3.6" fill="#b0b8c4" font-weight="500" text-anchor="middle">(Upload photo)</text>
+<rect x="15" y="150" width="180" height="68" fill="#fffafa" rx="3" stroke="#fecaca" stroke-width="0.5" data-layer-name="Details card"/>
+<text x="21" y="162" font-size="4.8" fill="#333" font-weight="600">নাম / পরিচয়: </text>
+<line x1="52.452" y1="162.9" x2="189" y2="162.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="21" y="173" font-size="4.8" fill="#333" font-weight="600">বয়স ও উচ্চতা: </text>
+<line x1="52.452" y1="173.9" x2="189" y2="173.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="21" y="184" font-size="4.8" fill="#333" font-weight="600">বিশেষ চিহ্ন: </text>
+<line x1="42.468" y1="184.9" x2="189" y2="184.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="21" y="195" font-size="4.8" fill="#333" font-weight="600">শেষ দেখা গেছে (স্থান ও সময়): </text>
+<line x1="77.412" y1="195.9" x2="189" y2="195.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="21" y="206" font-size="4.8" fill="#333" font-weight="600">পরনে ছিল: </text>
+<line x1="42.468" y1="206.9" x2="189" y2="206.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="15" y="223" width="180" height="25" fill="#fde047" rx="3" data-layer-name="Reward bar"/>
+<text x="105" y="231" font-size="5.2" fill="#b91c1c" font-weight="800" text-anchor="middle">সন্ধান দিতে পারলে উপযুক্ত পুরস্কৃত করা হবে</text>
+<text x="105" y="243" font-size="8.5" fill="#450a0a" font-weight="800" text-anchor="middle">যোগাযোগ: ০১৭০০-০০০০০০</text>
+<line x1="0" y1="252" x2="210" y2="252" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="105" y="250.5" font-size="3" fill="#999" font-weight="500" text-anchor="middle">✂ ছিঁড়ে নিন</text>
+<text x="24" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 24 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="33" y1="252" x2="33" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="42" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 42 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="51" y1="252" x2="51" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="60" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 60 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="69" y1="252" x2="69" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="78" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 78 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="87" y1="252" x2="87" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="96" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 96 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="105" y1="252" x2="105" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="114" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 114 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="123" y1="252" x2="123" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="132" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 132 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="141" y1="252" x2="141" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="150" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 150 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="159" y1="252" x2="159" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="168" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 168 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="177" y1="252" x2="177" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+<text x="186" y="273" font-size="3.6" fill="#b91c1c" font-weight="700" text-anchor="middle" transform="rotate(-90 186 273)">নিখোঁজ  ০১৭০০-০০০০০০</text>
+<line x1="15" y1="295" x2="195" y2="295" stroke="#999" stroke-width="0.3" stroke-dasharray="2 1.5"/>
+</svg>

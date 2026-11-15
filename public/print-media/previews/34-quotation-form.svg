@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="34" fill="#0f766e" data-layer-name="Header"/>
+<rect x="0" y="34" width="210" height="2" fill="#5eead4" data-layer-name="Accent"/>
+<text x="15" y="18" font-size="14" fill="#ffffff" font-weight="700">কোটেশন / মূল্য প্রস্তাব</text>
+<text x="15" y="26" font-size="4.5" fill="#99f6e4" font-weight="600" letter-spacing="2">QUOTATION</text>
+<text x="195" y="15" font-size="8" fill="#ffffff" font-weight="700" text-anchor="end">আপনার কোম্পানির নাম</text>
+<text x="195" y="21" font-size="3.8" fill="#ccfbf1" font-weight="500" text-anchor="end">ঠিকানা: বাজার রোড, থানা, জেলা</text>
+<text x="195" y="26" font-size="3.8" fill="#ccfbf1" font-weight="500" text-anchor="end">মোবাইল: ০১৭০০-০০০০০০  |  ইমেইল: info@example.com</text>
+<rect x="15" y="42" width="88" height="30" fill="#f0fdfa" rx="2" stroke="#99f6e4" stroke-width="0.3" data-layer-name="Customer card"/>
+<text x="19" y="48" font-size="4" fill="#0f766e" font-weight="700">প্রতি (গ্রাহক)</text>
+<text x="19" y="55" font-size="3.8" fill="#333" font-weight="600">নাম: </text>
+<line x1="28.404" y1="55.9" x2="99" y2="55.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="19" y="62" font-size="3.8" fill="#333" font-weight="600">প্রতিষ্ঠান: </text>
+<line x1="32.355999999999995" y1="62.9" x2="99" y2="62.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="19" y="69" font-size="3.8" fill="#333" font-weight="600">মোবাইল: </text>
+<line x1="32.355999999999995" y1="69.9" x2="99" y2="69.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="107" y="42" width="88" height="30" fill="#f0fdfa" rx="2" stroke="#99f6e4" stroke-width="0.3" data-layer-name="Quote card"/>
+<text x="111" y="48" font-size="4" fill="#0f766e" font-weight="700">কোটেশনের তথ্য</text>
+<text x="111" y="55" font-size="3.8" fill="#333" font-weight="600">কোটেশন নং: </text>
+<line x1="128.308" y1="55.9" x2="191" y2="55.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="62" font-size="3.8" fill="#333" font-weight="600">তারিখ: </text>
+<line x1="122.38" y1="62.9" x2="191" y2="62.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="69" font-size="3.8" fill="#333" font-weight="600">মেয়াদ: </text>
+<line x1="124.356" y1="69.9" x2="191" y2="69.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="15" y="78" width="180" height="9" fill="#0f766e" data-layer-name="Table header"/>
+<text x="21.0" y="84" font-size="3.8" fill="#ffffff" font-weight="700" text-anchor="middle">ক্রম</text>
+<text x="67.0" y="84" font-size="3.8" fill="#ffffff" font-weight="700" text-anchor="middle">পণ্য / সেবার বিবরণ</text>
+<text x="117.0" y="84" font-size="3.8" fill="#ffffff" font-weight="700" text-anchor="middle">পরিমাণ</text>
+<text x="142.0" y="84" font-size="3.8" fill="#ffffff" font-weight="700" text-anchor="middle">একক মূল্য (৳)</text>
+<text x="176.0" y="84" font-size="3.8" fill="#ffffff" font-weight="700" text-anchor="middle">মোট (৳)</text>
+<rect x="15" y="87" width="180" height="10" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="97" x2="195" y2="97" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="93.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">১</text>
+<line x1="15" y1="107" x2="195" y2="107" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="103.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">২</text>
+<rect x="15" y="107" width="180" height="10" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="117" x2="195" y2="117" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="113.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">৩</text>
+<line x1="15" y1="127" x2="195" y2="127" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="123.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">৪</text>
+<rect x="15" y="127" width="180" height="10" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="137" x2="195" y2="137" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="133.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">৫</text>
+<line x1="15" y1="147" x2="195" y2="147" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="143.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">৬</text>
+<rect x="15" y="147" width="180" height="10" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="157" x2="195" y2="157" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="153.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">৭</text>
+<line x1="15" y1="167" x2="195" y2="167" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="163.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">৮</text>
+<rect x="15" y="167" width="180" height="10" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="177" x2="195" y2="177" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="173.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">৯</text>
+<line x1="15" y1="187" x2="195" y2="187" stroke="#b6e3dd" stroke-width="0.2"/>
+<text x="21" y="183.3" font-size="3.6" fill="#7aa6a1" font-weight="500" text-anchor="middle">১০</text>
+<line x1="27" y1="87" x2="27" y2="187" stroke="#b6e3dd" stroke-width="0.2"/>
+<line x1="107" y1="87" x2="107" y2="187" stroke="#b6e3dd" stroke-width="0.2"/>
+<line x1="127" y1="87" x2="127" y2="187" stroke="#b6e3dd" stroke-width="0.2"/>
+<line x1="157" y1="87" x2="157" y2="187" stroke="#b6e3dd" stroke-width="0.2"/>
+<line x1="27" y1="87" x2="27" y2="187" stroke="#b6e3dd" stroke-width="0.2"/>
+<rect x="15" y="87" width="180" height="100" fill="none" stroke="#0f766e" stroke-width="0.4" data-layer-name="Table border"/>
+<text x="15" y="197" font-size="4" fill="#333" font-weight="600">কথায়: </text>
+<line x1="28.98" y1="197.9" x2="122" y2="197.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="127" y="190" width="68" height="9" fill="#ffffff" stroke="#0f766e" stroke-width="0.3" data-layer-name="Total row"/>
+<text x="131" y="196" font-size="4" fill="#333" font-weight="700">মোট</text>
+<rect x="127" y="199" width="68" height="9" fill="#ffffff" stroke="#0f766e" stroke-width="0.3" data-layer-name="Total row"/>
+<text x="131" y="205" font-size="4" fill="#333" font-weight="700">ছাড় (-)</text>
+<rect x="127" y="208" width="68" height="9" fill="#0f766e" stroke="#0f766e" stroke-width="0.3" data-layer-name="Total row"/>
+<text x="131" y="214" font-size="4" fill="#ffffff" font-weight="700">সর্বমোট (৳)</text>
+<rect x="15" y="222" width="180" height="40" fill="#fafafa" rx="2" stroke="#d4d4d4" stroke-width="0.3" data-layer-name="Terms box"/>
+<text x="19" y="229" font-size="4.6" fill="#0f766e" font-weight="700">শর্তাবলী</text>
+<text x="19" y="236.0" font-size="3.8" fill="#444" font-weight="500">১. এই কোটেশনের মেয়াদ উল্লিখিত তারিখ পর্যন্ত বহাল থাকবে।</text>
+<text x="19" y="242.3" font-size="3.8" fill="#444" font-weight="500">২. অগ্রিম পেমেন্ট: </text>
+<text x="19" y="248.6" font-size="3.8" fill="#444" font-weight="500">৩. ডেলিভারি / কাজ শেষের সময়: </text>
+<text x="19" y="254.9" font-size="3.8" fill="#444" font-weight="500">৪. পেমেন্টের মাধ্যম: নগদ / ব্যাংক / বিকাশ / নগদ</text>
+<line x1="15" y1="278" x2="78" y2="278" stroke="#555" stroke-width="0.3"/>
+<text x="46.5" y="283" font-size="3.8" fill="#555" font-weight="600" text-anchor="middle">গ্রাহকের স্বাক্ষর</text>
+<line x1="132" y1="278" x2="195" y2="278" stroke="#555" stroke-width="0.3"/>
+<text x="163.5" y="283" font-size="3.8" fill="#555" font-weight="600" text-anchor="middle">অনুমোদিত স্বাক্ষর ও সিল</text>
+<rect x="0" y="291" width="210" height="6" fill="#0f766e" data-layer-name="Footer"/>
+<text x="105" y="295.2" font-size="3.4" fill="#ffffff" font-weight="600" text-anchor="middle">ধন্যবাদ — আপনার আস্থাই আমাদের শক্তি</text>
+</svg>

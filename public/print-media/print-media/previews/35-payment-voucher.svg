@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 210" width="148mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="148" height="210" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="148" height="28" fill="#4338ca" data-layer-name="Header"/>
+<text x="74" y="14" font-size="12" fill="#ffffff" font-weight="700" text-anchor="middle">পেমেন্ট ভাউচার</text>
+<text x="74" y="21" font-size="3.8" fill="#c7d2fe" font-weight="600" text-anchor="middle" letter-spacing="2">PAYMENT VOUCHER</text>
+<text x="74" y="6.5" font-size="4.2" fill="#e0e7ff" font-weight="600" text-anchor="middle">আপনার প্রতিষ্ঠানের নাম</text>
+<text x="10" y="38" font-size="4" fill="#333" font-weight="600">ভাউচার নং: </text>
+<line x1="28.14" y1="38.9" x2="70" y2="38.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="78" y="38" font-size="4" fill="#333" font-weight="600">তারিখ: </text>
+<line x1="89.9" y1="38.9" x2="138" y2="38.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="10" y="49" font-size="4" fill="#333" font-weight="600">প্রাপকের নাম: </text>
+<line x1="30.22" y1="49.9" x2="138" y2="49.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="10" y="60" font-size="4" fill="#333" font-weight="600">ঠিকানা / মোবাইল: </text>
+<line x1="36.46" y1="60.9" x2="138" y2="60.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="10" y="68" width="128" height="15" fill="#eef2ff" rx="2" stroke="#4338ca" stroke-width="0.4" data-layer-name="Amount box"/>
+<text x="15" y="77.5" font-size="5.5" fill="#4338ca" font-weight="700">টাকার পরিমাণ:  ৳</text>
+<line x1="52" y1="78.2" x2="132" y2="78.2" stroke="#4338ca" stroke-width="0.3" stroke-dasharray="0.6 0.8"/>
+<text x="10" y="92" font-size="4" fill="#333" font-weight="600">কথায়: </text>
+<line x1="23.98" y1="92.9" x2="138" y2="92.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="10" y="103" font-size="4.4" fill="#4338ca" font-weight="700">বিবরণ / কী বাবদ</text>
+<line x1="10" y1="112" x2="138" y2="112" stroke="#9aa0c9" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="10" y1="121" x2="138" y2="121" stroke="#9aa0c9" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="10" y1="130" x2="138" y2="130" stroke="#9aa0c9" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="10" y1="139" x2="138" y2="139" stroke="#9aa0c9" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="10" y="153" font-size="4.4" fill="#4338ca" font-weight="700">পেমেন্টের মাধ্যম</text>
+<rect x="10" y="157.96" width="3.23" height="3.23" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="14.559999999999999" y="161" font-size="3.8" fill="#333" font-weight="500">নগদ</text>
+<rect x="42" y="157.96" width="3.23" height="3.23" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="46.56" y="161" font-size="3.8" fill="#333" font-weight="500">ব্যাংক চেক</text>
+<rect x="74" y="157.96" width="3.23" height="3.23" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="78.56" y="161" font-size="3.8" fill="#333" font-weight="500">বিকাশ / নগদ</text>
+<rect x="106" y="157.96" width="3.23" height="3.23" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="110.56" y="161" font-size="3.8" fill="#333" font-weight="500">অন্যান্য</text>
+<text x="10" y="171" font-size="4" fill="#333" font-weight="600">হিসাবের খাত: </text>
+<line x1="30.22" y1="171.9" x2="138" y2="171.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="10.0" y1="192" x2="39.0" y2="192" stroke="#555" stroke-width="0.3"/>
+<text x="24.5" y="197" font-size="3.4" fill="#555" font-weight="600" text-anchor="middle">প্রস্তুতকারী</text>
+<line x1="42.5" y1="192" x2="71.5" y2="192" stroke="#555" stroke-width="0.3"/>
+<text x="57.0" y="197" font-size="3.4" fill="#555" font-weight="600" text-anchor="middle">হিসাবরক্ষক</text>
+<line x1="75.0" y1="192" x2="104.0" y2="192" stroke="#555" stroke-width="0.3"/>
+<text x="89.5" y="197" font-size="3.4" fill="#555" font-weight="600" text-anchor="middle">অনুমোদনকারী</text>
+<line x1="107.5" y1="192" x2="136.5" y2="192" stroke="#555" stroke-width="0.3"/>
+<text x="122.0" y="197" font-size="3.4" fill="#555" font-weight="600" text-anchor="middle">প্রাপকের স্বাক্ষর</text>
+<rect x="0" y="204" width="148" height="6" fill="#4338ca" data-layer-name="Footer"/>
+</svg>

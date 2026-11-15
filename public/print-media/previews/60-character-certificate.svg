@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="8" y="8" width="194" height="281" fill="none" stroke="#7a1f2b" stroke-width="0.9" data-layer-name="Border"/>
+<rect x="11" y="11" width="188" height="275" fill="none" stroke="#7a1f2b" stroke-width="0.25" data-layer-name="Inner border"/>
+<circle cx="33" cy="34" r="11" fill="none" stroke="#7a1f2b" stroke-width="0.5" stroke-dasharray="1.6 1.2" data-layer-name="Logo / Seal placeholder"/>
+<text x="33" y="35.2" font-size="3.4" fill="#7a1f2b" font-weight="500" text-anchor="middle">লোগো</text>
+<text x="112" y="31" font-size="9.5" fill="#7a1f2b" font-weight="800" text-anchor="middle" data-layer-name="Organisation name">ইউনিয়ন পরিষদ / প্রতিষ্ঠানের নাম</text>
+<text x="112" y="39" font-size="3.6" fill="#555" font-weight="500" text-anchor="middle">গ্রাম/ওয়ার্ড: ........  ডাকঘর: ........  উপজেলা: ........  জেলা: ........</text>
+<rect x="165" y="22" width="28" height="34" fill="none" stroke="#94a3b8" stroke-width="0.4" stroke-dasharray="1.5 1" data-layer-name="Photo box"/>
+<text x="179" y="40" font-size="4" fill="#94a3b8" font-weight="500" text-anchor="middle">ছবি</text>
+<line x1="24" y1="62" x2="186" y2="62" stroke="#7a1f2b" stroke-width="0.5"/>
+<rect x="52" y="70" width="106" height="13" fill="#7a1f2b" rx="6.5" data-layer-name="Title pill"/>
+<text x="105" y="79.2" font-size="7.6" fill="#ffffff" font-weight="800" text-anchor="middle" data-layer-name="Title">প্রত্যয়নপত্র / চারিত্রিক সনদ</text>
+<text x="24" y="98" font-size="4.2" fill="#333" font-weight="600">স্মারক নং:</text>
+<line x1="39.36" y1="98.9" x2="95" y2="98.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="125" y="98" font-size="4.2" fill="#333" font-weight="600">তারিখ:</text>
+<line x1="134.82" y1="98.9" x2="186" y2="98.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="114" font-size="4.6" fill="#333" font-weight="600">এই মর্মে প্রত্যয়ন করা যাচ্ছে যে,</text>
+<text x="24" y="126" font-size="4.6" fill="#333" font-weight="600">নাম:</text>
+<line x1="31.57" y1="126.9" x2="186" y2="126.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="136" font-size="4.6" fill="#333" font-weight="600">পিতার নাম:</text>
+<line x1="40.68" y1="136.9" x2="100" y2="136.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="136" font-size="4.6" fill="#333" font-weight="600">মাতার নাম:</text>
+<line x1="122.68" y1="136.9" x2="186" y2="136.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="146" font-size="4.6" fill="#333" font-weight="600">স্থায়ী ঠিকানা:</text>
+<line x1="48.27" y1="146.9" x2="186" y2="146.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="156" font-size="4.6" fill="#333" font-weight="600">জন্ম তারিখ:</text>
+<line x1="42.2" y1="156.9" x2="100" y2="156.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="156" font-size="4.6" fill="#333" font-weight="600">জাতীয় পরিচয়পত্র নং:</text>
+<line x1="139.38" y1="156.9" x2="186" y2="156.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="176.0" font-size="4.4" fill="#333" font-weight="500">আমার জানামতে তিনি উপরোক্ত ঠিকানার একজন স্থায়ী বাসিন্দা। তাঁর চরিত্র ভালো এবং</text>
+<text x="24" y="184.5" font-size="4.4" fill="#333" font-weight="500">আমার জানামতে তিনি কোনো রাষ্ট্রবিরোধী বা সমাজবিরোধী কর্মকাণ্ডের সঙ্গে জড়িত নন।</text>
+<text x="24" y="193.0" font-size="4.4" fill="#333" font-weight="500">তিনি এলাকায় একজন ভদ্র, বিনয়ী ও আইন মান্যকারী ব্যক্তি হিসেবে পরিচিত।</text>
+<text x="24" y="210" font-size="4.6" fill="#333" font-weight="600">প্রত্যয়নের উদ্দেশ্য:</text>
+<line x1="57.38" y1="210.9" x2="186" y2="210.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="226" font-size="4.4" fill="#333" font-weight="600">আমি তাঁর সর্বাঙ্গীণ উন্নতি ও মঙ্গল কামনা করি।</text>
+<rect x="24" y="240" width="60" height="34" fill="#fdf4f5" rx="1.5" stroke="#7a1f2b" stroke-width="0.3" stroke-dasharray="1.5 1" data-layer-name="Applicant signature box"/>
+<text x="54" y="258" font-size="3.8" fill="#7a1f2b" font-weight="600" text-anchor="middle">আবেদনকারীর</text>
+<text x="54" y="263" font-size="3.8" fill="#7a1f2b" font-weight="600" text-anchor="middle">স্বাক্ষর / টিপসই</text>
+<circle cx="112" cy="255" r="11" fill="none" stroke="#7a1f2b" stroke-width="0.4" stroke-dasharray="1.6 1.2" data-layer-name="Seal placeholder"/>
+<text x="112" y="256" font-size="3.4" fill="#7a1f2b" font-weight="500" text-anchor="middle">সিল</text>
+<line x1="134" y1="268" x2="190" y2="268" stroke="#555" stroke-width="0.3"/>
+<text x="162" y="273" font-size="3.8" fill="#7a1f2b" font-weight="600" text-anchor="middle">চেয়ারম্যান / মেম্বার /</text>
+<text x="162" y="278" font-size="3.8" fill="#7a1f2b" font-weight="600" text-anchor="middle">প্রধান শিক্ষকের স্বাক্ষর</text>
+</svg>

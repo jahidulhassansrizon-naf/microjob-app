@@ -1,0 +1,19 @@
+{
+  "id": "46-certificate",
+  "title": "Certificate of Appreciation",
+  "category": "Education & Institution",
+  "aspectRatio": "297:210",
+  "physicalWidth": 297,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 landscape",
+  "file": "templates/46-certificate.svg",
+  "preview": "previews/46-certificate.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 297 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

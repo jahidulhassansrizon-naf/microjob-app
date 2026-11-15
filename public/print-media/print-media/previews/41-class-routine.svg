@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 210" width="297mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="297" height="210" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="297" height="30" fill="#0f172a" data-layer-name="Header"/>
+<text x="148.5" y="13" font-size="11" fill="#ffffff" font-weight="700" text-anchor="middle">প্রতিষ্ঠানের নাম</text>
+<text x="148.5" y="22" font-size="5.5" fill="#fbbf24" font-weight="700" text-anchor="middle" letter-spacing="1">ক্লাস রুটিন  •  CLASS ROUTINE</text>
+<text x="15" y="40" font-size="4.4" fill="#333" font-weight="600">শ্রেণি: </text>
+<line x1="25.652" y1="40.9" x2="80" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="105" y="40" font-size="4.4" fill="#333" font-weight="600">শাখা: </text>
+<line x1="115.652" y1="40.9" x2="160" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="170" y="40" font-size="4.4" fill="#333" font-weight="600">শিক্ষাবর্ষ: </text>
+<line x1="185.228" y1="40.9" x2="282" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="15" y="46" width="267" height="14" fill="#0f172a" data-layer-name="Table header"/>
+<text x="30" y="54.5" font-size="4.4" fill="#fff" font-weight="700" text-anchor="middle">বার</text>
+<text x="60.5" y="51.8" font-size="3.9" fill="#fff" font-weight="700" text-anchor="middle">১ম পিরিয়ড</text>
+<text x="60.5" y="56.8" font-size="3" fill="#fbbf24" font-weight="600" text-anchor="middle">৯:০০–৯:৪০</text>
+<text x="91.5" y="51.8" font-size="3.9" fill="#fff" font-weight="700" text-anchor="middle">২য় পিরিয়ড</text>
+<text x="91.5" y="56.8" font-size="3" fill="#fbbf24" font-weight="600" text-anchor="middle">৯:৪০–১০:২০</text>
+<text x="122.5" y="51.8" font-size="3.9" fill="#fff" font-weight="700" text-anchor="middle">৩য় পিরিয়ড</text>
+<text x="122.5" y="56.8" font-size="3" fill="#fbbf24" font-weight="600" text-anchor="middle">১০:২০–১১:০০</text>
+<text x="153.5" y="51.8" font-size="3.9" fill="#fff" font-weight="700" text-anchor="middle">৪র্থ পিরিয়ড</text>
+<text x="153.5" y="56.8" font-size="3" fill="#fbbf24" font-weight="600" text-anchor="middle">১১:০০–১১:৪০</text>
+<text x="204.5" y="51.8" font-size="3.9" fill="#fff" font-weight="700" text-anchor="middle">৫ম পিরিয়ড</text>
+<text x="204.5" y="56.8" font-size="3" fill="#fbbf24" font-weight="600" text-anchor="middle">১২:১০–১২:৫০</text>
+<text x="235.5" y="51.8" font-size="3.9" fill="#fff" font-weight="700" text-anchor="middle">৬ষ্ঠ পিরিয়ড</text>
+<text x="235.5" y="56.8" font-size="3" fill="#fbbf24" font-weight="600" text-anchor="middle">১২:৫০–১:৩০</text>
+<text x="266.5" y="51.8" font-size="3.9" fill="#fff" font-weight="700" text-anchor="middle">৭ম পিরিয়ড</text>
+<text x="266.5" y="56.8" font-size="3" fill="#fbbf24" font-weight="600" text-anchor="middle">১:৩০–২:১০</text>
+<text x="179" y="54.5" font-size="4" fill="#fff" font-weight="700" text-anchor="middle">বিরতি</text>
+<rect x="15" y="60" width="30" height="22" fill="#e0f2fe" data-layer-name="Day cell"/>
+<text x="30" y="72.3" font-size="4.6" fill="#0f172a" font-weight="700" text-anchor="middle">রবিবার</text>
+<text x="60.5" y="70" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="60.5" y="76" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="91.5" y="70" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="91.5" y="76" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="122.5" y="70" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="122.5" y="76" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="153.5" y="70" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="153.5" y="76" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="204.5" y="70" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="204.5" y="76" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="235.5" y="70" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="235.5" y="76" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="266.5" y="70" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="266.5" y="76" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<rect x="15" y="82" width="30" height="22" fill="#ede9fe" data-layer-name="Day cell"/>
+<text x="30" y="94.3" font-size="4.6" fill="#0f172a" font-weight="700" text-anchor="middle">সোমবার</text>
+<text x="60.5" y="92" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="60.5" y="98" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="91.5" y="92" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="91.5" y="98" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="122.5" y="92" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="122.5" y="98" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="153.5" y="92" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="153.5" y="98" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="204.5" y="92" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="204.5" y="98" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="235.5" y="92" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="235.5" y="98" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="266.5" y="92" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="266.5" y="98" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<rect x="15" y="104" width="30" height="22" fill="#dcfce7" data-layer-name="Day cell"/>
+<text x="30" y="116.3" font-size="4.6" fill="#0f172a" font-weight="700" text-anchor="middle">মঙ্গলবার</text>
+<text x="60.5" y="114" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="60.5" y="120" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="91.5" y="114" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="91.5" y="120" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="122.5" y="114" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="122.5" y="120" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="153.5" y="114" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="153.5" y="120" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="204.5" y="114" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="204.5" y="120" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="235.5" y="114" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="235.5" y="120" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="266.5" y="114" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="266.5" y="120" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<rect x="15" y="126" width="30" height="22" fill="#fef3c7" data-layer-name="Day cell"/>
+<text x="30" y="138.3" font-size="4.6" fill="#0f172a" font-weight="700" text-anchor="middle">বুধবার</text>
+<text x="60.5" y="136" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="60.5" y="142" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="91.5" y="136" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="91.5" y="142" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="122.5" y="136" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="122.5" y="142" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="153.5" y="136" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="153.5" y="142" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="204.5" y="136" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="204.5" y="142" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="235.5" y="136" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="235.5" y="142" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="266.5" y="136" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="266.5" y="142" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<rect x="15" y="148" width="30" height="22" fill="#fee2e2" data-layer-name="Day cell"/>
+<text x="30" y="160.3" font-size="4.6" fill="#0f172a" font-weight="700" text-anchor="middle">বৃহস্পতিবার</text>
+<text x="60.5" y="158" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="60.5" y="164" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="91.5" y="158" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="91.5" y="164" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="122.5" y="158" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="122.5" y="164" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="153.5" y="158" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="153.5" y="164" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="204.5" y="158" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="204.5" y="164" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="235.5" y="158" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="235.5" y="164" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<text x="266.5" y="158" font-size="4" fill="#94a3b8" font-weight="600" text-anchor="middle">বিষয়</text>
+<text x="266.5" y="164" font-size="3" fill="#b6c0cf" font-weight="500" text-anchor="middle">শিক্ষক</text>
+<rect x="169" y="60" width="20" height="110" fill="#fde68a" data-layer-name="Break column"/>
+<text x="179" y="115" font-size="5" fill="#92400e" font-weight="700" text-anchor="middle" letter-spacing="1" transform="rotate(-90 179 115)">টিফিন বিরতি</text>
+<line x1="15" y1="82" x2="282" y2="82" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="15" y1="104" x2="282" y2="104" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="15" y1="126" x2="282" y2="126" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="15" y1="148" x2="282" y2="148" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="76" y1="60" x2="76" y2="170" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="107" y1="60" x2="107" y2="170" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="138" y1="60" x2="138" y2="170" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="189" y1="60" x2="189" y2="170" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="220" y1="60" x2="220" y2="170" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="251" y1="60" x2="251" y2="170" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="45" y1="60" x2="45" y2="170" stroke="#cbd5e1" stroke-width="0.25"/>
+<line x1="169" y1="60" x2="169" y2="170" stroke="#cbd5e1" stroke-width="0.25"/>
+<rect x="15" y="60" width="267" height="110" fill="none" stroke="#0f172a" stroke-width="0.5" data-layer-name="Table border"/>
+<text x="15" y="184" font-size="4.2" fill="#333" font-weight="600">ক্লাস শিক্ষক: </text>
+<line x1="33.972" y1="184.9" x2="100" y2="184.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="110" y="184" font-size="4.2" fill="#333" font-weight="600">অধ্যক্ষ / প্রধান শিক্ষকের স্বাক্ষর: </text>
+<line x1="155.18" y1="184.9" x2="200" y2="184.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="282" y="184" font-size="4.2" fill="#333" font-weight="600" text-anchor="end">কার্যকর: </text>
+<text x="15" y="198" font-size="3.6" fill="#64748b" font-weight="500">* শুক্র ও শনিবার সাপ্তাহিক ছুটি। প্রয়োজনে রুটিন পরিবর্তনযোগ্য।</text>
+</svg>

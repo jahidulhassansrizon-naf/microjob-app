@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#064e3b" data-layer-name="Background"/>
+<circle cx="105" cy="98" r="78" fill="#075e47" data-layer-name="Glow"/>
+<line x1="25" y1="0" x2="25" y2="26" stroke="#fbbf24" stroke-width="0.4"/>
+<polygon points="20,26 30,26 28.5,38 21.5,38" fill="#fbbf24" data-layer-name="Lantern"/>
+<rect x="21" y="38" width="8" height="2" fill="#92400e" rx="1" data-layer-name="Lantern base"/>
+<line x1="60" y1="0" x2="60" y2="40" stroke="#fbbf24" stroke-width="0.4"/>
+<polygon points="55,40 65,40 63.5,52 56.5,52" fill="#f59e0b" data-layer-name="Lantern"/>
+<rect x="56" y="52" width="8" height="2" fill="#92400e" rx="1" data-layer-name="Lantern base"/>
+<line x1="150" y1="0" x2="150" y2="40" stroke="#fbbf24" stroke-width="0.4"/>
+<polygon points="145,40 155,40 153.5,52 146.5,52" fill="#fbbf24" data-layer-name="Lantern"/>
+<rect x="146" y="52" width="8" height="2" fill="#92400e" rx="1" data-layer-name="Lantern base"/>
+<line x1="185" y1="0" x2="185" y2="26" stroke="#fbbf24" stroke-width="0.4"/>
+<polygon points="180,26 190,26 188.5,38 181.5,38" fill="#f59e0b" data-layer-name="Lantern"/>
+<rect x="181" y="38" width="8" height="2" fill="#92400e" rx="1" data-layer-name="Lantern base"/>
+<circle cx="105" cy="70" r="30" fill="#fbbf24" data-layer-name="Crescent"/>
+<circle cx="114.0" cy="67.6" r="25.8" fill="#075e47" data-layer-name="Crescent cut"/>
+<polygon points="128.0,47.0 129.85,51.45 134.66,51.84 131.0,54.97 132.11,59.66 128.0,57.15 123.89,59.66 125.0,54.97 121.34,51.84 126.15,51.45" fill="#fbbf24" data-layer-name="Star"/>
+<polygon points="148.0,78.0 149.06,80.54 151.8,80.76 149.71,82.56 150.35,85.24 148.0,83.8 145.65,85.24 146.29,82.56 144.2,80.76 146.94,80.54" fill="#fde68a" data-layer-name="Star"/>
+<polygon points="70.0,34.5 70.93,36.73 73.33,36.92 71.5,38.49 72.06,40.83 70.0,39.58 67.94,40.83 68.5,38.49 66.67,36.92 69.07,36.73" fill="#fde68a" data-layer-name="Star"/>
+<text x="105" y="140" font-size="34" fill="#fbbf24" font-weight="800" text-anchor="middle">ঈদ মোবারক</text>
+<text x="105" y="153" font-size="7" fill="#d1fae5" font-weight="600" text-anchor="middle" letter-spacing="4">EID MUBARAK</text>
+<line x1="60" y1="160" x2="150" y2="160" stroke="#fbbf24" stroke-width="0.5"/>
+<polygon points="105,157.5 107.5,160 105,162.5 102.5,160" fill="#fbbf24" data-layer-name="Divider diamond"/>
+<text x="105" y="174" font-size="7" fill="#ffffff" font-weight="600" text-anchor="middle">আপনাকে ও আপনার পরিবারকে</text>
+<text x="105" y="183" font-size="7" fill="#ffffff" font-weight="600" text-anchor="middle">ঈদের আন্তরিক শুভেচ্ছা ও অভিনন্দন</text>
+<text x="105" y="197" font-size="5" fill="#a7f3d0" font-weight="500" text-anchor="middle">আল্লাহ আমাদের সকলের ইবাদত কবুল করুন।</text>
+<rect x="30" y="208" width="150" height="20" fill="#0b6b50" rx="4" stroke="#fbbf24" stroke-width="0.5" data-layer-name="Wish box"/>
+<text x="105" y="217" font-size="4.4" fill="#a7f3d0" font-weight="500" text-anchor="middle">শুভেচ্ছান্তে</text>
+<text x="105" y="224.5" font-size="7" fill="#fbbf24" font-weight="800" text-anchor="middle">আপনার নাম / প্রতিষ্ঠানের নাম</text>
+<rect x="0" y="246" width="210" height="51" fill="#043d2e" data-layer-name="Skyline ground"/>
+<rect x="78" y="252" width="54" height="45" fill="#065f46" data-layer-name="Mosque body"/>
+<circle cx="105" cy="252" r="20" fill="#065f46" data-layer-name="Dome"/>
+<rect x="104" y="226" width="2" height="8" fill="#fbbf24" data-layer-name="Finial"/>
+<rect x="58" y="232" width="8" height="65" fill="#065f46" data-layer-name="Minaret"/>
+<polygon points="57,232 67,232 62,218" fill="#065f46" data-layer-name="Minaret top"/>
+<circle cx="62" cy="216" r="1.8" fill="#fbbf24" data-layer-name="Minaret light"/>
+<rect x="152" y="232" width="8" height="65" fill="#065f46" data-layer-name="Minaret"/>
+<polygon points="151,232 161,232 156,218" fill="#065f46" data-layer-name="Minaret top"/>
+<circle cx="156" cy="216" r="1.8" fill="#fbbf24" data-layer-name="Minaret light"/>
+<rect x="82" y="268" width="7" height="14" fill="#043d2e" rx="3.5" data-layer-name="Window"/>
+<rect x="96" y="268" width="7" height="14" fill="#043d2e" rx="3.5" data-layer-name="Window"/>
+<rect x="110" y="268" width="7" height="14" fill="#043d2e" rx="3.5" data-layer-name="Window"/>
+<rect x="124" y="268" width="7" height="14" fill="#043d2e" rx="3.5" data-layer-name="Window"/>
+<text x="105" y="291" font-size="4" fill="#a7f3d0" font-weight="500" text-anchor="middle">যোগাযোগ: ০১৭০০-০০০০০০</text>
+</svg>

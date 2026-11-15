@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#5b3a1e" data-layer-name="Wood frame"/>
+<rect x="10" y="10" width="190" height="277" fill="#1f3b2d" data-layer-name="Chalkboard"/>
+<rect x="14" y="14" width="182" height="269" fill="none" stroke="#e8e2c9" stroke-width="0.4" stroke-dasharray="2 1.4" data-layer-name="Chalk border"/>
+<text x="105" y="38" font-size="6" fill="#fcd34d" font-weight="700" text-anchor="middle" letter-spacing="1" data-layer-name="Shop name">চা-নাস্তার দোকান</text>
+<text x="105" y="58" font-size="17" fill="#ffffff" font-weight="800" text-anchor="middle" data-layer-name="Title">আজকের অফার</text>
+<text x="105" y="66" font-size="3.6" fill="#e8e2c9" font-weight="600" text-anchor="middle" letter-spacing="2">TODAY'S MENU &amp; OFFER</text>
+<line x1="55" y1="72" x2="155" y2="72" stroke="#e8e2c9" stroke-width="0.35" stroke-dasharray="1 1"/>
+<text x="59.0" y="88" font-size="5.8" fill="#fcd34d" font-weight="800" text-anchor="middle">চা-কফি</text>
+<line x1="24" y1="91" x2="94" y2="91" stroke="#e8e2c9" stroke-width="0.25"/>
+<text x="24" y="100.0" font-size="4.6" fill="#ffffff" font-weight="600">দুধ চা</text>
+<text x="94" y="100.0" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ১৫</text>
+<line x1="24" y1="102.6" x2="94" y2="102.6" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="110.5" font-size="4.6" fill="#ffffff" font-weight="600">লিকার চা</text>
+<text x="94" y="110.5" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ১০</text>
+<line x1="24" y1="113.1" x2="94" y2="113.1" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="121.0" font-size="4.6" fill="#ffffff" font-weight="600">মসলা চা</text>
+<text x="94" y="121.0" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ২০</text>
+<line x1="24" y1="123.6" x2="94" y2="123.6" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="131.5" font-size="4.6" fill="#ffffff" font-weight="600">কফি</text>
+<text x="94" y="131.5" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ৩০</text>
+<line x1="24" y1="134.1" x2="94" y2="134.1" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="142.0" font-size="4.6" fill="#ffffff" font-weight="600">গ্রিন টি</text>
+<text x="94" y="142.0" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ২০</text>
+<line x1="24" y1="144.6" x2="94" y2="144.6" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="152.5" font-size="4.6" fill="#ffffff" font-weight="600">লেবু চা</text>
+<text x="94" y="152.5" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ১৫</text>
+<line x1="24" y1="155.1" x2="94" y2="155.1" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="151.0" y="88" font-size="5.8" fill="#fcd34d" font-weight="800" text-anchor="middle">নাস্তা</text>
+<line x1="116" y1="91" x2="186" y2="91" stroke="#e8e2c9" stroke-width="0.25"/>
+<text x="116" y="100.0" font-size="4.6" fill="#ffffff" font-weight="600">সিঙ্গারা (২ পিস)</text>
+<text x="186" y="100.0" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ২০</text>
+<line x1="116" y1="102.6" x2="186" y2="102.6" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="116" y="110.5" font-size="4.6" fill="#ffffff" font-weight="600">সমুচা (২ পিস)</text>
+<text x="186" y="110.5" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ২০</text>
+<line x1="116" y1="113.1" x2="186" y2="113.1" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="116" y="121.0" font-size="4.6" fill="#ffffff" font-weight="600">পুরি-সবজি</text>
+<text x="186" y="121.0" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ৩০</text>
+<line x1="116" y1="123.6" x2="186" y2="123.6" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="116" y="131.5" font-size="4.6" fill="#ffffff" font-weight="600">পরোটা-ভাজি</text>
+<text x="186" y="131.5" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ৪০</text>
+<line x1="116" y1="134.1" x2="186" y2="134.1" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="116" y="142.0" font-size="4.6" fill="#ffffff" font-weight="600">ডিম টোস্ট</text>
+<text x="186" y="142.0" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ৩৫</text>
+<line x1="116" y1="144.6" x2="186" y2="144.6" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="116" y="152.5" font-size="4.6" fill="#ffffff" font-weight="600">কেক / বিস্কুট</text>
+<text x="186" y="152.5" font-size="4.6" fill="#fcd34d" font-weight="800" text-anchor="end">৳ ১০</text>
+<line x1="116" y1="155.1" x2="186" y2="155.1" stroke="#8fa89a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<rect x="18" y="168" width="174" height="56" fill="#2a5240" rx="4" stroke="#fcd34d" stroke-width="0.5" stroke-dasharray="2 1.4" data-layer-name="Special offer box"/>
+<text x="105" y="182" font-size="7" fill="#fcd34d" font-weight="800" text-anchor="middle">আজকের স্পেশাল</text>
+<text x="105" y="195" font-size="6.6" fill="#ffffff" font-weight="800" text-anchor="middle">চা + সিঙ্গারা কম্বো — মাত্র ৳ ২৫</text>
+<text x="105" y="205" font-size="4.2" fill="#e8e2c9" font-weight="600" text-anchor="middle">দুপুর ১২টা – বিকাল ৫টা পর্যন্ত</text>
+<text x="105" y="215" font-size="3.4" fill="#8fa89a" font-weight="500" text-anchor="middle">(এখানে নিজের আজকের অফার লিখুন)</text>
+<rect x="70" y="232" width="70" height="13" fill="#fcd34d" rx="6.5" data-layer-name="Offer badge"/>
+<text x="105" y="241" font-size="5.6" fill="#1f3b2d" font-weight="800" text-anchor="middle">৫টা কিনলে ১টা ফ্রি!</text>
+<text x="105" y="262" font-size="4" fill="#e8e2c9" font-weight="600" text-anchor="middle">সকাল ৬টা – রাত ১০টা  |  মোবাইল: ০১৭০০-০০০০০০</text>
+<text x="105" y="270" font-size="3.4" fill="#8fa89a" font-weight="500" text-anchor="middle">বাকি দেওয়া হয় না — অনুগ্রহ করে সহযোগিতা করুন</text>
+</svg>

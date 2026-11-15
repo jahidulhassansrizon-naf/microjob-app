@@ -1,0 +1,19 @@
+{
+  "id": "43-gift-voucher",
+  "title": "Gift Voucher",
+  "category": "Shop & Business",
+  "aspectRatio": "200:90",
+  "physicalWidth": 200,
+  "physicalHeight": 90,
+  "unit": "mm",
+  "physicalSizeLabel": "200 x 90 mm",
+  "file": "templates/43-gift-voucher.svg",
+  "preview": "previews/43-gift-voucher.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 200 90",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

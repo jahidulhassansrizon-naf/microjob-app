@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#2b1633" data-layer-name="Background"/>
+<rect x="7" y="7" width="196" height="283" fill="none" stroke="#d4af37" stroke-width="0.9" data-layer-name="Gold frame"/>
+<rect x="10" y="10" width="190" height="277" fill="none" stroke="#d4af37" stroke-width="0.25" data-layer-name="Inner frame"/>
+<circle cx="105" cy="32" r="12" fill="none" stroke="#d4af37" stroke-width="0.5" stroke-dasharray="1.6 1.2" data-layer-name="Logo placeholder"/>
+<text x="105" y="33.2" font-size="3.4" fill="#d4af37" font-weight="500" text-anchor="middle">লোগো</text>
+<text x="105" y="58" font-size="13" fill="#ffffff" font-weight="800" text-anchor="middle" data-layer-name="Salon name">সেলুন / পার্লারের নাম</text>
+<text x="105" y="66" font-size="4.2" fill="#e9c9f5" font-weight="600" text-anchor="middle" letter-spacing="1">লেডিস ও জেন্টস সেলুন</text>
+<line x1="60" y1="72" x2="150" y2="72" stroke="#d4af37" stroke-width="0.4"/>
+<polygon points="105,69.8 107.2,72 105,74.2 102.8,72" fill="#d4af37" data-layer-name="Divider diamond"/>
+<rect x="62" y="78" width="86" height="12" fill="#d4af37" rx="6" data-layer-name="Title pill"/>
+<text x="105" y="86.2" font-size="7" fill="#2b1633" font-weight="800" text-anchor="middle" data-layer-name="Title">সার্ভিস রেট চার্ট</text>
+<rect x="14" y="98" width="88" height="9" fill="#6b2c7a" rx="2" data-layer-name="Column heading"/>
+<text x="58" y="104.2" font-size="5" fill="#ffffff" font-weight="800" text-anchor="middle">জেন্টস</text>
+<text x="17" y="119" font-size="4.6" fill="#ffffff" font-weight="600">চুল কাটা (সাধারণ)</text>
+<text x="99" y="119" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৫০</text>
+<line x1="17" y1="121.8" x2="99" y2="121.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="131" font-size="4.6" fill="#ffffff" font-weight="600">স্টাইলিশ হেয়ার কাট</text>
+<text x="99" y="131" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ১২০</text>
+<line x1="17" y1="133.8" x2="99" y2="133.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="143" font-size="4.6" fill="#ffffff" font-weight="600">শেভিং</text>
+<text x="99" y="143" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৩০</text>
+<line x1="17" y1="145.8" x2="99" y2="145.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="155" font-size="4.6" fill="#ffffff" font-weight="600">দাড়ি ট্রিম / সেট</text>
+<text x="99" y="155" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৫০</text>
+<line x1="17" y1="157.8" x2="99" y2="157.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="167" font-size="4.6" fill="#ffffff" font-weight="600">ফেসিয়াল</text>
+<text x="99" y="167" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ২৫০</text>
+<line x1="17" y1="169.8" x2="99" y2="169.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="179" font-size="4.6" fill="#ffffff" font-weight="600">হেয়ার কালার</text>
+<text x="99" y="179" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৩০০</text>
+<line x1="17" y1="181.8" x2="99" y2="181.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="191" font-size="4.6" fill="#ffffff" font-weight="600">হেড ম্যাসাজ</text>
+<text x="99" y="191" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ১০০</text>
+<line x1="17" y1="193.8" x2="99" y2="193.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="203" font-size="4.6" fill="#ffffff" font-weight="600">ফেস ক্লিন-আপ</text>
+<text x="99" y="203" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ১৫০</text>
+<line x1="17" y1="205.8" x2="99" y2="205.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="215" font-size="4.6" fill="#ffffff" font-weight="600">ওয়াশ ও ব্লো-ড্রাই</text>
+<text x="99" y="215" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ১০০</text>
+<line x1="17" y1="217.8" x2="99" y2="217.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="17" y="227" font-size="4.6" fill="#ffffff" font-weight="600">প্যাকেজ (কাট+শেভ+ম্যাসাজ)</text>
+<text x="99" y="227" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ২৫০</text>
+<line x1="17" y1="229.8" x2="99" y2="229.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<rect x="108" y="98" width="88" height="9" fill="#6b2c7a" rx="2" data-layer-name="Column heading"/>
+<text x="152" y="104.2" font-size="5" fill="#ffffff" font-weight="800" text-anchor="middle">লেডিস</text>
+<text x="111" y="119" font-size="4.6" fill="#ffffff" font-weight="600">হেয়ার কাট</text>
+<text x="193" y="119" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ২০০</text>
+<line x1="111" y1="121.8" x2="193" y2="121.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="131" font-size="4.6" fill="#ffffff" font-weight="600">আইব্রো থ্রেডিং</text>
+<text x="193" y="131" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৩০</text>
+<line x1="111" y1="133.8" x2="193" y2="133.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="143" font-size="4.6" fill="#ffffff" font-weight="600">ফেসিয়াল</text>
+<text x="193" y="143" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৪০০</text>
+<line x1="111" y1="145.8" x2="193" y2="145.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="155" font-size="4.6" fill="#ffffff" font-weight="600">হেয়ার স্পা</text>
+<text x="193" y="155" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৮০০</text>
+<line x1="111" y1="157.8" x2="193" y2="157.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="167" font-size="4.6" fill="#ffffff" font-weight="600">মেহেদি (হাত)</text>
+<text x="193" y="167" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ২৫০</text>
+<line x1="111" y1="169.8" x2="193" y2="169.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="179" font-size="4.6" fill="#ffffff" font-weight="600">ম্যানিকিউর</text>
+<text x="193" y="179" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৩৫০</text>
+<line x1="111" y1="181.8" x2="193" y2="181.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="191" font-size="4.6" fill="#ffffff" font-weight="600">পেডিকিউর</text>
+<text x="193" y="191" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ৪৫০</text>
+<line x1="111" y1="193.8" x2="193" y2="193.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="203" font-size="4.6" fill="#ffffff" font-weight="600">হেয়ার কালার</text>
+<text x="193" y="203" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ১২০০</text>
+<line x1="111" y1="205.8" x2="193" y2="205.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="215" font-size="4.6" fill="#ffffff" font-weight="600">পার্টি মেকআপ</text>
+<text x="193" y="215" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ২৫০০</text>
+<line x1="111" y1="217.8" x2="193" y2="217.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="227" font-size="4.6" fill="#ffffff" font-weight="600">ব্রাইডাল মেকআপ</text>
+<text x="193" y="227" font-size="4.6" fill="#f5d77a" font-weight="800" text-anchor="end">৳ ১২০০০</text>
+<line x1="111" y1="229.8" x2="193" y2="229.8" stroke="#8b5a9a" stroke-width="0.2" stroke-dasharray="0.6 0.8"/>
+<rect x="14" y="244" width="182" height="22" fill="#3d1f4b" rx="3" stroke="#d4af37" stroke-width="0.3" data-layer-name="Offer strip"/>
+<text x="105" y="253" font-size="5.2" fill="#f5d77a" font-weight="800" text-anchor="middle">বিশেষ অফার: ২টি সার্ভিসে ১০% ছাড়!</text>
+<text x="105" y="261" font-size="3.8" fill="#e9c9f5" font-weight="500" text-anchor="middle">অগ্রিম বুকিং ও হোম সার্ভিসের জন্য যোগাযোগ করুন</text>
+<text x="105" y="276" font-size="4" fill="#ffffff" font-weight="600" text-anchor="middle">মোবাইল: ০১৭০০-০০০০০০  |  সময়: সকাল ১০টা – রাত ৯টা</text>
+<text x="105" y="282" font-size="3.6" fill="#e9c9f5" font-weight="500" text-anchor="middle">ঠিকানা: বাজার রোড, থানা, জেলা</text>
+</svg>

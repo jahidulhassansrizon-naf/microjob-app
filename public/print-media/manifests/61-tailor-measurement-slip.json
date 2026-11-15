@@ -1,0 +1,19 @@
+{
+  "id": "61-tailor-measurement-slip",
+  "title": "Tailor Measurement Slip",
+  "category": "Shop & Business",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/61-tailor-measurement-slip.svg",
+  "preview": "previews/61-tailor-measurement-slip.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

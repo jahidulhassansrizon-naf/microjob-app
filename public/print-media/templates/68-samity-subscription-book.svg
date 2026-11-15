@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 210" width="297mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="297" height="210" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="297" height="30" fill="#9a3412" data-layer-name="Header"/>
+<circle cx="22" cy="15" r="9" fill="none" stroke="#fed7aa" stroke-width="0.4" stroke-dasharray="1.5 1" data-layer-name="Logo placeholder"/>
+<text x="22" y="16" font-size="3" fill="#fed7aa" font-weight="500" text-anchor="middle">লোগো</text>
+<text x="155" y="14" font-size="11" fill="#ffffff" font-weight="800" text-anchor="middle" data-layer-name="Samity name">সমিতির নাম</text>
+<text x="155" y="21" font-size="5" fill="#fed7aa" font-weight="700" text-anchor="middle" data-layer-name="Title">কিস্তি / চাঁদার খাতা</text>
+<text x="155" y="27" font-size="3" fill="#fdba74" font-weight="500" text-anchor="middle">ঠিকানা: বাজার রোড, থানা, জেলা  |  নিবন্ধন নং: ........</text>
+<text x="10" y="40" font-size="4" fill="#333" font-weight="600">সাল:</text>
+<line x1="16.78" y1="40.9" x2="55" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="70" y="40" font-size="4" fill="#333" font-weight="600">মাসিক কিস্তি / চাঁদা:</text>
+<line x1="99.22" y1="40.9" x2="150" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="158" y="40" font-size="4" fill="#333" font-weight="600">দায়িত্বপ্রাপ্ত:</text>
+<line x1="180.62" y1="40.9" x2="287" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="10" y="46" width="277.0" height="9" fill="#9a3412" data-layer-name="Table header"/>
+<text x="15.0" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">ক্রম</text>
+<text x="48.0" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">সদস্যের নাম</text>
+<text x="83.4" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">জানু</text>
+<text x="98.2" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">ফেব্রু</text>
+<text x="113.0" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">মার্চ</text>
+<text x="127.8" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">এপ্রি</text>
+<text x="142.6" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">মে</text>
+<text x="157.4" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">জুন</text>
+<text x="172.2" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">জুলাই</text>
+<text x="187.0" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">আগ</text>
+<text x="201.8" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">সেপ্টে</text>
+<text x="216.6" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">অক্টো</text>
+<text x="231.4" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">নভে</text>
+<text x="246.2" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">ডিসে</text>
+<text x="270.3" y="51.69" font-size="3.4" fill="#fff" font-weight="700" text-anchor="middle">মোট জমা</text>
+<text x="15.0" y="61.08" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">১</text>
+<rect x="10" y="64.5" width="277.0" height="9.5" fill="#fff7ed"/>
+<text x="15.0" y="70.58" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">২</text>
+<text x="15.0" y="80.08" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৩</text>
+<rect x="10" y="83.5" width="277.0" height="9.5" fill="#fff7ed"/>
+<text x="15.0" y="89.58" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৪</text>
+<text x="15.0" y="99.08" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৫</text>
+<rect x="10" y="102.5" width="277.0" height="9.5" fill="#fff7ed"/>
+<text x="15.0" y="108.58" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৬</text>
+<text x="15.0" y="118.08" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৭</text>
+<rect x="10" y="121.5" width="277.0" height="9.5" fill="#fff7ed"/>
+<text x="15.0" y="127.58" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৮</text>
+<text x="15.0" y="137.08" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৯</text>
+<rect x="10" y="140.5" width="277.0" height="9.5" fill="#fff7ed"/>
+<text x="15.0" y="146.58" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">১০</text>
+<text x="15.0" y="156.08" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">১১</text>
+<rect x="10" y="159.5" width="277.0" height="9.5" fill="#fff7ed"/>
+<text x="15.0" y="165.58" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">১২</text>
+<rect x="10" y="46" width="277.0" height="123.0" fill="none" stroke="#c9a58c" stroke-width="0.3" data-layer-name="Table outline"/>
+<line x1="10" y1="55.0" x2="287.0" y2="55.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="64.5" x2="287.0" y2="64.5" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="74.0" x2="287.0" y2="74.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="83.5" x2="287.0" y2="83.5" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="93.0" x2="287.0" y2="93.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="102.5" x2="287.0" y2="102.5" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="112.0" x2="287.0" y2="112.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="121.5" x2="287.0" y2="121.5" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="131.0" x2="287.0" y2="131.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="140.5" x2="287.0" y2="140.5" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="150.0" x2="287.0" y2="150.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="159.5" x2="287.0" y2="159.5" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="10" y1="169.0" x2="287.0" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="20" y1="46" x2="20" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="76" y1="46" x2="76" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="90.8" y1="46" x2="90.8" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="105.6" y1="46" x2="105.6" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="120.39999999999999" y1="46" x2="120.39999999999999" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="135.2" y1="46" x2="135.2" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="150.0" y1="46" x2="150.0" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="164.8" y1="46" x2="164.8" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="179.60000000000002" y1="46" x2="179.60000000000002" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="194.40000000000003" y1="46" x2="194.40000000000003" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="209.20000000000005" y1="46" x2="209.20000000000005" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="224.00000000000006" y1="46" x2="224.00000000000006" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="238.80000000000007" y1="46" x2="238.80000000000007" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<line x1="253.60000000000008" y1="46" x2="253.60000000000008" y2="169.0" stroke="#c9a58c" stroke-width="0.2"/>
+<rect x="10" y="169.0" width="277.0" height="9" fill="#ffedd5" stroke="#9a3412" stroke-width="0.4" data-layer-name="Total row"/>
+<text x="43" y="175.0" font-size="3.8" fill="#7c2d12" font-weight="800" text-anchor="middle">মাসের মোট জমা</text>
+<line x1="76" y1="169.0" x2="76" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="90.8" y1="169.0" x2="90.8" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="105.6" y1="169.0" x2="105.6" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="120.39999999999999" y1="169.0" x2="120.39999999999999" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="135.2" y1="169.0" x2="135.2" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="150.0" y1="169.0" x2="150.0" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="164.8" y1="169.0" x2="164.8" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="179.60000000000002" y1="169.0" x2="179.60000000000002" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="194.40000000000003" y1="169.0" x2="194.40000000000003" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="209.20000000000005" y1="169.0" x2="209.20000000000005" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="224.00000000000006" y1="169.0" x2="224.00000000000006" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="238.80000000000007" y1="169.0" x2="238.80000000000007" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<line x1="253.60000000000008" y1="169.0" x2="253.60000000000008" y2="178.0" stroke="#9a3412" stroke-width="0.25"/>
+<text x="10" y="186.0" font-size="3.2" fill="#7c2d12" font-weight="500">দ্রষ্টব্য: কিস্তি জমা হলে নির্ধারিত ঘরে টাকার পরিমাণ লিখুন ও স্বাক্ষর করুন। নির্দিষ্ট তারিখের পর জমা দিলে নিয়ম অনুযায়ী জরিমানা প্রযোজ্য।</text>
+<line x1="212" y1="198" x2="287" y2="198" stroke="#555" stroke-width="0.3"/>
+<text x="249.5" y="203" font-size="3.4" fill="#7c2d12" font-weight="600" text-anchor="middle">সভাপতি / সম্পাদকের স্বাক্ষর</text>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "id": "19-visiting-card",
+  "title": "Visiting Card",
+  "category": "Shop & Business",
+  "aspectRatio": "90:55",
+  "physicalWidth": 90,
+  "physicalHeight": 55,
+  "unit": "mm",
+  "physicalSizeLabel": "90 x 55 mm",
+  "file": "templates/19-visiting-card.svg",
+  "preview": "previews/19-visiting-card.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 90 55",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

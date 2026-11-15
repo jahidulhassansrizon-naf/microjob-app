@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="3" fill="#2f5d50" data-layer-name="Top line"/>
+<text x="105" y="28" font-size="10" fill="#2f5d50" font-weight="700" text-anchor="middle" data-layer-name="শিরোনাম">ছুটির আবেদনপত্র</text>
+<line x1="70" y1="32" x2="140" y2="32" stroke="#2f5d50" stroke-width="0.5" data-layer-name="Title underline"/>
+<text x="20" y="52" font-size="4.4" fill="#333" font-weight="500" data-layer-name="তারিখ">তারিখ: ১৫ নভেম্বর ২০২৬</text>
+<text x="20" y="68" font-size="4.6" fill="#222" font-weight="500" data-layer-name="প্রাপক (বরাবর)"><tspan data-line="true" x="20">বরাবর,</tspan><tspan data-line="true" x="20" dy="1.3em">প্রধান শিক্ষক</tspan><tspan data-line="true" x="20" dy="1.3em">আপনার প্রতিষ্ঠানের নাম</tspan><tspan data-line="true" x="20" dy="1.3em">ঠিকানা, থানা, জেলা</tspan></text>
+<text x="20" y="104" font-size="4.6" fill="#222" font-weight="700" data-layer-name="বিষয়">বিষয়: ০৩ (তিন) দিনের ছুটি মঞ্জুরের জন্য আবেদন।</text>
+<text x="20" y="118" font-size="4.6" fill="#222" font-weight="500" data-layer-name="সম্বোধন">জনাব,</text>
+<text x="20" y="130" font-size="4.6" fill="#333" font-weight="400" data-layer-name="আবেদনের মূল লেখা"><tspan data-line="true" x="20">বিনীত নিবেদন এই যে, আমি আপনার প্রতিষ্ঠানের একজন নিয়মিত</tspan><tspan data-line="true" x="20" dy="1.3em">শিক্ষার্থী। হঠাৎ অসুস্থতার কারণে আমি আগামী ১৬ নভেম্বর ২০২৬</tspan><tspan data-line="true" x="20" dy="1.3em">হতে ১৮ নভেম্বর ২০২৬ পর্যন্ত মোট ০৩ (তিন) দিন প্রতিষ্ঠানে</tspan><tspan data-line="true" x="20" dy="1.3em">উপস্থিত থাকতে পারব না।</tspan><tspan data-line="true" x="20" dy="1.3em">অতএব, মহোদয়ের নিকট বিনীত প্রার্থনা, উক্ত ০৩ (তিন) দিনের</tspan><tspan data-line="true" x="20" dy="1.3em">ছুটি মঞ্জুর করে বাধিত করবেন।</tspan></text>
+<text x="20" y="192" font-size="4.6" fill="#222" font-weight="500" data-layer-name="নিবেদক">বিনীত নিবেদক,</text>
+<line x1="20" y1="224" x2="80" y2="224" stroke="#555" stroke-width="0.3" data-layer-name="Signature line"/>
+<text x="20" y="229" font-size="3.4" fill="#666" font-weight="400" data-layer-name="স্বাক্ষর লেখা">(স্বাক্ষর)</text>
+<text x="20" y="240" font-size="4.4" fill="#333" font-weight="400" data-layer-name="আবেদনকারীর পরিচয়"><tspan data-line="true" x="20">নাম: আপনার নাম</tspan><tspan data-line="true" x="20" dy="1.3em">শ্রেণি: দশম  |  রোল: ১২</tspan><tspan data-line="true" x="20" dy="1.3em">মোবাইল: ০১৭০০-০০০০০০</tspan></text>
+<rect x="0" y="294" width="210" height="3" fill="#2f5d50" data-layer-name="Bottom line"/>
+<g display="none" id="safe-area-guide" data-print="false"><rect x="5" y="5" width="200" height="287" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

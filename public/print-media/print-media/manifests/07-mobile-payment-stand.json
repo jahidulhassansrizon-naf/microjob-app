@@ -1,0 +1,510 @@
+{
+  "id": "07-mobile-payment-stand",
+  "title": "Mobile Banking & Bangla QR Payment Stand",
+  "platform": "SebaLagbe.com",
+  "category": "Mobile Banking",
+  "description": "Tabletop merchant payment stand with an EMPTY square for the merchant's own QR image and four neutral payment-service logo placeholders. No payment-brand logos, no QR, no account numbers.",
+  "file": "templates/07-mobile-payment-stand.svg",
+  "preview": "previews/07-mobile-payment-stand.png",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "aspectRatio": "148:210",
+  "viewBox": "0 0 148 210",
+  "layers": [
+    {
+      "id": "background_layer",
+      "name": "Background"
+    },
+    {
+      "id": "header_layer",
+      "name": "Header"
+    },
+    {
+      "id": "decorative_shapes",
+      "name": "Decorative Shapes"
+    },
+    {
+      "id": "logo_placeholder",
+      "name": "Logo Placeholder"
+    },
+    {
+      "id": "title_text",
+      "name": "Shop Identity"
+    },
+    {
+      "id": "merchant_info",
+      "name": "Merchant Information"
+    },
+    {
+      "id": "payment_instruction",
+      "name": "Payment Instruction"
+    },
+    {
+      "id": "qr_area",
+      "name": "QR Code Area"
+    },
+    {
+      "id": "payment_services",
+      "name": "Payment Services"
+    },
+    {
+      "id": "footer_layer",
+      "name": "Footer"
+    },
+    {
+      "id": "contact_information",
+      "name": "Contact Information"
+    },
+    {
+      "id": "print_guides",
+      "name": "Print Guides (hidden - non-printing)"
+    }
+  ],
+  "editableObjects": [
+    {
+      "id": "bg_page",
+      "type": "shape",
+      "name": "Page Background",
+      "layer": "background_layer",
+      "x": -3,
+      "y": -3,
+      "width": 154,
+      "height": 216,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "header_wave_green",
+      "type": "shape",
+      "name": "Header Green Wave",
+      "layer": "header_layer",
+      "x": -3,
+      "y": -3,
+      "width": 154,
+      "height": 57.02,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "header_wave_purple",
+      "type": "shape",
+      "name": "Header Purple Wave",
+      "layer": "header_layer",
+      "x": -3,
+      "y": -3,
+      "width": 154,
+      "height": 51.02,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "deco_circle_orange",
+      "type": "shape",
+      "name": "Orange Dot",
+      "layer": "decorative_shapes",
+      "x": 134.8,
+      "y": 8.8,
+      "width": 6.4,
+      "height": 6.4,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "deco_circle_light",
+      "type": "shape",
+      "name": "Light Circle",
+      "layer": "decorative_shapes",
+      "x": 112,
+      "y": -14,
+      "width": 40,
+      "height": 40,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "deco_diamonds",
+      "type": "shape",
+      "name": "Header Diamonds",
+      "layer": "decorative_shapes",
+      "x": 98.42,
+      "y": 28,
+      "width": 39.16,
+      "height": 3,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "logo_image_placeholder",
+      "type": "image",
+      "name": "Shop Logo",
+      "layer": "logo_placeholder",
+      "x": 10,
+      "y": 9,
+      "width": 28,
+      "height": 28,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "replaceable": true
+    },
+    {
+      "id": "shop_name_text",
+      "type": "text",
+      "name": "Shop Name",
+      "layer": "title_text",
+      "x": 43.79,
+      "y": 12.97,
+      "width": 53.29,
+      "height": 8.72,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "fontSize": 7.8,
+      "defaultText": "আপনার দোকানের নাম"
+    },
+    {
+      "id": "merchant_name_text",
+      "type": "text",
+      "name": "Merchant Name",
+      "layer": "merchant_info",
+      "x": 43.9,
+      "y": 24.53,
+      "width": 31.89,
+      "height": 4.31,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "fontSize": 3.8,
+      "defaultText": "মার্চেন্টের নাম: আপনার নাম"
+    },
+    {
+      "id": "payment_title_text",
+      "type": "text",
+      "name": "Payment Title",
+      "layer": "payment_instruction",
+      "x": 44.91,
+      "y": 54.73,
+      "width": 58.39,
+      "height": 7.14,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "fontSize": 6.4,
+      "defaultText": "QR স্ক্যান করে পেমেন্ট করুন"
+    },
+    {
+      "id": "payment_instruction_text",
+      "type": "text",
+      "name": "Payment Instruction",
+      "layer": "payment_instruction",
+      "x": 49.01,
+      "y": 63.46,
+      "width": 49.95,
+      "height": 3.91,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "fontSize": 3.4,
+      "defaultText": "আপনার মোবাইল ব্যাংকিং অ্যাপ খুলে স্ক্যান করুন"
+    },
+    {
+      "id": "qr_card",
+      "type": "shape",
+      "name": "QR Card",
+      "layer": "qr_area",
+      "x": 22,
+      "y": 71,
+      "width": 104,
+      "height": 98,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "qr_corner_01",
+      "type": "shape",
+      "name": "Scan Corner 1",
+      "layer": "qr_area",
+      "x": 30,
+      "y": 78,
+      "width": 8,
+      "height": 8,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "qr_corner_02",
+      "type": "shape",
+      "name": "Scan Corner 2",
+      "layer": "qr_area",
+      "x": 110,
+      "y": 78,
+      "width": 8,
+      "height": 8,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "qr_corner_03",
+      "type": "shape",
+      "name": "Scan Corner 3",
+      "layer": "qr_area",
+      "x": 30,
+      "y": 154,
+      "width": 8,
+      "height": 8,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "qr_corner_04",
+      "type": "shape",
+      "name": "Scan Corner 4",
+      "layer": "qr_area",
+      "x": 110,
+      "y": 154,
+      "width": 8,
+      "height": 8,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "qr_image_placeholder",
+      "type": "image",
+      "name": "Merchant QR Placeholder (leave empty)",
+      "layer": "qr_area",
+      "x": 34,
+      "y": 82,
+      "width": 80,
+      "height": 80,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "replaceable": true
+    },
+    {
+      "id": "qr_hint_text",
+      "type": "text",
+      "name": "QR Hint (delete after uploading QR)",
+      "layer": "qr_area",
+      "x": 53.41,
+      "y": 163.88,
+      "width": 41.25,
+      "height": 3.26,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "fontSize": 2.9,
+      "defaultText": "এখানে আপনার নিজস্ব মার্চেন্ট QR কোড বসান"
+    },
+    {
+      "id": "services_heading",
+      "type": "text",
+      "name": "Services Heading",
+      "layer": "payment_services",
+      "x": 55.63,
+      "y": 173.35,
+      "width": 36.76,
+      "height": 3.89,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "fontSize": 3.5,
+      "defaultText": "সাপোর্টেড মোবাইল ব্যাংকিং সার্ভিস"
+    },
+    {
+      "id": "services_line_left",
+      "type": "shape",
+      "name": "Services Line Left",
+      "layer": "payment_services",
+      "x": 10,
+      "y": 175,
+      "width": 18,
+      "height": 0.5,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "services_line_right",
+      "type": "shape",
+      "name": "Services Line Right",
+      "layer": "payment_services",
+      "x": 120,
+      "y": 175,
+      "width": 18,
+      "height": 0.5,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "service_logo_placeholder_01",
+      "type": "image",
+      "name": "Payment Service Logo 1",
+      "layer": "payment_services",
+      "x": 13,
+      "y": 180,
+      "width": 28,
+      "height": 14,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "replaceable": true
+    },
+    {
+      "id": "service_logo_placeholder_02",
+      "type": "image",
+      "name": "Payment Service Logo 2",
+      "layer": "payment_services",
+      "x": 44.7,
+      "y": 180,
+      "width": 28,
+      "height": 14,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "replaceable": true
+    },
+    {
+      "id": "service_logo_placeholder_03",
+      "type": "image",
+      "name": "Payment Service Logo 3",
+      "layer": "payment_services",
+      "x": 76.4,
+      "y": 180,
+      "width": 28,
+      "height": 14,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "replaceable": true
+    },
+    {
+      "id": "service_logo_placeholder_04",
+      "type": "image",
+      "name": "Payment Service Logo 4",
+      "layer": "payment_services",
+      "x": 108.1,
+      "y": 180,
+      "width": 28,
+      "height": 14,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "replaceable": true
+    },
+    {
+      "id": "footer_band",
+      "type": "shape",
+      "name": "Footer Band",
+      "layer": "footer_layer",
+      "x": -3,
+      "y": 196.5,
+      "width": 154,
+      "height": 16.5,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "footer_orange_line",
+      "type": "shape",
+      "name": "Footer Orange Line",
+      "layer": "footer_layer",
+      "x": -3,
+      "y": 196.5,
+      "width": 154,
+      "height": 1.2,
+      "editable": true,
+      "visible": true,
+      "locked": false
+    },
+    {
+      "id": "contact_phone_icon",
+      "type": "shape",
+      "name": "Phone Icon",
+      "layer": "contact_information",
+      "x": 45.26,
+      "y": 198.26,
+      "width": 1.8,
+      "height": 3.6,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "shapeKind": "icon"
+    },
+    {
+      "id": "contact_phone_text",
+      "type": "text",
+      "name": "Contact Number",
+      "layer": "contact_information",
+      "x": 50,
+      "y": 197.53,
+      "width": 43.06,
+      "height": 4.41,
+      "editable": true,
+      "visible": true,
+      "locked": false,
+      "fontSize": 4,
+      "defaultText": "যোগাযোগ: ০১XXX-XXXXXX"
+    }
+  ],
+  "fonts": [
+    "Hind Siliguri",
+    "Anek Bangla",
+    "Noto Sans Bengali",
+    "Baloo Da 2",
+    "Noto Serif Bengali",
+    "Tiro Bangla",
+    "Plus Jakarta Sans",
+    "Inter"
+  ],
+  "colorPalette": [
+    {
+      "name": "Purple",
+      "hex": "#5B2A86"
+    },
+    {
+      "name": "Green",
+      "hex": "#1FA35C"
+    },
+    {
+      "name": "Orange",
+      "hex": "#F28C28"
+    },
+    {
+      "name": "Navy Blue",
+      "hex": "#13224A"
+    },
+    {
+      "name": "Premium White",
+      "hex": "#FBF9FF"
+    }
+  ],
+  "printSettings": {
+    "trimWidthMm": 148,
+    "trimHeightMm": 210,
+    "bleedMm": 3,
+    "safeMarginMm": 8,
+    "svgUnitsPerMm": 1,
+    "colorMode": "RGB (screen) - convert to CMYK in prepress",
+    "recommendedRasterDpi": 300,
+    "guidesLayerId": "print_guides",
+    "guidesHiddenByDefault": true,
+    "textAsPaths": false,
+    "fontsEmbedded": false
+  }
+}

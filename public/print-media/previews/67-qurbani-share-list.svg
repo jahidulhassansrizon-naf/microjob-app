@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#fffdf7" data-layer-name="Background"/>
+<rect x="6" y="6" width="198" height="285" fill="none" stroke="#166534" stroke-width="0.9" data-layer-name="Border"/>
+<rect x="9" y="9" width="192" height="279" fill="none" stroke="#c8a24a" stroke-width="0.3" data-layer-name="Inner border"/>
+<rect x="9" y="9" width="192" height="34" fill="#166534" data-layer-name="Header"/>
+<text x="105" y="25" font-size="12.5" fill="#ffffff" font-weight="800" text-anchor="middle" data-layer-name="Title">কোরবানির ভাগের তালিকা</text>
+<text x="105" y="33" font-size="4" fill="#bbf7d0" font-weight="600" text-anchor="middle">পশুর নাম / ওজন / অংশীদারদের হিসাব</text>
+<text x="105" y="39" font-size="3.4" fill="#86efac" font-weight="500" text-anchor="middle">ঈদুল আযহা ১৪৪৭ হিজরি  |  ২০২৬ ইং</text>
+<text x="14" y="54" font-size="4.2" fill="#166534" font-weight="700">পশুর ধরন:</text>
+<rect x="38" y="50.8" width="3.8" height="3.8" fill="none" stroke="#166534" stroke-width="0.3" data-layer-name="Checkbox"/>
+<text x="43.5" y="54" font-size="4" fill="#333" font-weight="500">গরু</text>
+<rect x="68" y="50.8" width="3.8" height="3.8" fill="none" stroke="#166534" stroke-width="0.3" data-layer-name="Checkbox"/>
+<text x="73.5" y="54" font-size="4" fill="#333" font-weight="500">মহিষ</text>
+<rect x="98" y="50.8" width="3.8" height="3.8" fill="none" stroke="#166534" stroke-width="0.3" data-layer-name="Checkbox"/>
+<text x="103.5" y="54" font-size="4" fill="#333" font-weight="500">উট</text>
+<rect x="128" y="50.8" width="3.8" height="3.8" fill="none" stroke="#166534" stroke-width="0.3" data-layer-name="Checkbox"/>
+<text x="133.5" y="54" font-size="4" fill="#333" font-weight="500">ছাগল / ভেড়া</text>
+<text x="14" y="64" font-size="4.2" fill="#333" font-weight="600">পশুর বয়স / ওজন:</text>
+<line x1="37.68" y1="64.9" x2="100" y2="64.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="64" font-size="4.2" fill="#333" font-weight="600">ক্রয়মূল্য (মোট):</text>
+<line x1="131.06" y1="64.9" x2="196" y2="64.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="72" font-size="4.2" fill="#333" font-weight="600">প্রতি ভাগ:</text>
+<line x1="29.36" y1="72.9" x2="100" y2="72.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="72" font-size="4.2" fill="#333" font-weight="600">কোরবানির তারিখ:</text>
+<line x1="128.29" y1="72.9" x2="196" y2="72.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="14" y="80" width="182" height="9" fill="#166534" data-layer-name="Table header"/>
+<text x="19.5" y="85.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">ক্রম</text>
+<text x="50.0" y="85.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">অংশীদারের নাম</text>
+<text x="91.0" y="85.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">মোবাইল</text>
+<text x="120.0" y="85.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">ভাগের টাকা</text>
+<text x="146.0" y="85.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">জমা</text>
+<text x="170.0" y="85.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">বাকি</text>
+<text x="188.5" y="85.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">স্বাক্ষর</text>
+<text x="19.5" y="95.83" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">১</text>
+<rect x="14" y="100" width="182" height="11" fill="#f0fdf4"/>
+<text x="19.5" y="106.83" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">২</text>
+<text x="19.5" y="117.83" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৩</text>
+<rect x="14" y="122" width="182" height="11" fill="#f0fdf4"/>
+<text x="19.5" y="128.83" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৪</text>
+<text x="19.5" y="139.83" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৫</text>
+<rect x="14" y="144" width="182" height="11" fill="#f0fdf4"/>
+<text x="19.5" y="150.83" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৬</text>
+<text x="19.5" y="161.83" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৭</text>
+<rect x="14" y="80" width="182" height="86" fill="none" stroke="#86a894" stroke-width="0.3" data-layer-name="Table outline"/>
+<line x1="14" y1="89" x2="196" y2="89" stroke="#86a894" stroke-width="0.2"/>
+<line x1="14" y1="100" x2="196" y2="100" stroke="#86a894" stroke-width="0.2"/>
+<line x1="14" y1="111" x2="196" y2="111" stroke="#86a894" stroke-width="0.2"/>
+<line x1="14" y1="122" x2="196" y2="122" stroke="#86a894" stroke-width="0.2"/>
+<line x1="14" y1="133" x2="196" y2="133" stroke="#86a894" stroke-width="0.2"/>
+<line x1="14" y1="144" x2="196" y2="144" stroke="#86a894" stroke-width="0.2"/>
+<line x1="14" y1="155" x2="196" y2="155" stroke="#86a894" stroke-width="0.2"/>
+<line x1="14" y1="166" x2="196" y2="166" stroke="#86a894" stroke-width="0.2"/>
+<line x1="25" y1="80" x2="25" y2="166" stroke="#86a894" stroke-width="0.2"/>
+<line x1="75" y1="80" x2="75" y2="166" stroke="#86a894" stroke-width="0.2"/>
+<line x1="107" y1="80" x2="107" y2="166" stroke="#86a894" stroke-width="0.2"/>
+<line x1="133" y1="80" x2="133" y2="166" stroke="#86a894" stroke-width="0.2"/>
+<line x1="159" y1="80" x2="159" y2="166" stroke="#86a894" stroke-width="0.2"/>
+<line x1="181" y1="80" x2="181" y2="166" stroke="#86a894" stroke-width="0.2"/>
+<text x="14" y="175" font-size="4.2" fill="#166534" font-weight="800">সর্বমোট:</text>
+<line x1="26.59" y1="175.9" x2="100" y2="175.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="105" y="182" font-size="4.6" fill="#166534" font-weight="800" text-anchor="middle">মাংস বণ্টন (সুন্নত নিয়ম: ১/৩ + ১/৩ + ১/৩)</text>
+<rect x="14" y="188" width="57" height="32" fill="#f0fdf4" rx="2" stroke="#166534" stroke-width="0.3" stroke-dasharray="1.5 1" data-layer-name="Meat share box"/>
+<text x="42.5" y="195" font-size="3.6" fill="#166534" font-weight="700" text-anchor="middle">নিজেদের জন্য (১/৩)</text>
+<text x="42.5" y="214" font-size="3.6" fill="#555" font-weight="500" text-anchor="middle">পরিমাণ: ........ কেজি</text>
+<rect x="75" y="188" width="57" height="32" fill="#f0fdf4" rx="2" stroke="#166534" stroke-width="0.3" stroke-dasharray="1.5 1" data-layer-name="Meat share box"/>
+<text x="103.5" y="195" font-size="3.6" fill="#166534" font-weight="700" text-anchor="middle">আত্মীয়-স্বজনের জন্য (১/৩)</text>
+<text x="103.5" y="214" font-size="3.6" fill="#555" font-weight="500" text-anchor="middle">পরিমাণ: ........ কেজি</text>
+<rect x="136" y="188" width="57" height="32" fill="#f0fdf4" rx="2" stroke="#166534" stroke-width="0.3" stroke-dasharray="1.5 1" data-layer-name="Meat share box"/>
+<text x="164.5" y="195" font-size="3.6" fill="#166534" font-weight="700" text-anchor="middle">গরিব-মিসকিনের জন্য (১/৩)</text>
+<text x="164.5" y="214" font-size="3.6" fill="#555" font-weight="500" text-anchor="middle">পরিমাণ: ........ কেজি</text>
+<text x="14" y="232" font-size="4.2" fill="#333" font-weight="600">জবাইকারীর নাম:</text>
+<line x1="34.9" y1="232.9" x2="100" y2="232.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="232" font-size="4.2" fill="#333" font-weight="600">মোবাইল:</text>
+<line x1="117.2" y1="232.9" x2="196" y2="232.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="241" font-size="4.2" fill="#333" font-weight="600">কসাইয়ের মজুরি:</text>
+<line x1="36.29" y1="241.9" x2="100" y2="241.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="241" font-size="4.2" fill="#333" font-weight="600">চামড়ার দাম / দান:</text>
+<line x1="132.45" y1="241.9" x2="196" y2="241.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="14" y="250" width="182" height="16" fill="#ffffff" rx="2" stroke="#166534" stroke-width="0.3" stroke-dasharray="1.5 1" data-layer-name="Notes box"/>
+<text x="17" y="256" font-size="3.8" fill="#166534" font-weight="700">নোট:</text>
+<text x="105" y="276" font-size="3.8" fill="#166534" font-weight="600" text-anchor="middle">তাকাব্বালাল্লাহু মিন্না ওয়া মিনকুম — আল্লাহ আমাদের কোরবানি কবুল করুন।</text>
+<text x="105" y="283" font-size="3.2" fill="#6b7d70" font-weight="500" text-anchor="middle">(প্রতি গরু/মহিষ/উটে সর্বোচ্চ ৭ ভাগ)</text>
+</svg>

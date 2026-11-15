@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 210" width="148mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="148" height="210" fill="#fff7ed" data-layer-name="Background"/>
+<rect x="0" y="0" width="148" height="10" fill="#7c3aed" data-layer-name="Top stripe"/>
+<rect x="0" y="200" width="148" height="10" fill="#7c3aed" data-layer-name="Bottom stripe"/>
+<polygon points="8.0,10 16.0,10 12.0,16" fill="#f59e0b" data-layer-name="Bunting flag"/>
+<polygon points="24.5,10 32.5,10 28.5,16" fill="#ec4899" data-layer-name="Bunting flag"/>
+<polygon points="41.0,10 49.0,10 45.0,16" fill="#22c55e" data-layer-name="Bunting flag"/>
+<polygon points="57.5,10 65.5,10 61.5,16" fill="#3b82f6" data-layer-name="Bunting flag"/>
+<polygon points="74.0,10 82.0,10 78.0,16" fill="#ef4444" data-layer-name="Bunting flag"/>
+<polygon points="90.5,10 98.5,10 94.5,16" fill="#f59e0b" data-layer-name="Bunting flag"/>
+<polygon points="107.0,10 115.0,10 111.0,16" fill="#ec4899" data-layer-name="Bunting flag"/>
+<polygon points="123.5,10 131.5,10 127.5,16" fill="#22c55e" data-layer-name="Bunting flag"/>
+<polygon points="140.0,10 148.0,10 144.0,16" fill="#3b82f6" data-layer-name="Bunting flag"/>
+<ellipse cx="22" cy="38" rx="8" ry="9.6" fill="#ec4899" data-layer-name="Balloon"/>
+<ellipse cx="19.2" cy="34.4" rx="1.6" ry="2.4" fill="#ffffff" opacity="0.45"/>
+<polygon points="22,47.6 20.4,50.0 23.6,50.0" fill="#ec4899"/>
+<path d="M22 50.0 q-3 6 1 11 q3 5 -1 8" fill="none" stroke="#9ca3af" stroke-width="0.3"/>
+<ellipse cx="126" cy="34" rx="8.5" ry="10.2" fill="#3b82f6" data-layer-name="Balloon"/>
+<ellipse cx="123.025" cy="30.175" rx="1.7000000000000002" ry="2.55" fill="#ffffff" opacity="0.45"/>
+<polygon points="126,44.2 124.4,46.6 127.6,46.6" fill="#3b82f6"/>
+<path d="M126 46.6 q-3 6 1 11 q3 5 -1 8" fill="none" stroke="#9ca3af" stroke-width="0.3"/>
+<ellipse cx="38" cy="28" rx="6.5" ry="7.8" fill="#f59e0b" data-layer-name="Balloon"/>
+<ellipse cx="35.725" cy="25.075" rx="1.3" ry="1.95" fill="#ffffff" opacity="0.45"/>
+<polygon points="38,35.8 36.4,38.199999999999996 39.6,38.199999999999996" fill="#f59e0b"/>
+<path d="M38 38.199999999999996 q-3 6 1 11 q3 5 -1 8" fill="none" stroke="#9ca3af" stroke-width="0.3"/>
+<ellipse cx="110" cy="26" rx="6.5" ry="7.8" fill="#22c55e" data-layer-name="Balloon"/>
+<ellipse cx="107.725" cy="23.075" rx="1.3" ry="1.95" fill="#ffffff" opacity="0.45"/>
+<polygon points="110,33.8 108.4,36.199999999999996 111.6,36.199999999999996" fill="#22c55e"/>
+<path d="M110 36.199999999999996 q-3 6 1 11 q3 5 -1 8" fill="none" stroke="#9ca3af" stroke-width="0.3"/>
+<text x="74" y="62" font-size="5" fill="#7c3aed" font-weight="700" text-anchor="middle">আপনি আমন্ত্রিত!</text>
+<text x="74" y="82" font-size="15" fill="#be185d" font-weight="800" text-anchor="middle" data-layer-name="Title">জন্মদিনের পার্টি</text>
+<text x="74" y="90" font-size="3.2" fill="#7c3aed" font-weight="600" text-anchor="middle" letter-spacing="2">BIRTHDAY PARTY INVITATION</text>
+<circle cx="74" cy="110" r="14" fill="#ffffff" stroke="#f59e0b" stroke-width="0.8" data-layer-name="Photo / age circle"/>
+<text x="74" y="109" font-size="3.4" fill="#9ca3af" font-weight="500" text-anchor="middle">ছবি /</text>
+<text x="74" y="114" font-size="3.4" fill="#9ca3af" font-weight="500" text-anchor="middle">বয়স</text>
+<text x="74" y="134" font-size="7" fill="#1f2937" font-weight="800" text-anchor="middle" data-layer-name="Birthday person">সোনামণি / নাম লিখুন</text>
+<text x="74" y="141" font-size="3.6" fill="#555" font-weight="500" text-anchor="middle">এর ........ তম জন্মদিনে আপনার সপরিবারে উপস্থিতি কাম্য</text>
+<rect x="18" y="148" width="112" height="30" fill="#ffffff" rx="4" stroke="#7c3aed" stroke-width="0.5" stroke-dasharray="2 1.2" data-layer-name="Details box"/>
+<text x="24" y="157" font-size="4" fill="#333" font-weight="600">তারিখ:</text>
+<line x1="33.42" y1="157.9" x2="124" y2="157.9" stroke="#a78bfa" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="165" font-size="4" fill="#333" font-weight="600">সময়:</text>
+<line x1="32.1" y1="165.9" x2="124" y2="165.9" stroke="#a78bfa" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="24" y="173" font-size="4" fill="#333" font-weight="600">স্থান:</text>
+<line x1="33.42" y1="173.9" x2="124" y2="173.9" stroke="#a78bfa" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="74" y="187" font-size="4.4" fill="#be185d" font-weight="700" text-anchor="middle">কেক কাটা • খাবার • গেম • মজা!</text>
+<text x="74" y="194" font-size="3.6" fill="#555" font-weight="600" text-anchor="middle">আসার আগে জানাতে: ০১৭০০-০০০০০০</text>
+<rect x="12" y="56" width="3" height="1.4" fill="#f59e0b" data-layer-name="Confetti"/>
+<rect x="132" y="70" width="3" height="1.4" fill="#ec4899" data-layer-name="Confetti"/>
+<rect x="20" y="90" width="3" height="1.4" fill="#22c55e" data-layer-name="Confetti"/>
+<rect x="128" y="100" width="3" height="1.4" fill="#3b82f6" data-layer-name="Confetti"/>
+<rect x="14" y="130" width="3" height="1.4" fill="#ec4899" data-layer-name="Confetti"/>
+<rect x="134" y="135" width="3" height="1.4" fill="#f59e0b" data-layer-name="Confetti"/>
+</svg>

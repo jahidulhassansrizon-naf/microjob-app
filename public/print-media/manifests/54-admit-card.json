@@ -1,0 +1,19 @@
+{
+  "id": "54-admit-card",
+  "title": "Exam Admit Card",
+  "category": "Education & Institution",
+  "aspectRatio": "210:148",
+  "physicalWidth": 210,
+  "physicalHeight": 148,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 landscape",
+  "file": "templates/54-admit-card.svg",
+  "preview": "previews/54-admit-card.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 148",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 210" width="297mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="297" height="210" fill="#fffdf5" data-layer-name="Background"/>
+<rect x="0" y="0" width="297" height="28" fill="#7c3aed" data-layer-name="Header"/>
+<text x="148.5" y="15" font-size="11" fill="#ffffff" font-weight="800" text-anchor="middle" data-layer-name="Title">সাপ্তাহিক কাজের তালিকা</text>
+<text x="148.5" y="22" font-size="3.4" fill="#ddd6fe" font-weight="600" text-anchor="middle" letter-spacing="2">WEEKLY PLANNER</text>
+<text x="12" y="38" font-size="4.2" fill="#333" font-weight="600">সপ্তাহ:  ........ থেকে ........</text>
+<line x1="56.47" y1="38.9" x2="130" y2="38.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="150" y="38" font-size="4.2" fill="#333" font-weight="600">পরিবারের নাম / সদস্য:</text>
+<line x1="180.61" y1="38.9" x2="285" y2="38.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="12" y="44" width="276.90000000000003" height="10" fill="#7c3aed" data-layer-name="Table header"/>
+<text x="56.85" y="50.6" font-size="4.2" fill="#ffffff" font-weight="700" text-anchor="middle">শনিবার</text>
+<text x="92.55" y="50.6" font-size="4.2" fill="#ffffff" font-weight="700" text-anchor="middle">রবিবার</text>
+<text x="128.25" y="50.6" font-size="4.2" fill="#ffffff" font-weight="700" text-anchor="middle">সোমবার</text>
+<text x="163.95" y="50.6" font-size="4.2" fill="#ffffff" font-weight="700" text-anchor="middle">মঙ্গলবার</text>
+<text x="199.65" y="50.6" font-size="4.2" fill="#ffffff" font-weight="700" text-anchor="middle">বুধবার</text>
+<text x="235.35" y="50.6" font-size="4.2" fill="#ffffff" font-weight="700" text-anchor="middle">বৃহস্পতিবার</text>
+<text x="271.05" y="50.6" font-size="4.2" fill="#ffffff" font-weight="700" text-anchor="middle">শুক্রবার</text>
+<text x="25.5" y="50.6" font-size="4.2" fill="#ffffff" font-weight="700" text-anchor="middle">সময়</text>
+<rect x="12" y="54" width="27" height="19" fill="#ede9fe" data-layer-name="Row label"/>
+<text x="25.5" y="65.0" font-size="4.2" fill="#5b21b6" font-weight="700" text-anchor="middle">সকাল</text>
+<rect x="12" y="73" width="27" height="19" fill="#ede9fe" data-layer-name="Row label"/>
+<text x="25.5" y="84.0" font-size="4.2" fill="#5b21b6" font-weight="700" text-anchor="middle">দুপুর</text>
+<rect x="39" y="73" width="249.90000000000003" height="19" fill="#faf5ff"/>
+<rect x="12" y="92" width="27" height="19" fill="#ede9fe" data-layer-name="Row label"/>
+<text x="25.5" y="103.0" font-size="4.2" fill="#5b21b6" font-weight="700" text-anchor="middle">বিকাল</text>
+<rect x="12" y="111" width="27" height="19" fill="#ede9fe" data-layer-name="Row label"/>
+<text x="25.5" y="122.0" font-size="4.2" fill="#5b21b6" font-weight="700" text-anchor="middle">রাত</text>
+<rect x="39" y="111" width="249.90000000000003" height="19" fill="#faf5ff"/>
+<rect x="12" y="130" width="27" height="19" fill="#ede9fe" data-layer-name="Row label"/>
+<text x="25.5" y="141.0" font-size="4.2" fill="#5b21b6" font-weight="700" text-anchor="middle">বিশেষ কাজ</text>
+<rect x="12" y="44" width="276.90000000000003" height="105" fill="none" stroke="#7c3aed" stroke-width="0.4" data-layer-name="Table outline"/>
+<line x1="12" y1="54" x2="288.90000000000003" y2="54" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="12" y1="73" x2="288.90000000000003" y2="73" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="12" y1="92" x2="288.90000000000003" y2="92" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="12" y1="111" x2="288.90000000000003" y2="111" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="12" y1="130" x2="288.90000000000003" y2="130" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="12" y1="149" x2="288.90000000000003" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="12.0" y1="44" x2="12.0" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="39.0" y1="44" x2="39.0" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="74.7" y1="44" x2="74.7" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="110.4" y1="44" x2="110.4" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="146.10000000000002" y1="44" x2="146.10000000000002" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="181.8" y1="44" x2="181.8" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="217.5" y1="44" x2="217.5" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<line x1="253.20000000000002" y1="44" x2="253.20000000000002" y2="149" stroke="#a78bfa" stroke-width="0.25"/>
+<rect x="12" y="157" width="135" height="30" fill="#ffffff" rx="2" stroke="#7c3aed" stroke-width="0.3" stroke-dasharray="1.5 1" data-layer-name="Notes box"/>
+<text x="15" y="163" font-size="4" fill="#5b21b6" font-weight="700">জরুরি নোট / মনে রাখার বিষয়:</text>
+<rect x="152" y="157" width="133" height="30" fill="#ffffff" rx="2" stroke="#7c3aed" stroke-width="0.3" stroke-dasharray="1.5 1" data-layer-name="Shopping box"/>
+<text x="155" y="163" font-size="4" fill="#5b21b6" font-weight="700">বাজার / কেনাকাটার তালিকা:</text>
+<text x="148.5" y="202" font-size="3.4" fill="#7c3aed" font-weight="600" text-anchor="middle">প্রতিদিনের কাজ শেষে ✓ চিহ্ন দিন — কাজ হলে মন ভালো থাকে!</text>
+</svg>

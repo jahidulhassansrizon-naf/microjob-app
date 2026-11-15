@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="68" height="297" fill="#1f2d3d" data-layer-name="Sidebar"/>
+<circle cx="34.0" cy="36.0" r="20.0" fill="#2c3e52" stroke="#f0b429" stroke-width="0.35" stroke-dasharray="1.5 1" id="photo_placeholder" data-object-type="image" data-layer-name="ছবি"/>
+<text x="34.0" y="37.13333333333333" font-size="3.4" fill="#777" font-weight="500" text-anchor="middle" id="photo_placeholder_hint" data-layer-name="ছবি hint">ছবি</text>
+<text x="10" y="72" font-size="4.2" fill="#f0b429" font-weight="700">যোগাযোগ</text>
+<line x1="10" y1="73.6" x2="50" y2="73.6" stroke="#f0b429" stroke-width="0.4"/>
+<text x="10" y="82" font-size="3.4" fill="#e6ecf2" font-weight="400">০১৭০০-০০০০০০</text>
+<text x="10" y="90" font-size="3.4" fill="#e6ecf2" font-weight="400">name@email.com</text>
+<text x="10" y="98" font-size="3.4" fill="#e6ecf2" font-weight="400">গ্রাম, থানা, জেলা</text>
+<text x="10" y="114" font-size="4.2" fill="#f0b429" font-weight="700">দক্ষতা</text>
+<line x1="10" y1="115.6" x2="50" y2="115.6" stroke="#f0b429" stroke-width="0.4"/>
+<text x="10" y="124" font-size="3.4" fill="#e6ecf2" font-weight="400">• কম্পিউটার ও ইন্টারনেট</text>
+<text x="10" y="132" font-size="3.4" fill="#e6ecf2" font-weight="400">• এমএস অফিস</text>
+<text x="10" y="140" font-size="3.4" fill="#e6ecf2" font-weight="400">• যোগাযোগ দক্ষতা</text>
+<text x="10" y="148" font-size="3.4" fill="#e6ecf2" font-weight="400">• হিসাব রক্ষণ</text>
+<text x="10" y="168" font-size="4.2" fill="#f0b429" font-weight="700">ভাষা</text>
+<line x1="10" y1="169.6" x2="50" y2="169.6" stroke="#f0b429" stroke-width="0.4"/>
+<text x="10" y="178" font-size="3.4" fill="#e6ecf2" font-weight="400">বাংলা — মাতৃভাষা</text>
+<text x="10" y="186" font-size="3.4" fill="#e6ecf2" font-weight="400">ইংরেজি — ভালো</text>
+<text x="78" y="28" font-size="14" fill="#1f2d3d" font-weight="700">আপনার নাম</text>
+<text x="78" y="37" font-size="5" fill="#c98a00" font-weight="600">পদের নাম / পেশা</text>
+<line x1="78" y1="42" x2="198" y2="42" stroke="#1f2d3d" stroke-width="0.5"/>
+<rect x="78" y="51.5" width="2.2" height="6.4" fill="#f0b429" data-layer-name="Heading mark"/>
+<text x="83" y="56" font-size="5" fill="#1f2d3d" font-weight="700">ক্যারিয়ার উদ্দেশ্য</text>
+<text x="78" y="64" font-size="3.5" fill="#444" font-weight="400" data-layer-name="ক্যারিয়ার উদ্দেশ্যের লেখা"><tspan data-line="true" x="78">আমি একজন পরিশ্রমী ও দায়িত্বশীল ব্যক্তি। সততা ও দক্ষতার সাথে</tspan><tspan data-line="true" x="78" dy="1.3em">কাজ করে প্রতিষ্ঠানের উন্নয়নে অবদান রাখতে চাই।</tspan></text>
+<rect x="78" y="83.5" width="2.2" height="6.4" fill="#f0b429" data-layer-name="Heading mark"/>
+<text x="83" y="88" font-size="5" fill="#1f2d3d" font-weight="700">শিক্ষাগত যোগ্যতা</text>
+<text x="78" y="97" font-size="4" fill="#222" font-weight="700">এইচএসসি — বোর্ডের নাম</text>
+<text x="78" y="103" font-size="3.4" fill="#555" font-weight="400">পাসের সন: ২০২০  |  ফলাফল: জিপিএ ৪.৫০</text>
+<text x="78" y="111" font-size="4" fill="#222" font-weight="700">এসএসসি — বোর্ডের নাম</text>
+<text x="78" y="117" font-size="3.4" fill="#555" font-weight="400">পাসের সন: ২০২০  |  ফলাফল: জিপিএ ৪.৫০</text>
+<rect x="78" y="129.5" width="2.2" height="6.4" fill="#f0b429" data-layer-name="Heading mark"/>
+<text x="83" y="134" font-size="5" fill="#1f2d3d" font-weight="700">কাজের অভিজ্ঞতা</text>
+<text x="78" y="143" font-size="4" fill="#222" font-weight="700">পদবি — প্রতিষ্ঠানের নাম</text>
+<text x="78" y="149" font-size="3.4" fill="#555" font-weight="400">২০২১ – ২০২৩  |  দায়িত্ব: এখানে কাজের বিবরণ লিখুন</text>
+<text x="78" y="157" font-size="4" fill="#222" font-weight="700">পদবি — প্রতিষ্ঠানের নাম</text>
+<text x="78" y="163" font-size="3.4" fill="#555" font-weight="400">২০২১ – ২০২৩  |  দায়িত্ব: এখানে কাজের বিবরণ লিখুন</text>
+<rect x="78" y="177.5" width="2.2" height="6.4" fill="#f0b429" data-layer-name="Heading mark"/>
+<text x="83" y="182" font-size="5" fill="#1f2d3d" font-weight="700">ব্যক্তিগত তথ্য</text>
+<text x="78" y="192" font-size="3.5" fill="#333" font-weight="600">পিতার নাম</text>
+<text x="112" y="192" font-size="3.5" fill="#444" font-weight="400">: পিতার নাম</text>
+<text x="78" y="200" font-size="3.5" fill="#333" font-weight="600">মাতার নাম</text>
+<text x="112" y="200" font-size="3.5" fill="#444" font-weight="400">: মাতার নাম</text>
+<text x="78" y="208" font-size="3.5" fill="#333" font-weight="600">জন্ম তারিখ</text>
+<text x="112" y="208" font-size="3.5" fill="#444" font-weight="400">: ১ জানুয়ারি ২০০০</text>
+<text x="78" y="216" font-size="3.5" fill="#333" font-weight="600">জাতীয়তা</text>
+<text x="112" y="216" font-size="3.5" fill="#444" font-weight="400">: বাংলাদেশি</text>
+<text x="78" y="224" font-size="3.5" fill="#333" font-weight="600">ধর্ম</text>
+<text x="112" y="224" font-size="3.5" fill="#444" font-weight="400">: ইসলাম</text>
+<text x="78" y="232" font-size="3.5" fill="#333" font-weight="600">বৈবাহিক অবস্থা</text>
+<text x="112" y="232" font-size="3.5" fill="#444" font-weight="400">: অবিবাহিত</text>
+<g display="none" id="safe-area-guide" data-print="false"><rect x="5" y="5" width="200" height="287" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

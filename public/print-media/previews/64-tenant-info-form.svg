@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="34" fill="#0f766e" data-layer-name="Header"/>
+<text x="105" y="16" font-size="12" fill="#ffffff" font-weight="800" text-anchor="middle" data-layer-name="Title">ভাড়াটিয়া তথ্য ফর্ম</text>
+<text x="105" y="24" font-size="3.6" fill="#99f6e4" font-weight="600" text-anchor="middle" letter-spacing="2">TENANT INFORMATION FORM</text>
+<text x="105" y="30" font-size="3.4" fill="#ccfbf1" font-weight="500" text-anchor="middle">বাড়িওয়ালার সংরক্ষণের জন্য</text>
+<rect x="160" y="40" width="32" height="38" fill="none" stroke="#94a3b8" stroke-width="0.4" stroke-dasharray="1.5 1" data-layer-name="Photo box"/>
+<text x="176" y="60" font-size="4" fill="#94a3b8" font-weight="500" text-anchor="middle">ছবি</text>
+<rect x="14" y="40" width="140" height="7" fill="#ccfbf1" rx="1.5" data-layer-name="Section heading"/>
+<text x="18" y="45" font-size="4.4" fill="#0f766e" font-weight="800">ক) বাসার তথ্য</text>
+<text x="14" y="55" font-size="4" fill="#333" font-weight="600">বাড়ির নাম / নং:</text>
+<line x1="36.62" y1="55.9" x2="90" y2="55.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="96" y="55" font-size="4" fill="#333" font-weight="600">ফ্ল্যাট / তলা:</text>
+<line x1="115.98" y1="55.9" x2="154" y2="55.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="63" font-size="4" fill="#333" font-weight="600">মাসিক ভাড়া:</text>
+<line x1="31.34" y1="63.9" x2="90" y2="63.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="96" y="63" font-size="4" fill="#333" font-weight="600">অগ্রিম / জামানত:</text>
+<line x1="118.62" y1="63.9" x2="154" y2="63.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="71" font-size="4" fill="#333" font-weight="600">ভাড়া শুরুর তারিখ:</text>
+<line x1="39.26" y1="71.9" x2="90" y2="71.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="96" y="71" font-size="4" fill="#333" font-weight="600">চুক্তির মেয়াদ:</text>
+<line x1="117.3" y1="71.9" x2="154" y2="71.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="14" y="82" width="178" height="7" fill="#ccfbf1" rx="1.5" data-layer-name="Section heading"/>
+<text x="18" y="87" font-size="4.4" fill="#0f766e" font-weight="800">খ) ভাড়াটিয়ার তথ্য</text>
+<text x="14" y="97" font-size="4" fill="#333" font-weight="600">নাম:</text>
+<line x1="20.78" y1="97.9" x2="192" y2="97.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="105" font-size="4" fill="#333" font-weight="600">পিতার নাম:</text>
+<line x1="28.7" y1="105.9" x2="100" y2="105.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="105" font-size="4" fill="#333" font-weight="600">মাতার নাম:</text>
+<line x1="120.7" y1="105.9" x2="192" y2="105.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="113" font-size="4" fill="#333" font-weight="600">স্থায়ী ঠিকানা:</text>
+<line x1="35.3" y1="113.9" x2="192" y2="113.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="121" font-size="4" fill="#333" font-weight="600">পেশা:</text>
+<line x1="22.1" y1="121.9" x2="100" y2="121.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="121" font-size="4" fill="#333" font-weight="600">কর্মস্থল:</text>
+<line x1="119.38" y1="121.9" x2="192" y2="121.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="129" font-size="4" fill="#333" font-weight="600">মোবাইল:</text>
+<line x1="24.74" y1="129.9" x2="100" y2="129.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="129" font-size="4" fill="#333" font-weight="600">জাতীয় পরিচয়পত্র নং:</text>
+<line x1="135.22" y1="129.9" x2="192" y2="129.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="14" y="138" width="178" height="7" fill="#ccfbf1" rx="1.5" data-layer-name="Section heading"/>
+<text x="18" y="143" font-size="4.4" fill="#0f766e" font-weight="800">গ) পরিবারের সদস্য</text>
+<rect x="14" y="147" width="178" height="7" fill="#0f766e" data-layer-name="Table header"/>
+<text x="20.0" y="151.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">ক্রম</text>
+<text x="59.0" y="151.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">সদস্যের নাম</text>
+<text x="112.0" y="151.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">সম্পর্ক</text>
+<text x="142.0" y="151.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">বয়স</text>
+<text x="172.0" y="151.76" font-size="3.6" fill="#fff" font-weight="700" text-anchor="middle">পেশা</text>
+<text x="20.0" y="159.33" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">১</text>
+<rect x="14" y="162" width="178" height="8" fill="#f0fdfa"/>
+<text x="20.0" y="167.33" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">২</text>
+<text x="20.0" y="175.33" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৩</text>
+<rect x="14" y="178" width="178" height="8" fill="#f0fdfa"/>
+<text x="20.0" y="183.33" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৪</text>
+<text x="20.0" y="191.33" font-size="3.8" fill="#333" font-weight="600" text-anchor="middle">৫</text>
+<rect x="14" y="147" width="178" height="47" fill="none" stroke="#999" stroke-width="0.3" data-layer-name="Table outline"/>
+<line x1="14" y1="154" x2="192" y2="154" stroke="#999" stroke-width="0.2"/>
+<line x1="14" y1="162" x2="192" y2="162" stroke="#999" stroke-width="0.2"/>
+<line x1="14" y1="170" x2="192" y2="170" stroke="#999" stroke-width="0.2"/>
+<line x1="14" y1="178" x2="192" y2="178" stroke="#999" stroke-width="0.2"/>
+<line x1="14" y1="186" x2="192" y2="186" stroke="#999" stroke-width="0.2"/>
+<line x1="14" y1="194" x2="192" y2="194" stroke="#999" stroke-width="0.2"/>
+<line x1="26" y1="147" x2="26" y2="194" stroke="#999" stroke-width="0.2"/>
+<line x1="92" y1="147" x2="92" y2="194" stroke="#999" stroke-width="0.2"/>
+<line x1="132" y1="147" x2="132" y2="194" stroke="#999" stroke-width="0.2"/>
+<line x1="152" y1="147" x2="152" y2="194" stroke="#999" stroke-width="0.2"/>
+<rect x="14" y="198" width="178" height="7" fill="#ccfbf1" rx="1.5" data-layer-name="Section heading"/>
+<text x="18" y="203" font-size="4.4" fill="#0f766e" font-weight="800">ঘ) জরুরি যোগাযোগ</text>
+<text x="14" y="213" font-size="4" fill="#333" font-weight="600">নাম:</text>
+<line x1="20.78" y1="213.9" x2="100" y2="213.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="213" font-size="4" fill="#333" font-weight="600">সম্পর্ক:</text>
+<line x1="118.06" y1="213.9" x2="192" y2="213.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="221" font-size="4" fill="#333" font-weight="600">মোবাইল:</text>
+<line x1="24.74" y1="221.9" x2="100" y2="221.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="106" y="221" font-size="4" fill="#333" font-weight="600">ঠিকানা:</text>
+<line x1="116.74" y1="221.9" x2="192" y2="221.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="14" y="230" width="178" height="18" fill="#f0fdfa" rx="2" stroke="#0f766e" stroke-width="0.3" stroke-dasharray="1.5 1" data-layer-name="Declaration box"/>
+<text x="18" y="237" font-size="3.7" fill="#134e4a" font-weight="500">ঘোষণা: আমি উপরোক্ত সকল তথ্য সত্য বলে ঘোষণা করছি এবং বাড়ির নিয়ম-কানুন মেনে চলব।</text>
+<text x="18" y="243.5" font-size="3.7" fill="#134e4a" font-weight="500">ভাড়া দেওয়ার তারিখ: প্রতি মাসের ................ তারিখের মধ্যে।</text>
+<line x1="20" y1="275" x2="80" y2="275" stroke="#555" stroke-width="0.3"/>
+<text x="50.0" y="280" font-size="3.8" fill="#0f766e" font-weight="600" text-anchor="middle">ভাড়াটিয়ার স্বাক্ষর ও তারিখ</text>
+<line x1="130" y1="275" x2="190" y2="275" stroke="#555" stroke-width="0.3"/>
+<text x="160.0" y="280" font-size="3.8" fill="#0f766e" font-weight="600" text-anchor="middle">বাড়িওয়ালার স্বাক্ষর ও তারিখ</text>
+</svg>

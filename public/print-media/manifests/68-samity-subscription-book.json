@@ -1,0 +1,19 @@
+{
+  "id": "68-samity-subscription-book",
+  "title": "Samity Installment & Subscription Book",
+  "category": "Business Forms",
+  "aspectRatio": "297:210",
+  "physicalWidth": 297,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 landscape",
+  "file": "templates/68-samity-subscription-book.svg",
+  "preview": "previews/68-samity-subscription-book.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 297 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

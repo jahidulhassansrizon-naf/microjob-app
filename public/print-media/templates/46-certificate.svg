@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 297 210" width="297mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="297" height="210" fill="#fffdf6" data-layer-name="Background"/>
+<rect x="8" y="8" width="281" height="194" fill="none" stroke="#1e3a5f" stroke-width="2" data-layer-name="Outer border"/>
+<rect x="12.5" y="12.5" width="272" height="185" fill="none" stroke="#c9a227" stroke-width="0.8" data-layer-name="Gold border"/>
+<rect x="15" y="15" width="267" height="180" fill="none" stroke="#1e3a5f" stroke-width="0.3" data-layer-name="Inner border"/>
+<polygon points="15,10 20,15 15,20 10,15" fill="#c9a227" data-layer-name="Corner diamond"/>
+<polygon points="282,10 287,15 282,20 277,15" fill="#c9a227" data-layer-name="Corner diamond"/>
+<polygon points="15,190 20,195 15,200 10,195" fill="#c9a227" data-layer-name="Corner diamond"/>
+<polygon points="282,190 287,195 282,200 277,195" fill="#c9a227" data-layer-name="Corner diamond"/>
+<circle cx="148.5" cy="40" r="12" fill="#c9a227" data-layer-name="Seal ring"/>
+<circle cx="148.5" cy="40" r="9.5" fill="#fffdf6" data-layer-name="Seal inner"/>
+<polygon points="148.5,33.5 150.22,37.63 154.68,37.99 151.28,40.9 152.32,45.26 148.5,42.92 144.68,45.26 145.72,40.9 142.32,37.99 146.78,37.63" fill="#1e3a5f" data-layer-name="Seal star"/>
+<text x="148.5" y="72" font-size="30" fill="#1e3a5f" font-weight="800" text-anchor="middle" letter-spacing="1">সার্টিফিকেট</text>
+<text x="148.5" y="83" font-size="5.5" fill="#c9a227" font-weight="700" text-anchor="middle" letter-spacing="3">CERTIFICATE OF APPRECIATION</text>
+<line x1="90" y1="90" x2="207" y2="90" stroke="#c9a227" stroke-width="0.5"/>
+<polygon points="148.5,87.5 151,90 148.5,92.5 146,90" fill="#c9a227" data-layer-name="Divider diamond"/>
+<text x="148.5" y="104" font-size="6" fill="#444" font-weight="500" text-anchor="middle">এই মর্মে প্রত্যয়ন করা যাচ্ছে যে</text>
+<text x="148.5" y="124" font-size="18" fill="#1e3a5f" font-weight="800" text-anchor="middle">প্রাপকের নাম</text>
+<line x1="70" y1="129" x2="227" y2="129" stroke="#c9a227" stroke-width="0.5"/>
+<text x="148.5" y="141" font-size="5.6" fill="#444" font-weight="500" text-anchor="middle">কে তাঁর অসামান্য অবদান, নিষ্ঠা ও কৃতিত্বের স্বীকৃতিস্বরূপ</text>
+<text x="148.5" y="149" font-size="5.6" fill="#444" font-weight="500" text-anchor="middle">এই সনদপত্র প্রদান করা হলো।</text>
+<text x="30" y="190" font-size="4.6" fill="#1e3a5f" font-weight="600">তারিখ: </text>
+<line x1="43.46" y1="190.9" x2="100" y2="190.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="35" y1="172" x2="95" y2="172" stroke="#555" stroke-width="0.3"/>
+<text x="65" y="177" font-size="3.8" fill="#555" font-weight="600" text-anchor="middle">প্রদানকারীর স্বাক্ষর</text>
+<line x1="202" y1="172" x2="262" y2="172" stroke="#555" stroke-width="0.3"/>
+<text x="232" y="177" font-size="3.8" fill="#555" font-weight="600" text-anchor="middle">প্রধান / সভাপতির স্বাক্ষর</text>
+<circle cx="148.5" cy="170" r="12" fill="none" stroke="#94a3b8" stroke-width="0.3" stroke-dasharray="1 0.8" data-layer-name="Stamp placeholder"/>
+<text x="148.5" y="171" font-size="3.4" fill="#94a3b8" font-weight="500" text-anchor="middle">সিল</text>
+<text x="148.5" y="186" font-size="5" fill="#1e3a5f" font-weight="700" text-anchor="middle">প্রতিষ্ঠানের নাম</text>
+</svg>

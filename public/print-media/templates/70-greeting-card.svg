@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 148" width="210mm" height="148mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="148" fill="#fff1f2" data-layer-name="Background"/>
+<circle cx="0" cy="0" r="38" fill="#fecdd3" data-layer-name="Decor circle"/>
+<circle cx="210" cy="148" r="44" fill="#fecdd3" data-layer-name="Decor circle"/>
+<circle cx="210" cy="0" r="20" fill="#ffe4e6" data-layer-name="Decor circle"/>
+<circle cx="0" cy="148" r="22" fill="#ffe4e6" data-layer-name="Decor circle"/>
+<rect x="8" y="8" width="194" height="132" fill="none" rx="4" stroke="#be123c" stroke-width="0.7" data-layer-name="Frame"/>
+<rect x="11" y="11" width="188" height="126" fill="none" rx="3" stroke="#c8a24a" stroke-width="0.3" stroke-dasharray="2 1.2" data-layer-name="Inner frame"/>
+<path d="M105 34.8 C87.4 21.6 96.2 8.399999999999999 105 19.4 C113.8 8.399999999999999 122.6 21.6 105 34.8 Z" fill="#be123c" opacity="1" data-layer-name="Heart"/>
+<path d="M90 34.8 C80.4 27.6 85.2 20.4 90 26.4 C94.8 20.4 99.6 27.6 90 34.8 Z" fill="#fb7185" opacity="0.8" data-layer-name="Heart"/>
+<path d="M120 34.8 C110.4 27.6 115.2 20.4 120 26.4 C124.8 20.4 129.6 27.6 120 34.8 Z" fill="#fb7185" opacity="0.8" data-layer-name="Heart"/>
+<text x="105" y="62" font-size="17" fill="#be123c" font-weight="800" text-anchor="middle" data-layer-name="Title">অনেক অনেক শুভেচ্ছা</text>
+<text x="105" y="74" font-size="7" fill="#9f1239" font-weight="700" text-anchor="middle" data-layer-name="Occasion">শুভ জন্মদিন  /  শুভ বিবাহ বার্ষিকী</text>
+<line x1="60" y1="81" x2="150" y2="81" stroke="#c8a24a" stroke-width="0.5"/>
+<polygon points="105,78.8 107.2,81 105,83.2 102.8,81" fill="#c8a24a" data-layer-name="Divider diamond"/>
+<text x="105" y="94" font-size="5" fill="#444" font-weight="600" text-anchor="middle" data-layer-name="Message line 1">আপনার জীবন সুখ, শান্তি ও ভালোবাসায় ভরে উঠুক।</text>
+<text x="105" y="102" font-size="4.4" fill="#555" font-weight="500" text-anchor="middle" data-layer-name="Message line 2">আল্লাহ আপনাকে সুস্থ ও দীর্ঘজীবী করুন — এই কামনা করি।</text>
+<text x="105" y="124" font-size="4.6" fill="#9f1239" font-weight="700" text-anchor="middle">— প্রীতি ও শুভকামনায়</text>
+<text x="105" y="132" font-size="5.2" fill="#333" font-weight="800" text-anchor="middle" data-layer-name="Sender name">প্রেরকের নাম লিখুন</text>
+</svg>

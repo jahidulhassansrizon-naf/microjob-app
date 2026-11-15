@@ -1,0 +1,19 @@
+{
+  "id": "22-house-rent-receipt",
+  "title": "House Rent Receipt",
+  "category": "Business Forms",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/22-house-rent-receipt.svg",
+  "preview": "previews/22-house-rent-receipt.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

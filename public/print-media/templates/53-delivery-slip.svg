@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 105" width="148mm" height="105mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="148" height="105" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="8" height="105" fill="#b45309" data-layer-name="Side bar"/>
+<rect x="8" y="0" width="140" height="15" fill="#fffbeb" data-layer-name="Header"/>
+<text x="14" y="9.5" font-size="8.5" fill="#b45309" font-weight="800">ডেলিভারি স্লিপ</text>
+<text x="14" y="13.3" font-size="2.6" fill="#b45309" font-weight="600" letter-spacing="1.5">DELIVERY SLIP</text>
+<text x="142" y="8" font-size="4.6" fill="#333" font-weight="700" text-anchor="end">আপনার দোকানের নাম</text>
+<text x="142" y="13" font-size="3.2" fill="#777" font-weight="500" text-anchor="end">মোবাইল: ০১৭০০-০০০০০০</text>
+<text x="14" y="24" font-size="3.9" fill="#333" font-weight="600">অর্ডার নং: </text>
+<line x1="29.696" y1="24.9" x2="70" y2="24.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="76" y="24" font-size="3.9" fill="#333" font-weight="600">তারিখ: </text>
+<line x1="87.64" y1="24.9" x2="142" y2="24.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="33" font-size="4.2" fill="#b45309" font-weight="700">প্রাপকের তথ্য</text>
+<text x="14" y="40" font-size="3.9" fill="#333" font-weight="600">নাম: </text>
+<line x1="23.612000000000002" y1="40.9" x2="142" y2="40.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="47" font-size="3.9" fill="#333" font-weight="600">মোবাইল: </text>
+<line x1="27.668" y1="47.9" x2="142" y2="47.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="54" font-size="3.9" fill="#333" font-weight="600">ঠিকানা: </text>
+<line x1="25.64" y1="54.9" x2="142" y2="54.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="14" y1="61.4" x2="142" y2="61.4" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="14" y="68" font-size="3.9" fill="#333" font-weight="600">পণ্যের বিবরণ: </text>
+<line x1="35.78" y1="68.9" x2="142" y2="68.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="14" y="73" width="76" height="14" fill="#fffbeb" rx="2.5" stroke="#b45309" stroke-width="0.5" data-layer-name="COD box"/>
+<text x="18" y="79" font-size="3.4" fill="#b45309" font-weight="700">ক্যাশ অন ডেলিভারি (COD)</text>
+<text x="18" y="85" font-size="5" fill="#b45309" font-weight="800">৳</text>
+<line x1="25" y1="85.4" x2="86" y2="85.4" stroke="#b45309" stroke-width="0.3" stroke-dasharray="0.6 0.8"/>
+<rect x="96" y="76.12" width="3.06" height="3.06" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="100.32" y="79" font-size="3.6" fill="#333" font-weight="500">ভঙ্গুর</text>
+<rect x="118" y="76.12" width="3.06" height="3.06" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="122.32" y="79" font-size="3.6" fill="#333" font-weight="500">সাবধানে</text>
+<rect x="96" y="83.12" width="3.06" height="3.06" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="100.32" y="86" font-size="3.6" fill="#333" font-weight="500">ভিজবে না</text>
+<rect x="118" y="83.12" width="3.06" height="3.06" fill="none" rx="0.4" stroke="#555" stroke-width="0.3"/>
+<text x="122.32" y="86" font-size="3.6" fill="#333" font-weight="500">জরুরি</text>
+<text x="14" y="96" font-size="3.4" fill="#555" font-weight="500">প্রেরক: আপনার দোকানের নাম, বাজার রোড, থানা, জেলা</text>
+<rect x="8" y="99" width="140" height="6" fill="#b45309" data-layer-name="Footer"/>
+<text x="78" y="103.2" font-size="3" fill="#fff" font-weight="600" text-anchor="middle">আমাদের সাথে কেনাকাটার জন্য ধন্যবাদ</text>
+</svg>

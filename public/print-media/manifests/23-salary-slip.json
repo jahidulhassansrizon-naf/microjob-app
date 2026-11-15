@@ -1,0 +1,19 @@
+{
+  "id": "23-salary-slip",
+  "title": "Salary Slip / Pay Slip",
+  "category": "Business Forms",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/23-salary-slip.svg",
+  "preview": "previews/23-salary-slip.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

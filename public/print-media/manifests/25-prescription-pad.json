@@ -1,0 +1,19 @@
+{
+  "id": "25-prescription-pad",
+  "title": "Doctor Prescription Pad",
+  "category": "Health & Clinic",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/25-prescription-pad.svg",
+  "preview": "previews/25-prescription-pad.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

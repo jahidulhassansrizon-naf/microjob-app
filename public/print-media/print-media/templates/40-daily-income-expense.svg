@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#fffdf9" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="28" fill="#9a3412" data-layer-name="Header"/>
+<text x="15" y="15" font-size="13" fill="#ffffff" font-weight="700">দৈনিক আয়-ব্যয় খাতা</text>
+<text x="15" y="22" font-size="4" fill="#fed7aa" font-weight="600" letter-spacing="2">DAILY CASH REGISTER</text>
+<text x="195" y="15" font-size="7" fill="#ffffff" font-weight="700" text-anchor="end">আপনার দোকানের নাম</text>
+<text x="195" y="21" font-size="3.8" fill="#fed7aa" font-weight="500" text-anchor="end">মোবাইল: ০১৭০০-০০০০০০</text>
+<text x="15" y="39" font-size="4.4" fill="#333" font-weight="600">তারিখ: </text>
+<line x1="27.94" y1="39.9" x2="75" y2="39.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="82" y="39" font-size="4.4" fill="#333" font-weight="600">বার: </text>
+<line x1="92.652" y1="39.9" x2="130" y2="39.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="138" y="39" font-size="4.4" fill="#333" font-weight="600">শাখা / দায়িত্বে: </text>
+<line x1="164.668" y1="39.9" x2="195" y2="39.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="15" y="46" width="88" height="8" fill="#15803d" data-layer-name="Table header"/>
+<text x="48" y="51.4" font-size="4" fill="#fff" font-weight="700" text-anchor="middle">আয় / বিক্রি</text>
+<text x="91" y="51.4" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">টাকা (৳)</text>
+<rect x="15" y="54" width="88" height="8" fill="#f0fdf4" data-layer-name="Row shade"/>
+<line x1="15" y1="62" x2="103" y2="62" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="59.3" font-size="3.2" fill="#999" font-weight="500">১</text>
+<line x1="15" y1="70" x2="103" y2="70" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="67.3" font-size="3.2" fill="#999" font-weight="500">২</text>
+<rect x="15" y="70" width="88" height="8" fill="#f0fdf4" data-layer-name="Row shade"/>
+<line x1="15" y1="78" x2="103" y2="78" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="75.3" font-size="3.2" fill="#999" font-weight="500">৩</text>
+<line x1="15" y1="86" x2="103" y2="86" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="83.3" font-size="3.2" fill="#999" font-weight="500">৪</text>
+<rect x="15" y="86" width="88" height="8" fill="#f0fdf4" data-layer-name="Row shade"/>
+<line x1="15" y1="94" x2="103" y2="94" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="91.3" font-size="3.2" fill="#999" font-weight="500">৫</text>
+<line x1="15" y1="102" x2="103" y2="102" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="99.3" font-size="3.2" fill="#999" font-weight="500">৬</text>
+<rect x="15" y="102" width="88" height="8" fill="#f0fdf4" data-layer-name="Row shade"/>
+<line x1="15" y1="110" x2="103" y2="110" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="107.3" font-size="3.2" fill="#999" font-weight="500">৭</text>
+<line x1="15" y1="118" x2="103" y2="118" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="115.3" font-size="3.2" fill="#999" font-weight="500">৮</text>
+<rect x="15" y="118" width="88" height="8" fill="#f0fdf4" data-layer-name="Row shade"/>
+<line x1="15" y1="126" x2="103" y2="126" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="123.3" font-size="3.2" fill="#999" font-weight="500">৯</text>
+<line x1="15" y1="134" x2="103" y2="134" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="131.3" font-size="3.2" fill="#999" font-weight="500">১০</text>
+<rect x="15" y="134" width="88" height="8" fill="#f0fdf4" data-layer-name="Row shade"/>
+<line x1="15" y1="142" x2="103" y2="142" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="139.3" font-size="3.2" fill="#999" font-weight="500">১১</text>
+<line x1="15" y1="150" x2="103" y2="150" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="147.3" font-size="3.2" fill="#999" font-weight="500">১২</text>
+<rect x="15" y="150" width="88" height="8" fill="#f0fdf4" data-layer-name="Row shade"/>
+<line x1="15" y1="158" x2="103" y2="158" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="155.3" font-size="3.2" fill="#999" font-weight="500">১৩</text>
+<line x1="15" y1="166" x2="103" y2="166" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="163.3" font-size="3.2" fill="#999" font-weight="500">১৪</text>
+<rect x="15" y="166" width="88" height="8" fill="#f0fdf4" data-layer-name="Row shade"/>
+<line x1="15" y1="174" x2="103" y2="174" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="171.3" font-size="3.2" fill="#999" font-weight="500">১৫</text>
+<line x1="15" y1="182" x2="103" y2="182" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="18" y="179.3" font-size="3.2" fill="#999" font-weight="500">১৬</text>
+<line x1="80" y1="54" x2="80" y2="190" stroke="#cfcfcf" stroke-width="0.2"/>
+<rect x="15" y="54" width="88" height="136" fill="none" stroke="#15803d" stroke-width="0.4" data-layer-name="Table border"/>
+<rect x="15" y="190" width="88" height="8" fill="#f0fdf4" stroke="#15803d" stroke-width="0.4" data-layer-name="Total row"/>
+<text x="18" y="195.4" font-size="4" fill="#15803d" font-weight="700">মোট</text>
+<rect x="107" y="46" width="88" height="8" fill="#b91c1c" data-layer-name="Table header"/>
+<text x="140" y="51.4" font-size="4" fill="#fff" font-weight="700" text-anchor="middle">ব্যয় / খরচ</text>
+<text x="183" y="51.4" font-size="3.8" fill="#fff" font-weight="700" text-anchor="middle">টাকা (৳)</text>
+<rect x="107" y="54" width="88" height="8" fill="#fef2f2" data-layer-name="Row shade"/>
+<line x1="107" y1="62" x2="195" y2="62" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="59.3" font-size="3.2" fill="#999" font-weight="500">১</text>
+<line x1="107" y1="70" x2="195" y2="70" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="67.3" font-size="3.2" fill="#999" font-weight="500">২</text>
+<rect x="107" y="70" width="88" height="8" fill="#fef2f2" data-layer-name="Row shade"/>
+<line x1="107" y1="78" x2="195" y2="78" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="75.3" font-size="3.2" fill="#999" font-weight="500">৩</text>
+<line x1="107" y1="86" x2="195" y2="86" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="83.3" font-size="3.2" fill="#999" font-weight="500">৪</text>
+<rect x="107" y="86" width="88" height="8" fill="#fef2f2" data-layer-name="Row shade"/>
+<line x1="107" y1="94" x2="195" y2="94" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="91.3" font-size="3.2" fill="#999" font-weight="500">৫</text>
+<line x1="107" y1="102" x2="195" y2="102" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="99.3" font-size="3.2" fill="#999" font-weight="500">৬</text>
+<rect x="107" y="102" width="88" height="8" fill="#fef2f2" data-layer-name="Row shade"/>
+<line x1="107" y1="110" x2="195" y2="110" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="107.3" font-size="3.2" fill="#999" font-weight="500">৭</text>
+<line x1="107" y1="118" x2="195" y2="118" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="115.3" font-size="3.2" fill="#999" font-weight="500">৮</text>
+<rect x="107" y="118" width="88" height="8" fill="#fef2f2" data-layer-name="Row shade"/>
+<line x1="107" y1="126" x2="195" y2="126" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="123.3" font-size="3.2" fill="#999" font-weight="500">৯</text>
+<line x1="107" y1="134" x2="195" y2="134" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="131.3" font-size="3.2" fill="#999" font-weight="500">১০</text>
+<rect x="107" y="134" width="88" height="8" fill="#fef2f2" data-layer-name="Row shade"/>
+<line x1="107" y1="142" x2="195" y2="142" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="139.3" font-size="3.2" fill="#999" font-weight="500">১১</text>
+<line x1="107" y1="150" x2="195" y2="150" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="147.3" font-size="3.2" fill="#999" font-weight="500">১২</text>
+<rect x="107" y="150" width="88" height="8" fill="#fef2f2" data-layer-name="Row shade"/>
+<line x1="107" y1="158" x2="195" y2="158" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="155.3" font-size="3.2" fill="#999" font-weight="500">১৩</text>
+<line x1="107" y1="166" x2="195" y2="166" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="163.3" font-size="3.2" fill="#999" font-weight="500">১৪</text>
+<rect x="107" y="166" width="88" height="8" fill="#fef2f2" data-layer-name="Row shade"/>
+<line x1="107" y1="174" x2="195" y2="174" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="171.3" font-size="3.2" fill="#999" font-weight="500">১৫</text>
+<line x1="107" y1="182" x2="195" y2="182" stroke="#cfcfcf" stroke-width="0.2"/>
+<text x="110" y="179.3" font-size="3.2" fill="#999" font-weight="500">১৬</text>
+<line x1="172" y1="54" x2="172" y2="190" stroke="#cfcfcf" stroke-width="0.2"/>
+<rect x="107" y="54" width="88" height="136" fill="none" stroke="#b91c1c" stroke-width="0.4" data-layer-name="Table border"/>
+<rect x="107" y="190" width="88" height="8" fill="#fef2f2" stroke="#b91c1c" stroke-width="0.4" data-layer-name="Total row"/>
+<text x="110" y="195.4" font-size="4" fill="#b91c1c" font-weight="700">মোট</text>
+<rect x="15" y="206" width="42" height="20" fill="#ffffff" rx="3" stroke="#475569" stroke-width="0.5" data-layer-name="Summary card"/>
+<text x="36" y="212" font-size="3.8" fill="#475569" font-weight="700" text-anchor="middle">আগের জের (৳)</text>
+<line x1="20" y1="221" x2="52" y2="221" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="61" y="206" width="42" height="20" fill="#ffffff" rx="3" stroke="#15803d" stroke-width="0.5" data-layer-name="Summary card"/>
+<text x="82" y="212" font-size="3.8" fill="#15803d" font-weight="700" text-anchor="middle">আজকের আয় (৳)</text>
+<line x1="66" y1="221" x2="98" y2="221" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="107" y="206" width="42" height="20" fill="#ffffff" rx="3" stroke="#b91c1c" stroke-width="0.5" data-layer-name="Summary card"/>
+<text x="128" y="212" font-size="3.8" fill="#b91c1c" font-weight="700" text-anchor="middle">আজকের ব্যয় (৳)</text>
+<line x1="112" y1="221" x2="144" y2="221" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="153" y="206" width="42" height="20" fill="#ffffff" rx="3" stroke="#9a3412" stroke-width="0.5" data-layer-name="Summary card"/>
+<text x="174" y="212" font-size="3.8" fill="#9a3412" font-weight="700" text-anchor="middle">নগদ জের (৳)</text>
+<line x1="158" y1="221" x2="190" y2="221" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="15" y="237" font-size="4.4" fill="#9a3412" font-weight="700">মন্তব্য / নোট</text>
+<line x1="15" y1="246" x2="195" y2="246" stroke="#bbb" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="15" y1="255" x2="195" y2="255" stroke="#bbb" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="15" y1="280" x2="75" y2="280" stroke="#555" stroke-width="0.3"/>
+<text x="45" y="285" font-size="3.9" fill="#555" font-weight="600" text-anchor="middle">হিসাবরক্ষক</text>
+<line x1="135" y1="280" x2="195" y2="280" stroke="#555" stroke-width="0.3"/>
+<text x="165" y="285" font-size="3.9" fill="#555" font-weight="600" text-anchor="middle">মালিকের স্বাক্ষর</text>
+</svg>

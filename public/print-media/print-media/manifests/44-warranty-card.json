@@ -1,0 +1,19 @@
+{
+  "id": "44-warranty-card",
+  "title": "Warranty Card",
+  "category": "Shop & Business",
+  "aspectRatio": "148:105",
+  "physicalWidth": 148,
+  "physicalHeight": 105,
+  "unit": "mm",
+  "physicalSizeLabel": "A6 landscape",
+  "file": "templates/44-warranty-card.svg",
+  "preview": "previews/44-warranty-card.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 105",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

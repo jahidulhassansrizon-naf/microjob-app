@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="07-mobile-payment-stand" width="148mm" height="210mm" viewBox="0 0 148 210" overflow="visible" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif" data-template="07-mobile-payment-stand" data-platform="SebaLagbe.com" data-unit="mm" data-bleed-mm="3" text-rendering="optimizeLegibility" font-kerning="normal">
+<title>Mobile Banking &amp; QR Payment Stand A5</title>
+<desc>SebaLagbe.com print-media template. Real SVG text/shapes; all objects with data-editable="true" are user-editable. 1 user unit = 1 mm.</desc>
+<g id="background_layer" data-layer-name="Background" data-editable="false">
+<rect id="bg_page" data-editable="true" data-object-type="shape" data-layer-name="Page Background" x="-3" y="-3" width="154" height="216" fill="#FBF9FF"/>
+</g>
+<g id="header_layer" data-layer-name="Header" data-editable="false">
+<path id="header_wave_green" data-editable="true" data-object-type="shape" data-layer-name="Header Green Wave" d="M-3 -3H151V47C122 56 96 42 66 49S18 56-3 47Z" fill="#1FA35C"/>
+<path id="header_wave_purple" data-editable="true" data-object-type="shape" data-layer-name="Header Purple Wave" d="M-3 -3H151V41C122 50 96 36 66 43S18 50-3 41Z" fill="#5B2A86"/>
+</g>
+<g id="decorative_shapes" data-layer-name="Decorative Shapes" data-editable="false">
+<circle id="deco_circle_orange" data-editable="true" data-object-type="shape" data-layer-name="Orange Dot" cx="138" cy="12" r="3.2" fill="#F28C28"/>
+<circle id="deco_circle_light" data-editable="true" data-object-type="shape" data-layer-name="Light Circle" cx="132" cy="6" r="20" fill="#FFFFFF" fill-opacity="0.07"/>
+<path id="deco_diamonds" data-editable="true" data-object-type="shape" data-layer-name="Header Diamonds" d="M98.42 29.5L99.67 28L100.92 29.5L99.67 31ZM101.75 29.5L103 28L104.25 29.5L103 31ZM105.08 29.5L106.33 28L107.58 29.5L106.33 31ZM108.42 29.5L109.67 28L110.92 29.5L109.67 31ZM111.75 29.5L113 28L114.25 29.5L113 31ZM115.08 29.5L116.33 28L117.58 29.5L116.33 31ZM118.42 29.5L119.67 28L120.92 29.5L119.67 31ZM121.75 29.5L123 28L124.25 29.5L123 31ZM125.08 29.5L126.33 28L127.58 29.5L126.33 31ZM128.42 29.5L129.67 28L130.92 29.5L129.67 31ZM131.75 29.5L133 28L134.25 29.5L133 31ZM135.08 29.5L136.33 28L137.58 29.5L136.33 31Z" fill="#FFFFFF" fill-opacity="0.45"/>
+</g>
+<g id="logo_placeholder" data-layer-name="Logo Placeholder" data-editable="false">
+<g id="logo_image_placeholder_group" data-editable="false" data-layer-name="Shop Logo Group">
+<circle id="logo_image_placeholder" data-editable="true" data-object-type="image" data-layer-name="Shop Logo" cx="24" cy="23" r="14" fill="#FFFFFF" stroke="#7D8CA3" stroke-width="0.35" stroke-dasharray="1.4 1.05" data-placeholder="true"/>
+<g id="logo_image_placeholder_hint" class="placeholder-hint" data-editable="false" data-placeholder-hint="true" pointer-events="none">
+<g transform="translate(20.36 17.54) scale(0.3)" fill="none" stroke="#7D8CA3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></g>
+<text x="24" y="29.04" font-size="3.4" fill="#7D8CA3" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif">লোগো</text>
+</g></g>
+</g>
+<g id="title_text" data-layer-name="Shop Identity" data-editable="false">
+<text id="shop_name_text" data-editable="true" data-object-type="text" data-layer-name="Shop Name" x="44" y="20" font-size="7.8" font-weight="800" fill="#FFFFFF" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="44">আপনার দোকানের নাম</tspan></text>
+</g>
+<g id="merchant_info" data-layer-name="Merchant Information" data-editable="false">
+<text id="merchant_name_text" data-editable="true" data-object-type="text" data-layer-name="Merchant Name" x="44" y="28" font-size="3.8" font-weight="600" fill="#E9DDF7" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="44">মার্চেন্টের নাম: আপনার নাম</tspan></text>
+</g>
+<g id="payment_instruction" data-layer-name="Payment Instruction" data-editable="false">
+<text id="payment_title_text" data-editable="true" data-object-type="text" data-layer-name="Payment Title" x="74" y="60.5" font-size="6.4" font-weight="800" fill="#13224A" text-anchor="middle" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="74">QR স্ক্যান করে পেমেন্ট করুন</tspan></text>
+<text id="payment_instruction_text" data-editable="true" data-object-type="text" data-layer-name="Payment Instruction" x="74" y="66.5" font-size="3.4" font-weight="500" fill="#5A6785" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="74">আপনার মোবাইল ব্যাংকিং অ্যাপ খুলে স্ক্যান করুন</tspan></text>
+</g>
+<g id="qr_area" data-layer-name="QR Code Area" data-editable="false">
+<rect id="qr_card" data-editable="true" data-object-type="shape" data-layer-name="QR Card" x="22" y="71" width="104" height="98" rx="4" fill="#FFFFFF" stroke="#5B2A86" stroke-width="1.2"/>
+<path id="qr_corner_01" data-editable="true" data-object-type="shape" data-layer-name="Scan Corner 1" d="M30 86v-8h8" fill="none" stroke="#1FA35C" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+<path id="qr_corner_02" data-editable="true" data-object-type="shape" data-layer-name="Scan Corner 2" d="M118 86v-8h-8" fill="none" stroke="#1FA35C" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+<path id="qr_corner_03" data-editable="true" data-object-type="shape" data-layer-name="Scan Corner 3" d="M30 154v8h8" fill="none" stroke="#1FA35C" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+<path id="qr_corner_04" data-editable="true" data-object-type="shape" data-layer-name="Scan Corner 4" d="M118 154v8h-8" fill="none" stroke="#1FA35C" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/>
+<rect id="qr_image_placeholder" data-editable="true" data-object-type="image" data-layer-name="Merchant QR Placeholder (leave empty)" x="34" y="82" width="80" height="80" fill="#FFFFFF" stroke="#C7CEDC" stroke-width="0.3" data-placeholder="true" data-placeholder-kind="merchant-qr"/>
+<text id="qr_hint_text" data-editable="true" data-object-type="text" data-layer-name="QR Hint (delete after uploading QR)" x="74" y="166.5" font-size="2.9" font-weight="500" fill="#7A8499" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif"><tspan x="74">এখানে আপনার নিজস্ব মার্চেন্ট QR কোড বসান</tspan></text>
+</g>
+<g id="payment_services" data-layer-name="Payment Services" data-editable="false">
+<text id="services_heading" data-editable="true" data-object-type="text" data-layer-name="Services Heading" x="74" y="176.5" font-size="3.5" font-weight="700" fill="#13224A" text-anchor="middle" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="74">সাপোর্টেড মোবাইল ব্যাংকিং সার্ভিস</tspan></text>
+<rect id="services_line_left" data-editable="true" data-object-type="shape" data-layer-name="Services Line Left" x="10" y="175" width="18" height="0.5" fill="#F28C28"/>
+<rect id="services_line_right" data-editable="true" data-object-type="shape" data-layer-name="Services Line Right" x="120" y="175" width="18" height="0.5" fill="#F28C28"/>
+<g id="service_logo_placeholder_01_group" data-editable="false" data-layer-name="Payment Service Logo 1 Group">
+<rect id="service_logo_placeholder_01" data-editable="true" data-object-type="image" data-layer-name="Payment Service Logo 1" x="13" y="180" width="28" height="14" rx="2" fill="#FFFFFF" stroke="#5B2A86" stroke-width="0.35" stroke-dasharray="1.4 1.05" data-placeholder="true"/>
+<g id="service_logo_placeholder_01_hint" class="placeholder-hint" data-editable="false" data-placeholder-hint="true" pointer-events="none">
+<g transform="translate(25.18 184.27) scale(0.15)" fill="none" stroke="#5B2A86" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></g>
+<text x="27" y="190.44" font-size="2.4" fill="#5B2A86" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif">সার্ভিস লোগো</text>
+</g></g>
+<g id="service_logo_placeholder_02_group" data-editable="false" data-layer-name="Payment Service Logo 2 Group">
+<rect id="service_logo_placeholder_02" data-editable="true" data-object-type="image" data-layer-name="Payment Service Logo 2" x="44.7" y="180" width="28" height="14" rx="2" fill="#FFFFFF" stroke="#1FA35C" stroke-width="0.35" stroke-dasharray="1.4 1.05" data-placeholder="true"/>
+<g id="service_logo_placeholder_02_hint" class="placeholder-hint" data-editable="false" data-placeholder-hint="true" pointer-events="none">
+<g transform="translate(56.88 184.27) scale(0.15)" fill="none" stroke="#1FA35C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></g>
+<text x="58.7" y="190.44" font-size="2.4" fill="#1FA35C" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif">সার্ভিস লোগো</text>
+</g></g>
+<g id="service_logo_placeholder_03_group" data-editable="false" data-layer-name="Payment Service Logo 3 Group">
+<rect id="service_logo_placeholder_03" data-editable="true" data-object-type="image" data-layer-name="Payment Service Logo 3" x="76.4" y="180" width="28" height="14" rx="2" fill="#FFFFFF" stroke="#F28C28" stroke-width="0.35" stroke-dasharray="1.4 1.05" data-placeholder="true"/>
+<g id="service_logo_placeholder_03_hint" class="placeholder-hint" data-editable="false" data-placeholder-hint="true" pointer-events="none">
+<g transform="translate(88.58 184.27) scale(0.15)" fill="none" stroke="#F28C28" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></g>
+<text x="90.4" y="190.44" font-size="2.4" fill="#F28C28" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif">সার্ভিস লোগো</text>
+</g></g>
+<g id="service_logo_placeholder_04_group" data-editable="false" data-layer-name="Payment Service Logo 4 Group">
+<rect id="service_logo_placeholder_04" data-editable="true" data-object-type="image" data-layer-name="Payment Service Logo 4" x="108.1" y="180" width="28" height="14" rx="2" fill="#FFFFFF" stroke="#13224A" stroke-width="0.35" stroke-dasharray="1.4 1.05" data-placeholder="true"/>
+<g id="service_logo_placeholder_04_hint" class="placeholder-hint" data-editable="false" data-placeholder-hint="true" pointer-events="none">
+<g transform="translate(120.28 184.27) scale(0.15)" fill="none" stroke="#13224A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M3 17l5-4 4 3 3-2 6 4"/></g>
+<text x="122.1" y="190.44" font-size="2.4" fill="#13224A" text-anchor="middle" font-family="&quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, &quot;Nirmala UI&quot;, sans-serif">সার্ভিস লোগো</text>
+</g></g>
+</g>
+<g id="footer_layer" data-layer-name="Footer" data-editable="false">
+<rect id="footer_band" data-editable="true" data-object-type="shape" data-layer-name="Footer Band" x="-3" y="196.5" width="154" height="16.5" fill="#5B2A86"/>
+<rect id="footer_orange_line" data-editable="true" data-object-type="shape" data-layer-name="Footer Orange Line" x="-3" y="196.5" width="154" height="1.2" fill="#F28C28"/>
+</g>
+<g id="contact_information" data-layer-name="Contact Information" data-editable="false">
+<g id="contact_phone_icon" data-editable="true" data-object-type="shape" data-layer-name="Phone Icon"><g transform="translate(44 197.9) scale(0.18)" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.2"/><path d="M11 18.5h2"/></g></g>
+<text id="contact_phone_text" data-editable="true" data-object-type="text" data-layer-name="Contact Number" x="50" y="201.1" font-size="4" font-weight="700" fill="#FFFFFF" font-family="&quot;Anek Bangla&quot;, &quot;Hind Siliguri&quot;, &quot;Noto Sans Bengali&quot;, sans-serif"><tspan x="50">যোগাযোগ: ০১XXX-XXXXXX</tspan></text>
+</g>
+<g id="print_guides" data-layer-name="Print Guides (hidden - non-printing)" data-editable="false">
+<g id="print_guides_group" display="none" data-editable="false" data-print="false" pointer-events="none"><rect id="guide_trim" x="0" y="0" width="148" height="210" fill="none" stroke="#E5007D" stroke-width="0.3"/><rect id="guide_safe" x="8" y="8" width="132" height="194" fill="none" stroke="#00A3E0" stroke-width="0.3" stroke-dasharray="1.49 1.37"/><rect id="guide_bleed" x="-3" y="-3" width="154" height="216" fill="none" stroke="#FF6A00" stroke-width="0.3" stroke-dasharray="1.49 1.37"/></g>
+</g>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "id": "45-bazar-list",
+  "title": "Shopping / Bazar List",
+  "category": "Personal & Applications",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/45-bazar-list.svg",
+  "preview": "previews/45-bazar-list.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

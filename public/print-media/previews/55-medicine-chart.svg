@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="34" fill="#0f766e" data-layer-name="Header"/>
+<circle cx="188" cy="14" r="10" fill="#14b8a6" data-layer-name="Decor circle"/>
+<rect x="184" y="9" width="8" height="10" fill="#ffffff" rx="4" data-layer-name="Pill"/>
+<rect x="184" y="14" width="8" height="5" fill="#fda4af" rx="0" data-layer-name="Pill half"/>
+<text x="15" y="18" font-size="14" fill="#ffffff" font-weight="800">ওষুধ খাওয়ার চার্ট</text>
+<text x="15" y="26" font-size="4" fill="#99f6e4" font-weight="600" letter-spacing="2">MEDICINE SCHEDULE CHART</text>
+<text x="15" y="44" font-size="4.4" fill="#333" font-weight="600">রোগীর নাম: </text>
+<line x1="34.804" y1="44.9" x2="105" y2="44.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="112" y="44" font-size="4.4" fill="#333" font-weight="600">বয়স: </text>
+<line x1="127.22800000000001" y1="44.9" x2="150" y2="44.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="155" y="44" font-size="4.4" fill="#333" font-weight="600">ওজন: </text>
+<line x1="167.94" y1="44.9" x2="195" y2="44.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="15" y="53" font-size="4.4" fill="#333" font-weight="600">ডাক্তারের নাম: </text>
+<line x1="37.092" y1="53.9" x2="105" y2="53.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="112" y="53" font-size="4.4" fill="#333" font-weight="600">শুরুর তারিখ: </text>
+<line x1="134.092" y1="53.9" x2="195" y2="53.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="15" y="60" width="180" height="11" fill="#0f766e" data-layer-name="Table header"/>
+<text x="21.0" y="66.8" font-size="3.5" fill="#fff" font-weight="700" text-anchor="middle">ক্রম</text>
+<text x="54.5" y="66.8" font-size="3.5" fill="#fff" font-weight="700" text-anchor="middle">ওষুধের নাম ও ডোজ</text>
+<text x="97.0" y="66.8" font-size="3.5" fill="#fff" font-weight="700" text-anchor="middle">কীসের জন্য</text>
+<text x="119.5" y="66.8" font-size="3.5" fill="#fff" font-weight="700" text-anchor="middle">সকাল</text>
+<text x="134.5" y="66.8" font-size="3.5" fill="#fff" font-weight="700" text-anchor="middle">দুপুর</text>
+<text x="149.5" y="66.8" font-size="3.5" fill="#fff" font-weight="700" text-anchor="middle">রাত</text>
+<text x="167.0" y="66.8" font-size="3.5" fill="#fff" font-weight="700" text-anchor="middle">আগে/পরে</text>
+<text x="186.0" y="66.8" font-size="3.5" fill="#fff" font-weight="700" text-anchor="middle">কত দিন</text>
+<rect x="15" y="71" width="180" height="12" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="83" x2="195" y2="83" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="78.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">১</text>
+<rect x="117.0" y="75.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="75.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="75.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<line x1="15" y1="95" x2="195" y2="95" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="90.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">২</text>
+<rect x="117.0" y="87.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="87.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="87.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="15" y="95" width="180" height="12" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="107" x2="195" y2="107" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="102.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">৩</text>
+<rect x="117.0" y="99.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="99.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="99.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<line x1="15" y1="119" x2="195" y2="119" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="114.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">৪</text>
+<rect x="117.0" y="111.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="111.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="111.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="15" y="119" width="180" height="12" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="131" x2="195" y2="131" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="126.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">৫</text>
+<rect x="117.0" y="123.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="123.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="123.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<line x1="15" y1="143" x2="195" y2="143" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="138.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">৬</text>
+<rect x="117.0" y="135.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="135.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="135.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="15" y="143" width="180" height="12" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="155" x2="195" y2="155" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="150.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">৭</text>
+<rect x="117.0" y="147.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="147.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="147.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<line x1="15" y1="167" x2="195" y2="167" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="162.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">৮</text>
+<rect x="117.0" y="159.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="159.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="159.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="15" y="167" width="180" height="12" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="179" x2="195" y2="179" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="174.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">৯</text>
+<rect x="117.0" y="171.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="171.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="171.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<line x1="15" y1="191" x2="195" y2="191" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="186.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">১০</text>
+<rect x="117.0" y="183.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="183.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="183.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="15" y="191" width="180" height="12" fill="#f0fdfa" data-layer-name="Row shade"/>
+<line x1="15" y1="203" x2="195" y2="203" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="198.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">১১</text>
+<rect x="117.0" y="195.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="195.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="195.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<line x1="15" y1="215" x2="195" y2="215" stroke="#a9dcd5" stroke-width="0.2"/>
+<text x="21" y="210.5" font-size="3.4" fill="#7fb8b0" font-weight="500" text-anchor="middle">১২</text>
+<rect x="117.0" y="207.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="132.0" y="207.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<rect x="147.0" y="207.5" width="5" height="5" fill="none" rx="0.8" stroke="#6aa9a1" stroke-width="0.3" data-layer-name="Dose box"/>
+<line x1="27" y1="71" x2="27" y2="215" stroke="#a9dcd5" stroke-width="0.2"/>
+<line x1="82" y1="71" x2="82" y2="215" stroke="#a9dcd5" stroke-width="0.2"/>
+<line x1="112" y1="71" x2="112" y2="215" stroke="#a9dcd5" stroke-width="0.2"/>
+<line x1="127" y1="71" x2="127" y2="215" stroke="#a9dcd5" stroke-width="0.2"/>
+<line x1="142" y1="71" x2="142" y2="215" stroke="#a9dcd5" stroke-width="0.2"/>
+<line x1="157" y1="71" x2="157" y2="215" stroke="#a9dcd5" stroke-width="0.2"/>
+<line x1="177" y1="71" x2="177" y2="215" stroke="#a9dcd5" stroke-width="0.2"/>
+<rect x="15" y="71" width="180" height="144" fill="none" stroke="#0f766e" stroke-width="0.4" data-layer-name="Table border"/>
+<rect x="15" y="223" width="88" height="52" fill="#fffbeb" rx="3" stroke="#fcd34d" stroke-width="0.4" data-layer-name="Advice box"/>
+<text x="19" y="230" font-size="4.4" fill="#92400e" font-weight="700">ডাক্তারের পরামর্শ</text>
+<line x1="19" y1="240" x2="99" y2="240" stroke="#d9b44a" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="19" y1="249" x2="99" y2="249" stroke="#d9b44a" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="19" y1="258" x2="99" y2="258" stroke="#d9b44a" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<line x1="19" y1="267" x2="99" y2="267" stroke="#d9b44a" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<rect x="107" y="223" width="88" height="52" fill="#fef2f2" rx="3" stroke="#fca5a5" stroke-width="0.4" data-layer-name="Emergency box"/>
+<text x="111" y="230" font-size="4.4" fill="#b91c1c" font-weight="700">জরুরি যোগাযোগ</text>
+<text x="111" y="241" font-size="3.9" fill="#333" font-weight="600">ডাক্তার: </text>
+<line x1="122.64" y1="241.9" x2="191" y2="241.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="251" font-size="3.9" fill="#333" font-weight="600">হাসপাতাল: </text>
+<line x1="126.696" y1="251.9" x2="191" y2="251.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="111" y="261" font-size="3.9" fill="#333" font-weight="600">আত্মীয়: </text>
+<line x1="124.668" y1="261.9" x2="191" y2="261.9" stroke="#888" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="105" y="288" font-size="3.4" fill="#666" font-weight="500" text-anchor="middle">ওষুধ ডাক্তারের পরামর্শ অনুযায়ী নিয়মিত খান। কোর্স শেষ না করে বন্ধ করবেন না।</text>
+</svg>

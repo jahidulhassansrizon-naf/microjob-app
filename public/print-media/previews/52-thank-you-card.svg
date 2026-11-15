@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 105" width="148mm" height="105mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="148" height="105" fill="#fdf2f8" data-layer-name="Background"/>
+<circle cx="0" cy="0" r="35" fill="#fbcfe8" data-layer-name="Decor circle"/>
+<circle cx="148" cy="105" r="40" fill="#fbcfe8" data-layer-name="Decor circle"/>
+<rect x="6" y="6" width="136" height="93" fill="none" rx="4" stroke="#be185d" stroke-width="0.5" stroke-dasharray="2 1.2" data-layer-name="Frame"/>
+<text x="74" y="32" font-size="24" fill="#be185d" font-weight="800" text-anchor="middle">ধন্যবাদ!</text>
+<text x="74" y="41" font-size="4" fill="#9d174d" font-weight="600" text-anchor="middle" letter-spacing="2">THANK YOU FOR YOUR ORDER</text>
+<line x1="48" y1="46" x2="100" y2="46" stroke="#be185d" stroke-width="0.4"/>
+<polygon points="74,44.5 75.5,46 74,47.5 72.5,46" fill="#be185d" data-layer-name="Divider diamond"/>
+<text x="74" y="55" font-size="4.6" fill="#444" font-weight="500" text-anchor="middle">আমাদের থেকে কেনাকাটা করার জন্য কৃতজ্ঞ।</text>
+<text x="74" y="62" font-size="3.6" fill="#666" font-weight="500" text-anchor="middle">পণ্যটি পছন্দ হলে আমাদের জানান — আপনার মতামত আমাদের সাহস।</text>
+<rect x="30" y="68" width="88" height="13" fill="#ffffff" rx="3" stroke="#be185d" stroke-width="0.5" stroke-dasharray="1.5 1" data-layer-name="Coupon box"/>
+<text x="74" y="74.5" font-size="5" fill="#be185d" font-weight="800" text-anchor="middle">পরের কেনাকাটায় ১০% ছাড়</text>
+<text x="74" y="79.2" font-size="3.6" fill="#9d174d" font-weight="600" text-anchor="middle">কুপন কোড: THANKS10</text>
+<text x="74" y="88" font-size="5.5" fill="#333" font-weight="800" text-anchor="middle">আপনার দোকানের নাম</text>
+<text x="74" y="94" font-size="3.2" fill="#666" font-weight="500" text-anchor="middle">ফেসবুক: facebook.com/yourpage  |  মোবাইল: ০১৭০০-০০০০০০</text>
+</svg>

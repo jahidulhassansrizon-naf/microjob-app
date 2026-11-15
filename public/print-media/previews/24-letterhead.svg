@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="6" fill="#12355b" data-layer-name="Top bar"/>
+<rect x="0" y="6" width="210" height="1.5" fill="#d9a441" data-layer-name="Top accent"/>
+<circle cx="26.0" cy="26.0" r="12.0" fill="#f1f1f1" stroke="#9a9a9a" stroke-width="0.35" stroke-dasharray="1.5 1" id="logo_placeholder" data-object-type="image" data-layer-name="লোগো"/>
+<text x="26.0" y="27.0" font-size="3" fill="#777" font-weight="500" text-anchor="middle" id="logo_placeholder_hint" data-layer-name="লোগো hint">লোগো</text>
+<text x="44" y="27" font-size="10" fill="#12355b" font-weight="700">আপনার প্রতিষ্ঠানের নাম</text>
+<text x="44" y="34" font-size="3.8" fill="#8a6a1f" font-weight="500">আপনার ট্যাগলাইন এখানে লিখুন</text>
+<line x1="14" y1="44" x2="196" y2="44" stroke="#12355b" stroke-width="0.5"/>
+<text x="14" y="62" font-size="3.8" fill="#333" font-weight="500">স্মারক নং: ০০১/২০২৬</text>
+<text x="196" y="62" font-size="3.8" fill="#333" font-weight="500" text-anchor="end">তারিখ: ১৫ নভেম্বর ২০২৬</text>
+<rect x="0" y="280" width="210" height="17" fill="#12355b" data-layer-name="Footer band"/>
+<rect x="0" y="278.5" width="210" height="1.5" fill="#d9a441" data-layer-name="Footer accent"/>
+<text x="105" y="287" font-size="3.6" fill="#ffffff" font-weight="500" text-anchor="middle">ঠিকানা: বাজার রোড, থানা, জেলা  |  মোবাইল: ০১৭০০-০০০০০০</text>
+<text x="105" y="292.5" font-size="3.3" fill="#f2d58a" font-weight="400" text-anchor="middle">ইমেইল: info@example.com  |  ওয়েব: www.example.com</text>
+<g display="none" id="safe-area-guide" data-print="false"><rect x="5" y="5" width="200" height="287" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

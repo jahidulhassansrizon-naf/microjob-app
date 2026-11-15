@@ -1,0 +1,19 @@
+{
+  "id": "57-milad-mahfil-invitation",
+  "title": "Milad & Dua Mahfil Invitation",
+  "category": "Events & Invitations",
+  "aspectRatio": "148:210",
+  "physicalWidth": 148,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 portrait",
+  "file": "templates/57-milad-mahfil-invitation.svg",
+  "preview": "previews/57-milad-mahfil-invitation.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

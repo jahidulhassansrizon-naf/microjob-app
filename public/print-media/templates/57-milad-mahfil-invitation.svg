@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 210" width="148mm" height="210mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="148" height="210" fill="#f7fbf4" data-layer-name="Background"/>
+<rect x="6" y="6" width="136" height="198" fill="none" stroke="#065f46" stroke-width="1" data-layer-name="Outer frame"/>
+<rect x="9" y="9" width="130" height="192" fill="none" stroke="#c9a227" stroke-width="0.4" data-layer-name="Inner frame"/>
+<polygon points="9,6 12,9 9,12 6,9" fill="#c9a227" data-layer-name="Corner diamond"/>
+<polygon points="139,6 142,9 139,12 136,9" fill="#c9a227" data-layer-name="Corner diamond"/>
+<polygon points="9,198 12,201 9,204 6,201" fill="#c9a227" data-layer-name="Corner diamond"/>
+<polygon points="139,198 142,201 139,204 136,201" fill="#c9a227" data-layer-name="Corner diamond"/>
+<circle cx="74" cy="34" r="13" fill="#c9a227" data-layer-name="Crescent"/>
+<circle cx="77.9" cy="32.96" r="11.18" fill="#f7fbf4" data-layer-name="Crescent cut"/>
+<polygon points="86.0,23.8 86.85,25.84 89.04,26.01 87.37,27.44 87.88,29.59 86.0,28.44 84.12,29.59 84.63,27.44 82.96,26.01 85.15,25.84" fill="#c9a227" data-layer-name="Star"/>
+<circle cx="74" cy="56" r="9" fill="#065f46" data-layer-name="Dome"/>
+<rect x="65" y="56" width="18" height="8" fill="#065f46" data-layer-name="Dome base"/>
+<rect x="73.3" y="44" width="1.4" height="4" fill="#c9a227" data-layer-name="Finial"/>
+<text x="74" y="78" font-size="12.5" fill="#065f46" font-weight="800" text-anchor="middle">মিলাদ ও দোয়া মাহফিল</text>
+<text x="74" y="86" font-size="3.6" fill="#c9a227" font-weight="700" text-anchor="middle" letter-spacing="2.5">MILAD &amp; DUA MAHFIL</text>
+<line x1="38" y1="92" x2="110" y2="92" stroke="#c9a227" stroke-width="0.4"/>
+<polygon points="74,90 76,92 74,94 72,92" fill="#c9a227" data-layer-name="Divider diamond"/>
+<text x="74" y="102" font-size="4.4" fill="#444" font-weight="500" text-anchor="middle">আসসালামু আলাইকুম, আপনাকে সপরিবারে দাওয়াত</text>
+<text x="18" y="118" font-size="4.6" fill="#065f46" font-weight="600">উপলক্ষ: </text>
+<line x1="33.852" y1="118.9" x2="130" y2="118.9" stroke="#c9a227" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="18" y="130" font-size="4.6" fill="#065f46" font-weight="600">তারিখ ও বার: </text>
+<line x1="43.42" y1="130.9" x2="130" y2="130.9" stroke="#c9a227" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="18" y="142" font-size="4.6" fill="#065f46" font-weight="600">সময়: </text>
+<line x1="33.852" y1="142.9" x2="130" y2="142.9" stroke="#c9a227" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="18" y="154" font-size="4.6" fill="#065f46" font-weight="600">স্থান: </text>
+<line x1="29.067999999999998" y1="154.9" x2="130" y2="154.9" stroke="#c9a227" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="18" y="166" font-size="4.6" fill="#065f46" font-weight="600">আলোচক: </text>
+<line x1="33.852" y1="166.9" x2="130" y2="166.9" stroke="#c9a227" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="74" y="182" font-size="4.4" fill="#555" font-weight="500" text-anchor="middle">দোয়া শেষে তবারক বিতরণ করা হবে।</text>
+<text x="74" y="191" font-size="5.2" fill="#065f46" font-weight="700" text-anchor="middle">বিনীত: আপনার নাম / পরিবারবর্গ</text>
+<text x="74" y="197" font-size="3.6" fill="#666" font-weight="500" text-anchor="middle">যোগাযোগ: ০১৭০০-০০০০০০</text>
+</svg>

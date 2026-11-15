@@ -1,0 +1,19 @@
+{
+  "id": "53-delivery-slip",
+  "title": "Delivery / Courier Slip",
+  "category": "Shop & Business",
+  "aspectRatio": "148:105",
+  "physicalWidth": 148,
+  "physicalHeight": 105,
+  "unit": "mm",
+  "physicalSizeLabel": "A6 landscape",
+  "file": "templates/53-delivery-slip.svg",
+  "preview": "previews/53-delivery-slip.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 148 105",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

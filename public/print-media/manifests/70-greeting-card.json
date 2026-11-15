@@ -1,0 +1,19 @@
+{
+  "id": "70-greeting-card",
+  "title": "Anniversary & Birthday Greeting Card",
+  "category": "Events & Invitations",
+  "aspectRatio": "210:148",
+  "physicalWidth": 210,
+  "physicalHeight": 148,
+  "unit": "mm",
+  "physicalSizeLabel": "A5 landscape",
+  "file": "templates/70-greeting-card.svg",
+  "preview": "previews/70-greeting-card.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 148",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

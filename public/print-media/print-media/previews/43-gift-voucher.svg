@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 90" width="200mm" height="90mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="200" height="90" fill="#ffffff" rx="4" stroke="#d6c8f0" stroke-width="0.4" data-layer-name="Background"/>
+<rect x="0" y="0" width="70" height="90" fill="#4c1d95" rx="4" data-layer-name="Left panel"/>
+<rect x="60" y="0" width="10" height="90" fill="#4c1d95" data-layer-name="Left panel fill"/>
+<circle cx="12" cy="12" r="14" fill="#5b2bb0" data-layer-name="Decor circle"/>
+<circle cx="62" cy="80" r="18" fill="#5b2bb0" data-layer-name="Decor circle"/>
+<text x="35" y="28" font-size="13" fill="#ffffff" font-weight="800" text-anchor="middle">গিফট</text>
+<text x="35" y="41" font-size="13" fill="#fbbf24" font-weight="800" text-anchor="middle">ভাউচার</text>
+<text x="35" y="48" font-size="3.4" fill="#ddd0f7" font-weight="600" text-anchor="middle" letter-spacing="1.8">GIFT VOUCHER</text>
+<rect x="10" y="56" width="50" height="20" fill="#fbbf24" rx="3" data-layer-name="Amount box"/>
+<text x="35" y="70" font-size="14" fill="#4c1d95" font-weight="800" text-anchor="middle">৳ ৫০০</text>
+<line x1="70" y1="4" x2="70" y2="86" stroke="#c9b7ee" stroke-width="0.4" stroke-dasharray="1.5 1.2"/>
+<text x="86" y="15" font-size="8" fill="#4c1d95" font-weight="800">আপনার দোকানের নাম</text>
+<text x="86" y="21" font-size="3.8" fill="#7c6aa8" font-weight="500">বিশেষ উপহার ভাউচার — আপনার জন্য</text>
+<text x="86" y="35" font-size="4.6" fill="#333" font-weight="600">প্রাপক: </text>
+<line x1="99.46000000000001" y1="35.9" x2="190" y2="35.9" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="86" y="47" font-size="4.6" fill="#333" font-weight="600">প্রদানকারী: </text>
+<line x1="104.244" y1="47.9" x2="190" y2="47.9" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="86" y="59" font-size="4.6" fill="#333" font-weight="600">ভাউচার কোড: </text>
+<line x1="109.02799999999999" y1="59.9" x2="190" y2="59.9" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="86" y="71" font-size="4.6" fill="#333" font-weight="600">মেয়াদ: </text>
+<line x1="101.852" y1="71.9" x2="190" y2="71.9" stroke="#999" stroke-width="0.25" stroke-dasharray="0.6 0.8"/>
+<text x="86" y="83" font-size="3.2" fill="#777" font-weight="500">* নগদে রূপান্তরযোগ্য নয়। একবারই ব্যবহারযোগ্য।  যোগাযোগ: ০১৭০০-০০০০০০</text>
+<rect x="196" y="0" width="4" height="90" fill="#fbbf24" data-layer-name="Right stripe"/>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "id": "60-character-certificate",
+  "title": "Character Certificate / Attestation",
+  "category": "Office & Job",
+  "aspectRatio": "210:297",
+  "physicalWidth": 210,
+  "physicalHeight": 297,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 portrait",
+  "file": "templates/60-character-certificate.svg",
+  "preview": "previews/60-character-certificate.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 297",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

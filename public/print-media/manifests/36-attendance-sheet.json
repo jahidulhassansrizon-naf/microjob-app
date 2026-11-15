@@ -1,0 +1,19 @@
+{
+  "id": "36-attendance-sheet",
+  "title": "Monthly Attendance Sheet",
+  "category": "Business Forms",
+  "aspectRatio": "297:210",
+  "physicalWidth": 297,
+  "physicalHeight": 210,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 landscape",
+  "file": "templates/36-attendance-sheet.svg",
+  "preview": "previews/36-attendance-sheet.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 297 210",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}

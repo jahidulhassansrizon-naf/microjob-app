@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" width="210mm" height="297mm" font-family="'Hind Siliguri', 'Noto Sans Bengali', 'Nirmala UI', sans-serif">
+<rect x="0" y="0" width="210" height="297" fill="#ffffff" data-layer-name="Background"/>
+<rect x="0" y="0" width="210" height="110" fill="#1d4ed8" data-layer-name="Hero"/>
+<circle cx="185" cy="20" r="45" fill="#2563eb" data-layer-name="Hero circle 1"/>
+<circle cx="20" cy="105" r="30" fill="#f97316" opacity="0.9" data-layer-name="Hero circle 2"/>
+<circle cx="26.0" cy="24.0" r="12.0" fill="#3b6fe6" stroke="#ffffff" stroke-width="0.35" stroke-dasharray="1.5 1" id="logo_placeholder" data-object-type="image" data-layer-name="লোগো"/>
+<text x="26.0" y="25.0" font-size="3" fill="#777" font-weight="500" text-anchor="middle" id="logo_placeholder_hint" data-layer-name="লোগো hint">লোগো</text>
+<text x="44" y="25" font-size="7.5" fill="#ffffff" font-weight="700">আপনার প্রতিষ্ঠানের নাম</text>
+<text x="44" y="33" font-size="3.6" fill="#cfe0ff" font-weight="400">স্থাপিত: ২০১০</text>
+<text x="105" y="70" font-size="22" fill="#ffffff" font-weight="700" text-anchor="middle">ভর্তি চলছে!</text>
+<text x="105" y="84" font-size="8" fill="#fde68a" font-weight="700" text-anchor="middle">শিক্ষাবর্ষ ২০২৭</text>
+<text x="105" y="96" font-size="5" fill="#ffffff" font-weight="500" text-anchor="middle">প্লে থেকে দশম শ্রেণি পর্যন্ত</text>
+<text x="105" y="128" font-size="6.5" fill="#1d4ed8" font-weight="700" text-anchor="middle">কেন আমাদের বেছে নেবেন?</text>
+<circle cx="30" cy="140.8" r="4.2" fill="#f97316" data-layer-name="Bullet"/>
+<polyline points="28.24,140.8 29.68,142.24 31.92,139.36" fill="none" stroke="#fff" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" data-layer-name="Tick"/>
+<text x="40" y="142" font-size="5" fill="#222" font-weight="600">অভিজ্ঞ ও দক্ষ শিক্ষকমণ্ডলী</text>
+<circle cx="30" cy="155.8" r="4.2" fill="#f97316" data-layer-name="Bullet"/>
+<polyline points="28.24,155.8 29.68,157.24 31.92,154.36" fill="none" stroke="#fff" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" data-layer-name="Tick"/>
+<text x="40" y="157" font-size="5" fill="#222" font-weight="600">ছোট ব্যাচ, প্রতিজন শিক্ষার্থীর প্রতি যত্ন</text>
+<circle cx="30" cy="170.8" r="4.2" fill="#f97316" data-layer-name="Bullet"/>
+<polyline points="28.24,170.8 29.68,172.24 31.92,169.36" fill="none" stroke="#fff" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" data-layer-name="Tick"/>
+<text x="40" y="172" font-size="5" fill="#222" font-weight="600">আধুনিক শ্রেণিকক্ষ ও কম্পিউটার ল্যাব</text>
+<circle cx="30" cy="185.8" r="4.2" fill="#f97316" data-layer-name="Bullet"/>
+<polyline points="28.24,185.8 29.68,187.24 31.92,184.36" fill="none" stroke="#fff" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" data-layer-name="Tick"/>
+<text x="40" y="187" font-size="5" fill="#222" font-weight="600">মেধাবী ও দরিদ্র শিক্ষার্থীদের জন্য বৃত্তি</text>
+<rect x="20" y="206" width="170" height="28" fill="#fff7ed" rx="3" stroke="#f97316" stroke-width="0.5" data-layer-name="Date box"/>
+<text x="105" y="217" font-size="4.8" fill="#9a3412" font-weight="700" text-anchor="middle">ভর্তি ফরম বিতরণ: ১ ডিসেম্বর ২০২৬ থেকে</text>
+<text x="105" y="227" font-size="4.4" fill="#444" font-weight="500" text-anchor="middle">সময়: সকাল ৯টা – বিকাল ৪টা (শুক্রবার বন্ধ)</text>
+<rect x="0" y="246" width="210" height="51" fill="#0f2f8f" data-layer-name="Footer"/>
+<text x="105" y="262" font-size="5.5" fill="#fde68a" font-weight="700" text-anchor="middle">যোগাযোগ করুন</text>
+<text x="105" y="274" font-size="7" fill="#ffffff" font-weight="700" text-anchor="middle">০১৭০০-০০০০০০  |  ০১৮০০-০০০০০০</text>
+<text x="105" y="284" font-size="4.2" fill="#cfe0ff" font-weight="400" text-anchor="middle">ঠিকানা: স্কুল রোড, গ্রাম, থানা, জেলা</text>
+<g id="safe-area-guide" data-print="false"><rect x="5" y="5" width="200" height="287" fill="none" stroke="#e11d48" stroke-width="0.25" stroke-dasharray="2 1.5" opacity="0.55"/></g>
+</svg>

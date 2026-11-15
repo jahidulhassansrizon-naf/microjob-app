@@ -1,0 +1,19 @@
+{
+  "id": "64-tenant-info-form",
+  "title": "Tenant Information Form",
+  "category": "Home & Family",
+  "aspectRatio": "210:297",
+  "physicalWidth": 210,
+  "physicalHeight": 297,
+  "unit": "mm",
+  "physicalSizeLabel": "A4 portrait",
+  "file": "templates/64-tenant-info-form.svg",
+  "preview": "previews/64-tenant-info-form.svg",
+  "platform": "SebaLagbe.com",
+  "viewBox": "0 0 210 297",
+  "editableObjects": [],
+  "printSettings": {
+    "bleedMm": 3,
+    "safeMarginMm": 5
+  }
+}
