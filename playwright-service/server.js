@@ -2682,6 +2682,51 @@ function splitPromptText(text, max) {
   return pieces;
 }
 
+// LONG PROMPTS AS A FILE (default): a prompt longer than DUCKAI_MAX_CHARS is NOT sent as many
+// messages. The full text is put into a PDF ("prompt-instructions.pdf") that is attached together
+// with the photo, and ONE short message tells Duck.ai to follow every instruction in that PDF.
+//   DUCKAI_LONG_MODE=file   (default) PDF + one message
+//   DUCKAI_LONG_MODE=split  old way: several messages
+// If the PDF cannot be made, the bot falls back to "split" by itself.
+const DUCKAI_LONG_MODE = (process.env.DUCKAI_LONG_MODE || "file").toLowerCase() === "split" ? "split" : "file";
+
+function escapeHtml(text) {
+  return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Writes the whole prompt (nothing cut, any characters) into a text PDF. A small separate headless
+// Chromium prints it, because only headless Chromium can make PDFs.
+async function makePromptPdf(prompt, outputDir) {
+  const pdfPath = path.join(outputDir, "prompt-instructions.pdf");
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.45;color:#000;margin:0}
+    h1{font-size:14pt;margin:0 0 10pt}
+    pre{white-space:pre-wrap;word-wrap:break-word;font-family:inherit;margin:0}
+  </style></head><body><h1>Complete photo editing instructions (follow every line)</h1><pre>${escapeHtml(prompt)}</pre></body></html>`;
+
+  const pdfBrowser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+
+  try {
+    const pdfPage = await pdfBrowser.newPage();
+    await pdfPage.setContent(html, { waitUntil: "load" });
+    await pdfPage.pdf({
+      path: pdfPath,
+      format: "A4",
+      margin: { top: "18mm", right: "16mm", bottom: "18mm", left: "16mm" },
+    });
+  } finally {
+    await pdfBrowser.close().catch(() => {});
+  }
+
+  const stat = await fs.stat(pdfPath);
+
+  if (!stat.size) {
+    throw new Error("prompt PDF is empty");
+  }
+
+  return pdfPath;
+}
+
 async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
   throwIfAborted(signal);
 
@@ -2804,10 +2849,28 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
       }
     };
 
-    const parts = prompt.length <= DUCKAI_MAX_CHARS ? [prompt] : splitPromptText(prompt, DUCKAI_MAX_CHARS - 350);
-    console.log(`[duckai] prompt is ${prompt.length} characters -> ${parts.length} message(s).`);
+    let parts = [prompt];
+    let promptPdf = "";
 
-    // Every part except the last: the full text, with the order "do not make the picture yet".
+    if (prompt.length > DUCKAI_MAX_CHARS) {
+      if (DUCKAI_LONG_MODE === "file") {
+        try {
+          promptPdf = await makePromptPdf(prompt, outputDir);
+          console.log(`[duckai] prompt is ${prompt.length} characters -> sent as a PDF file (1 message).`);
+        } catch (error) {
+          console.log(`[duckai] could not make the prompt PDF (${error && error.message}), sending several messages instead.`);
+        }
+      }
+
+      if (!promptPdf) {
+        parts = splitPromptText(prompt, DUCKAI_MAX_CHARS - 350);
+        console.log(`[duckai] prompt is ${prompt.length} characters -> ${parts.length} message(s).`);
+      }
+    } else {
+      console.log(`[duckai] prompt is ${prompt.length} characters -> 1 message.`);
+    }
+
+    // Split mode only: every part except the last, with the order "do not make the picture yet".
     for (let i = 0; i < parts.length - 1; i += 1) {
       await sendText(
         `[PART ${i + 1} OF ${parts.length}] Do NOT generate or edit any image yet. This is only the first part of my instructions: read it, remember it exactly, and reply with the single word OK.\n\n${parts[i]}`,
@@ -2816,17 +2879,37 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
       console.log(`[duckai] part ${i + 1}/${parts.length} sent.`);
     }
 
-    // The photo and the last (or only) part go together.
-    await fileInput.setInputFiles(imagePath);
-    await sleep(2500);
+    // The photo (and the prompt PDF, if there is one) are attached.
+    if (promptPdf) {
+      try {
+        await fileInput.setInputFiles([imagePath, promptPdf]);
+      } catch {
+        // The upload control takes one file at a time: add them one after the other.
+        await fileInput.setInputFiles(imagePath);
+        await sleep(2500);
+        await fileInput.setInputFiles(promptPdf);
+      }
+      console.log("[duckai] photo + prompt PDF attached.");
+      await sleep(4000);
+    } else {
+      await fileInput.setInputFiles(imagePath);
+      await sleep(2500);
+    }
 
     const before = await countResults();
     const lastPart = parts[parts.length - 1];
-    await sendText(
-      parts.length === 1
-        ? lastPart
-        : `[PART ${parts.length} OF ${parts.length} - FINAL] ${lastPart}\n\nNow edit the attached photo and generate the image, following ALL parts of my instructions (part 1 to part ${parts.length}) together.`,
-    );
+
+    if (promptPdf) {
+      await sendText(
+        "I attached my photo and a PDF file (prompt-instructions.pdf). The PDF contains my COMPLETE and detailed instructions. Read the ENTIRE PDF from the first line to the last and follow EVERY instruction in it exactly. Now edit the attached photo according to those instructions and generate the final image.",
+      );
+    } else {
+      await sendText(
+        parts.length === 1
+          ? lastPart
+          : `[PART ${parts.length} OF ${parts.length} - FINAL] ${lastPart}\n\nNow edit the attached photo and generate the image, following ALL parts of my instructions (part 1 to part ${parts.length}) together.`,
+      );
+    }
 
     console.log("[duckai] prompt sent, waiting for the picture ...");
     let got = false;
