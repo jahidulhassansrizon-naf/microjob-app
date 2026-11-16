@@ -1,0 +1,24 @@
+Create an ultra-high-resolution, photorealistic professional passport/ID portrait using the uploaded ORIGINAL photo as the identity reference. The result must show the EXACT SAME MAN.
+
+IDENTITY — ABSOLUTE PRIORITY
+Preserve his real, recognizable identity and facial anatomy: exact face shape, forehead, jaw, cheeks, eyes and spacing, eyebrows, nose, lips, ears, beard, mustache, hairline, hairstyle and apparent age. Do not beautify, de-age, idealize, slim, reshape or replace his face. Keep his original neutral/serious expression. No face swap or generic AI face.
+
+STRICT FRONTAL STUDIO POSE
+Rebuild the head, neck and upper body into a perfectly straight, symmetrical, front-facing passport pose; do NOT merely rotate or deskew the whole photo. Head upright, centered, with no tilt, lean, turn or nod. Align forehead, nose, lips and chin vertically. Both eyes open, level on one horizontal line and looking directly into the camera. Both sides of the face equally visible; ears level. Chin level. Neck straight and centered. Shoulders exactly level and square to camera; chest and torso facing forward. The pose and shoulder line must be corrected if crooked in the original. Use eye-level camera perspective and natural 85mm portrait-lens proportions, without wide-angle distortion.
+
+FACE CLARITY — VERY IMPORTANT
+Make the face exceptionally clear, crisp and sharply detailed like a professional high-resolution studio photograph. Preserve actual facial details rather than inventing them. Sharpen eyes, pupils, irises, eyelids, eyelashes, eyebrows, nose contours, nostrils, lips, beard and mustache hair strands, hairline and face edges. Keep beard density and shape unchanged. Retain natural pores, fine lines and realistic skin texture. Remove blur, noise, grain, compression artifacts, muddy details and unwanted sharpening halos. Do not over-sharpen or make the face look artificial.
+
+SKIN RETOUCH AND COLOR
+Apply a natural medium-fair warm light-honey complexion (approximately #E4B58F) consistently to face, ears, neck and all visible skin. Recolor skin only; never recolor eyes, teeth, lips, hair, beard, eyebrows or clothing. Keep natural skin shading and realistic undertones. Gently even the complexion and remove distracting blemishes, dirt, dust, acne, dark patches, pigmentation, stains, unwanted spots and dark circles, including the small forehead mark. Keep realistic pores and texture; no plastic, waxy, glossy, painted or airbrushed skin. Keep eyes clear with natural whites and unchanged eye color. Correct dull lighting without overexposure.
+
+HAIR AND CLOTHING
+Keep his original short black hairstyle, hairline, beard and mustache unchanged; tidy only stray flyaway hairs. Preserve the exact original white button-down shirt, including its collar, buttons, fabric and color. Do not add a tie, jacket, hoodie, accessories, scarf, hijab or head covering. Make clothing fit naturally on the corrected shoulders, with realistic folds and clean edges. Clothing must not cast color onto the skin.
+
+BACKGROUND AND COMPOSITION
+Replace the original surroundings with a perfectly uniform solid sky-blue background (#38BDF8), with no gradient, scenery, texture, objects or shadows. Center him in a professional 45 × 55 mm passport composition, showing head and upper shoulders with natural proportions and adequate space above the head. The app will set exact pixel dimensions; add no text or size labels.
+
+FINAL QUALITY CHECK
+Output at the highest available resolution and sharpness. Keep eyes, eyebrows, individual beard hairs, hair strands, facial contours and shirt fabric exceptionally crisp. No blur, noise, grain, pixelation, compression artifacts, jagged edges, halos, fake details, extra people, duplicated features, text, logos, borders or watermarks.
+
+Before finishing, verify: exact same man and facial anatomy; unchanged natural expression; perfectly upright frontal head; horizontal eye line; straight neck; level shoulders; direct eye contact; clean natural #E4B58F skin; original black hair, beard and white shirt preserved; uniform #38BDF8 background. Identity and realistic photographic detail must take priority over cosmetic changes.

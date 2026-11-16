@@ -1,0 +1,66 @@
+name: Duck.ai test
+
+# Manual test only: Actions tab -> "Duck.ai test" -> Run workflow.
+# It runs playwright-service/try-duckai.js on a GitHub runner, once with a virtual screen
+# ("headed") and once without ("headless"), and uploads the result files.
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [headed, headless]
+    defaults:
+      run:
+        working-directory: playwright-service
+    env:
+      TEST_PHOTO_B64: ${{ secrets.TEST_PHOTO_B64 }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Make sure a browser exists
+        run: |
+          if [ -x /opt/google/chrome/chrome ]; then
+            echo "Google Chrome is installed on this runner."
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      - name: Use the test photo from the secret (if the secret exists)
+        run: |
+          if [ -n "$TEST_PHOTO_B64" ]; then
+            printf '%s' "$TEST_PHOTO_B64" | base64 -d > test-photo.jpg
+            echo "Photo restored from secret."
+          fi
+          ls -la test-photo.jpg prompt.txt
+
+      - name: Show where this runner is (for the log only)
+        run: curl -s https://ipinfo.io/json | head -c 400 || true
+
+      - name: Run the Duck.ai test (${{ matrix.mode }})
+        run: |
+          if [ "${{ matrix.mode }}" = "headless" ]; then
+            HEADLESS=1 node try-duckai.js
+          else
+            xvfb-run -a node try-duckai.js
+          fi
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: duckai-${{ matrix.mode }}
+          path: |
+            playwright-service/duckai-*
+          if-no-files-found: ignore

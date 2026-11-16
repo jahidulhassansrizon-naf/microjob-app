@@ -2614,10 +2614,293 @@ async function runGeminiGenerationInner(options) {
 }
 
 // --------------------------------------------------
+// TEST ONLY: Duck.ai instead of Gemini (start the bot with DUCKAI_TEST=1)
+//
+// Only the one-image route /edit-image uses it (AI Editor, Bulk Photo Edit). No login is needed.
+// Each job opens its own browser window, uploads the photo, types the prompt, presses Ask,
+// waits for the new picture and downloads it with Duck.ai's own download button.
+// It never tries to get past a check page: if Duck.ai shows a limit or a check, the job fails.
+// DUCKAI_HEADLESS=1 runs without a visible window (on GitHub use xvfb-run and leave it off).
+// --------------------------------------------------
+
+const DUCKAI_TEST = process.env.DUCKAI_TEST === "1";
+const DUCKAI_HEADLESS = process.env.DUCKAI_HEADLESS === "1";
+const DUCKAI_WAIT_MS = readIntEnv("DUCKAI_WAIT_MS", 120_000, 30_000, 280_000);
+// Duck.ai accepts a limited number of characters in ONE message (about 4500 as far as we know).
+// A longer prompt is NOT cut: it is sent in several messages, in full, and the picture is
+// asked for only in the last one. Keep this a little below the real limit.
+const DUCKAI_MAX_CHARS = readIntEnv("DUCKAI_MAX_CHARS", 4300, 1000, 20000);
+
+// Splits text into pieces of at most `max` characters, at paragraph ends when possible, then at
+// sentence ends, and only as a last resort in the middle of a long run of text. Nothing is dropped.
+function splitPromptText(text, max) {
+  const pieces = [];
+  const paragraphs = String(text).split(/\n{2,}/);
+  let current = "";
+
+  const flush = () => {
+    if (current.trim()) pieces.push(current.trim());
+    current = "";
+  };
+
+  const addUnit = (unit) => {
+    if (!unit) return;
+    if (current && current.length + 2 + unit.length > max) flush();
+    current = current ? `${current}\n\n${unit}` : unit;
+  };
+
+  for (const paragraph of paragraphs) {
+    if (paragraph.length <= max) {
+      addUnit(paragraph);
+      continue;
+    }
+
+    // One paragraph is longer than a whole message: cut it at sentence ends.
+    flush();
+    let piece = "";
+    for (const sentence of paragraph.split(/(?<=[.!?;])\s+/)) {
+      if (sentence.length > max) {
+        if (piece) {
+          pieces.push(piece.trim());
+          piece = "";
+        }
+        for (let i = 0; i < sentence.length; i += max) {
+          pieces.push(sentence.slice(i, i + max));
+        }
+        continue;
+      }
+      if (piece && piece.length + 1 + sentence.length > max) {
+        pieces.push(piece.trim());
+        piece = "";
+      }
+      piece = piece ? `${piece} ${sentence}` : sentence;
+    }
+    if (piece.trim()) pieces.push(piece.trim());
+  }
+
+  flush();
+  return pieces;
+}
+
+async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
+  throwIfAborted(signal);
+
+  const launchArgs = [
+    "--disable-blink-features=AutomationControlled",
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+  ];
+  let browser;
+
+  try {
+    browser = await chromium.launch({ channel: "chrome", headless: DUCKAI_HEADLESS, args: launchArgs });
+  } catch {
+    browser = await chromium.launch({ headless: DUCKAI_HEADLESS, args: launchArgs });
+  }
+
+  const onAbort = () => {
+    browser.close().catch(() => {});
+  };
+
+  if (signal) {
+    signal.addEventListener("abort", onAbort, { once: true });
+  }
+
+  const started = Date.now();
+
+  try {
+    const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+    const page = await context.newPage();
+
+    console.log("[duckai] opening duck.ai ...");
+    await page.goto("https://duck.ai/", { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await sleep(3000);
+    throwIfAborted(signal);
+
+    // First-visit buttons only (welcome / consent). Nothing else is ever clicked.
+    for (const name of [/^got it$/i, /^agree and continue$/i, /^accept/i, /^continue$/i, /^ok$/i]) {
+      const btn = page.getByRole("button", { name }).first();
+
+      if (await btn.isVisible().catch(() => false)) {
+        await btn.click().catch(() => {});
+        await sleep(800);
+      }
+    }
+
+    const fileInput = page.locator('input[type="file"]').first();
+
+    if ((await fileInput.count()) === 0) {
+      await sleep(4000);
+    }
+
+    if ((await fileInput.count()) === 0) {
+      throw new Error("Duck.ai: upload control not found.");
+    }
+
+    // Pixel size of our own photo, so it is never mistaken for the generated picture.
+    const ext = path.extname(imagePath).toLowerCase();
+    const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
+    const b64 = (await fs.readFile(imagePath)).toString("base64");
+    const up = await page.evaluate(
+      async ({ m, d }) => {
+        const img = new Image();
+        img.src = `data:${m};base64,${d}`;
+        await img.decode();
+        return { w: img.naturalWidth, h: img.naturalHeight };
+      },
+      { m: mime, d: b64 },
+    );
+
+    const countResults = () =>
+      page.evaluate(
+        ({ uw, uh }) =>
+          [...document.querySelectorAll("img")].filter(
+            (i) =>
+              i.naturalWidth >= 400 &&
+              i.naturalHeight >= 400 &&
+              !(i.naturalWidth === uw && i.naturalHeight === uh),
+          ).length,
+        { uw: up.w, uh: up.h },
+      );
+
+    const box = page.locator("textarea, [contenteditable=true]").first();
+    const askBtn = page
+      .getByRole("button", { name: /^ask$/i })
+      .or(page.locator('button[type="submit"], button[aria-label*="send" i]'))
+      .first();
+
+    const sendText = async (text) => {
+      await box.click();
+      await box.fill(text);
+      await sleep(800);
+      throwIfAborted(signal);
+
+      if (await askBtn.isVisible().catch(() => false)) {
+        await askBtn.click();
+      } else {
+        await box.click().catch(() => {});
+        await page.keyboard.press("Enter");
+      }
+    };
+
+    const stopVisible = () =>
+      page
+        .locator('button[aria-label*="stop" i]')
+        .first()
+        .isVisible()
+        .catch(() => false);
+
+    // Wait until Duck.ai has finished answering a "part" message.
+    const waitForReplyDone = async () => {
+      const limit = Date.now() + 60_000;
+      let quiet = 0;
+      await sleep(3000);
+
+      while (Date.now() < limit) {
+        throwIfAborted(signal);
+        quiet = (await stopVisible()) ? 0 : quiet + 1;
+        if (quiet >= 2) return;
+        await sleep(1500);
+      }
+    };
+
+    const parts = prompt.length <= DUCKAI_MAX_CHARS ? [prompt] : splitPromptText(prompt, DUCKAI_MAX_CHARS - 350);
+    console.log(`[duckai] prompt is ${prompt.length} characters -> ${parts.length} message(s).`);
+
+    // Every part except the last: the full text, with the order "do not make the picture yet".
+    for (let i = 0; i < parts.length - 1; i += 1) {
+      await sendText(
+        `[PART ${i + 1} OF ${parts.length}] Do NOT generate or edit any image yet. This is only the first part of my instructions: read it, remember it exactly, and reply with the single word OK.\n\n${parts[i]}`,
+      );
+      await waitForReplyDone();
+      console.log(`[duckai] part ${i + 1}/${parts.length} sent.`);
+    }
+
+    // The photo and the last (or only) part go together.
+    await fileInput.setInputFiles(imagePath);
+    await sleep(2500);
+
+    const before = await countResults();
+    const lastPart = parts[parts.length - 1];
+    await sendText(
+      parts.length === 1
+        ? lastPart
+        : `[PART ${parts.length} OF ${parts.length} - FINAL] ${lastPart}\n\nNow edit the attached photo and generate the image, following ALL parts of my instructions (part 1 to part ${parts.length}) together.`,
+    );
+
+    console.log("[duckai] prompt sent, waiting for the picture ...");
+    let got = false;
+    const pictureWaitStarted = Date.now();
+
+    while (Date.now() - pictureWaitStarted < DUCKAI_WAIT_MS) {
+      await sleep(2000);
+      throwIfAborted(signal);
+
+      if ((await countResults()) > before) {
+        got = true;
+        break;
+      }
+
+      const text = (await page.evaluate(() => document.body.innerText)).toLowerCase();
+
+      if (/daily limit|reached.*limit|try again tomorrow|limit.*reached/.test(text)) {
+        console.log("[duckai] Duck.ai says the usage limit is reached.");
+        throw new HttpError("Image generation is busy right now. Please try again later.", 503, {
+          retryAfter: 900,
+        });
+      }
+    }
+
+    if (!got) {
+      throw new Error("Duck.ai: no picture appeared in time.");
+    }
+
+    await sleep(2500);
+    throwIfAborted(signal);
+
+    // Download with Duck.ai's own download button (full quality).
+    const dl = page.getByRole("button", { name: /download/i }).last();
+    const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20_000 }), dl.click()]);
+    const suggested = download.suggestedFilename() || "duckai.png";
+    const outExt = path.extname(suggested).toLowerCase() || ".png";
+    const outPath = path.join(outputDir, `duckai-result${outExt}`);
+    await download.saveAs(outPath);
+
+    const buffer = await fs.readFile(outPath);
+
+    if (!buffer.length) {
+      throw new Error("Duck.ai returned an empty image.");
+    }
+
+    console.log(`[duckai] done in ${Math.round((Date.now() - started) / 1000)}s (${Math.round(buffer.length / 1024)} KB).`);
+
+    return { buffer, mimeType: getMimeType(outExt) };
+  } catch (error) {
+    if (signal && signal.aborted) {
+      throw abortReason(signal);
+    }
+
+    console.error(`[duckai] failed: ${error && error.message ? error.message : error}`);
+    throw error;
+  } finally {
+    if (signal) {
+      signal.removeEventListener("abort", onAbort);
+    }
+
+    await browser.close().catch(() => {});
+  }
+}
+
+// --------------------------------------------------
 // Existing AI Editor Gemini generation (one image)
 // --------------------------------------------------
 
 function generateWithGemini(imagePath, prompt, outputDir, signal, forceSlot = 0) {
+  // TEST ONLY: with DUCKAI_TEST=1 the one-image /edit-image route uses Duck.ai instead of Gemini.
+  if (DUCKAI_TEST) {
+    return generateWithDuckAi(imagePath, prompt, outputDir, signal);
+  }
+
   return runGeminiGeneration({
     forceSlot,
     imagePaths: [imagePath],
