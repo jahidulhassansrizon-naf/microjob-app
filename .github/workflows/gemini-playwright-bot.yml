@@ -51,15 +51,22 @@ jobs:
     env:
       BOT_PORT: "4000"
       SKIP_DESKTOP: "1"
+      # ---- DUCK.AI TEST: /edit-image (AI Editor, Bulk Photo Edit) uses Duck.ai instead of Gemini. ----
+      # To go back to Gemini: delete the next 3 lines (and set PREWARM / WARM_DEMAND back to "1").
+      # The bot is started with xvfb-run below, so Chrome has a (virtual) screen: do NOT set DUCKAI_HEADLESS
+      # (headless failed on GitHub, headed worked).
+      DUCKAI_TEST: "1"
+      DUCKAI_MAX_CHARS: "4300"
+      DUCKAI_WAIT_MS: "150000"
       # Machine limit: about 20 headless Chromium pages fit on the 4 vCPU / 16 GB
       # public runner. The jobs per Google account are worked out by the bot from
       # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).
-      MAX_CONCURRENT_GENERATIONS: "20"
+      MAX_CONCURRENT_GENERATIONS: "3"
       MAX_JOB_RETRIES: "2"
       # Warm pages: at the start of every run the bot opens Gemini pages for all sessions,
       # one session after the other, and keeps them open. Set PREWARM to "0" to go back
       # to the old way (a fresh page for every image).
-      PREWARM: "1"
+      PREWARM: "0" # was "1" (Gemini warm pages are not needed while Duck.ai is tested)
       # "1" = session 1 works (and keeps its ready pages) until its job limit; only then session 2, 3, 4.
       # Accounts that are not needed are never opened. WARM_PER_SESSION_MAX is not used in this mode.
       STICKY_SESSIONS: "1"
@@ -67,7 +74,7 @@ jobs:
       # Demand mode: no page is opened at start. Pages open one by one when visitors
       # arrive on the AI editor page (the website calls POST /warm-hint).
       # To go back to the old "fresh page for every image" way, set PREWARM to "0".
-      WARM_DEMAND: "1"
+      WARM_DEMAND: "0" # was "1"
       WARM_MAX_PAGES: "8"
       WARM_PER_SESSION_MAX: "2"
       WARM_OPEN_STAGGER_MS: "5000"
@@ -166,7 +173,7 @@ jobs:
       - name: Start bot server
         shell: bash
         run: |
-          nohup npm start > bot.log 2>&1 &
+          nohup xvfb-run -a npm start > bot.log 2>&1 &
           echo $! > bot.pid
 
       - name: Wait for bot health
@@ -407,7 +414,7 @@ jobs:
             pkill -f "node server.js" 2>/dev/null || true
             sleep 2
             pkill -9 -f "node server.js" 2>/dev/null || true
-            nohup npm start >> bot.log 2>&1 &
+            nohup xvfb-run -a npm start >> bot.log 2>&1 &
             echo $! > bot.pid
             local i
             for i in {1..30}; do
