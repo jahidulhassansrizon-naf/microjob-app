@@ -49,8 +49,8 @@ export function filterString(filters: FilterState) {
 export function isNeutralFilters(filters: FilterState) {
     return (Object.keys(DEFAULT_FILTERS) as (keyof FilterState)[]).every((key) => filters[key] === DEFAULT_FILTERS[key]);
 }
-/** Slightly brighter starting point for a freshly generated photo. The user can change it freely. */
-export const RESULT_DEFAULT_FILTERS: FilterState = { ...DEFAULT_FILTERS, brightness: 108 };
+/** A freshly generated photo starts with the normal values (no extra brightness). The user can change it freely. */
+export const RESULT_DEFAULT_FILTERS: FilterState = { ...DEFAULT_FILTERS };
 export const PRESETS: {
     name: string;
     filters: FilterState;

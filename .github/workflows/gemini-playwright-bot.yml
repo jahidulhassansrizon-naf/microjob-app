@@ -58,6 +58,10 @@ jobs:
       DUCKAI_TEST: "1"
       DUCKAI_MAX_CHARS: "4300"
       DUCKAI_WAIT_MS: "150000"
+      # A Duck.ai window is opened in advance when a visitor has chosen a photo in the AI editor
+      # (the website's "strong" hint). 0 = off.
+      DUCKAI_WARM_MAX: "3"
+      DUCKAI_WARM_TTL_MS: "300000"
       # Machine limit: about 20 headless Chromium pages fit on the 4 vCPU / 16 GB
       # public runner. The jobs per Google account are worked out by the bot from
       # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).

@@ -2727,9 +2727,24 @@ async function makePromptPdf(prompt, outputDir) {
   return pdfPath;
 }
 
-async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
-  throwIfAborted(signal);
+// --------------------------------------------------
+// Duck.ai pages opened in advance
+//
+// The website sends a "strong" hint to POST /warm-hint when a visitor has chosen a photo in the
+// AI editor (before pressing Generate). The bot then opens ONE Duck.ai window for that visitor
+// and keeps it ready. When someone presses Generate, the job takes a ready window instead of
+// starting Chrome and loading duck.ai, so the picture starts faster. If no window is ready,
+// the job opens its own (the normal way). Unused windows are closed after DUCKAI_WARM_TTL_MS.
+//   DUCKAI_WARM_MAX     most ready windows at once (0 = off, default 3)
+//   DUCKAI_WARM_TTL_MS  how long a ready window waits for its visitor (default 5 minutes)
+// --------------------------------------------------
+const DUCKAI_WARM_MAX = readIntEnv("DUCKAI_WARM_MAX", 3, 0, 10);
+const DUCKAI_WARM_TTL_MS = readIntEnv("DUCKAI_WARM_TTL_MS", 300_000, 30_000, 1_800_000);
+const duckWarm = new Map(); // visitor key -> { key, expiresAt, session, promise, closed }
+let duckWarmChain = Promise.resolve();
 
+// Opens Chrome + duck.ai and gets it ready for a photo upload. Used by warm windows and by jobs.
+async function openDuckAiSession(signal) {
   const launchArgs = [
     "--disable-blink-features=AutomationControlled",
     "--no-sandbox",
@@ -2743,15 +2758,13 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
     browser = await chromium.launch({ headless: DUCKAI_HEADLESS, args: launchArgs });
   }
 
-  const onAbort = () => {
+  const closeOnAbort = () => {
     browser.close().catch(() => {});
   };
 
   if (signal) {
-    signal.addEventListener("abort", onAbort, { once: true });
+    signal.addEventListener("abort", closeOnAbort, { once: true });
   }
-
-  const started = Date.now();
 
   try {
     const context = await browser.newContext({ viewport: { width: 1366, height: 900 } });
@@ -2781,6 +2794,142 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
     if ((await fileInput.count()) === 0) {
       throw new Error("Duck.ai: upload control not found.");
     }
+
+    return { browser, context, page, fileInput };
+  } catch (error) {
+    await browser.close().catch(() => {});
+    throw error;
+  } finally {
+    if (signal) {
+      signal.removeEventListener("abort", closeOnAbort);
+    }
+  }
+}
+
+function closeDuckWarmEntry(entry) {
+  entry.closed = true;
+  duckWarm.delete(entry.key);
+
+  if (entry.session) {
+    entry.session.browser.close().catch(() => {});
+    entry.session = null;
+  }
+}
+
+// A visitor chose a photo: open one window for them (one at a time, never many at the same moment).
+function recordDuckWarmHint(key) {
+  if (!DUCKAI_TEST || DUCKAI_WARM_MAX < 1) {
+    return;
+  }
+
+  const existing = duckWarm.get(key);
+
+  if (existing) {
+    existing.expiresAt = Date.now() + DUCKAI_WARM_TTL_MS;
+    return;
+  }
+
+  if (duckWarm.size >= DUCKAI_WARM_MAX) {
+    return;
+  }
+
+  const entry = { key, expiresAt: Date.now() + DUCKAI_WARM_TTL_MS, session: null, promise: null, closed: false };
+  duckWarm.set(key, entry);
+
+  entry.promise = duckWarmChain = duckWarmChain
+    .catch(() => {})
+    .then(async () => {
+      if (entry.closed) return;
+
+      const session = await openDuckAiSession(null);
+
+      if (entry.closed) {
+        await session.browser.close().catch(() => {});
+        return;
+      }
+
+      entry.session = session;
+      const ready = [...duckWarm.values()].filter((e) => e.session).length;
+      console.log(`[duckai] a page is ready in advance (${ready} ready).`);
+    })
+    .catch((error) => {
+      console.log(`[duckai] could not open a page in advance: ${error && error.message ? error.message : error}`);
+      closeDuckWarmEntry(entry);
+    });
+}
+
+// A job takes a ready window. If one is still opening it waits a few seconds for it
+// (faster than opening another). Returns null when nothing is available.
+async function takeDuckWarmSession() {
+  const deadline = Date.now() + 8000;
+
+  while (true) {
+    for (const entry of duckWarm.values()) {
+      if (!entry.session) continue;
+
+      const session = entry.session;
+      entry.session = null;
+      duckWarm.delete(entry.key);
+      entry.closed = true;
+
+      if (session.browser.isConnected() && !session.page.isClosed()) {
+        return session;
+      }
+
+      session.browser.close().catch(() => {});
+    }
+
+    const opening = [...duckWarm.values()].find((e) => !e.session && !e.closed);
+
+    if (!opening || Date.now() >= deadline) {
+      return null;
+    }
+
+    await Promise.race([opening.promise, sleep(Math.max(500, deadline - Date.now()))]);
+  }
+}
+
+setInterval(() => {
+  const now = Date.now();
+
+  for (const entry of [...duckWarm.values()]) {
+    if (entry.expiresAt <= now) {
+      closeDuckWarmEntry(entry);
+      console.log("[duckai] closed a ready page nobody used.");
+    }
+  }
+}, 15_000).unref();
+
+async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
+  throwIfAborted(signal);
+
+  const started = Date.now();
+  let session = await takeDuckWarmSession();
+
+  if (session) {
+    console.log("[duckai] using a page that was opened in advance.");
+  } else {
+    session = await openDuckAiSession(signal);
+  }
+
+  const browser = session.browser;
+
+  const onAbort = () => {
+    browser.close().catch(() => {});
+  };
+
+  if (signal) {
+    if (signal.aborted) {
+      onAbort();
+    } else {
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+  }
+
+  try {
+    throwIfAborted(signal);
+
+    const { page, fileInput } = session;
 
     // Pixel size of our own photo, so it is never mistaken for the generated picture.
     const ext = path.extname(imagePath).toLowerCase();
@@ -3142,6 +3291,21 @@ function healthPayload() {
 // The website calls this when a visitor opens the AI editor (weak) or has chosen
 // a photo (strong). Needs the same x-api-key as the image routes (ASK_KEY).
 app.post("/warm-hint", requireApiKey, (req, res) => {
+  // Duck.ai test: only a "strong" hint (the visitor has chosen a photo) opens a window in advance.
+  if (DUCKAI_TEST) {
+    const duckKey = String((req.body && req.body.key) || "").slice(0, 80);
+
+    if (!duckKey) {
+      return res.status(400).json({ ok: false, error: "key is required" });
+    }
+
+    if (req.body && req.body.strong) {
+      recordDuckWarmHint(duckKey);
+    }
+
+    return res.json({ ok: true, mode: "duckai", ready: [...duckWarm.values()].filter((e) => e.session).length });
+  }
+
   if (!PREWARM || !WARM_DEMAND) {
     return res.json({ ok: true, mode: "off" });
   }
