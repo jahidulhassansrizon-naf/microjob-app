@@ -60,6 +60,9 @@ jobs:
       # one session after the other, and keeps them open. Set PREWARM to "0" to go back
       # to the old way (a fresh page for every image).
       PREWARM: "1"
+      # "1" = session 1 works (and keeps its ready pages) until its job limit; only then session 2, 3, 4.
+      # Accounts that are not needed are never opened. WARM_PER_SESSION_MAX is not used in this mode.
+      STICKY_SESSIONS: "1"
       WARM_PAGES_PER_SESSION: "3"
       # Demand mode: no page is opened at start. Pages open one by one when visitors
       # arrive on the AI editor page (the website calls POST /warm-hint).
@@ -470,6 +473,13 @@ jobs:
               if GH_TOKEN="$SESSION_WRITE_TOKEN" gh secret set "GEMINI_SESSION_JSON_${N}" --repo "$GITHUB_REPOSITORY" < "$f" > /dev/null 2>&1; then
                 cp "$f" "pushed-${N}.json"
                 echo "Renewed Google cookies saved for session ${N}."
+                # Tell the bot (admin panel shows this time). Best effort.
+                if [ -n "$NOTIFY_TOKEN" ]; then
+                  curl -fsS -m 10 -X POST "http://127.0.0.1:${BOT_PORT}/cookie-pushed" \
+                    -H "x-notify-token: ${NOTIFY_TOKEN}" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"slot\":${N}}" > /dev/null 2>&1 || true
+                fi
               else
                 echo "::warning::Could not save renewed cookies for session ${N}."
               fi

@@ -1371,6 +1371,8 @@ const FRESH_SESSION_DIR = process.env.FRESH_SESSION_DIR || path.join(__dirname, 
 const FRESH_SAVE_EVERY_MS = readIntEnv("FRESH_SAVE_EVERY_MS", 10 * 60_000, 60_000, 6 * 3_600_000);
 const FRESH_SECRET_MAX_BYTES = 45_000; // GitHub secrets are limited to 48 KB
 const freshSavedAt = {};
+// When the GitHub watchdog last copied renewed cookies into the secret (see POST /cookie-pushed).
+const cookiePushedAt = {};
 
 async function saveFreshSession(slot, context) {
   try {
@@ -1430,6 +1432,9 @@ async function saveFreshSession(slot, context) {
 //   WARM_STRONG_TTL_MS     same after the photo is chosen (default 6 min)
 // --------------------------------------------------
 const WARM_DEMAND = process.env.WARM_DEMAND === "1";
+// STICKY_SESSIONS=1: work with the lowest healthy session first. Jobs fill session 1 up to its job
+// limit before session 2 is used, and demand-mode ready pages are opened on that same session only.
+const STICKY_SESSIONS = process.env.STICKY_SESSIONS === "1";
 const WARM_MAX_PAGES = readIntEnv("WARM_MAX_PAGES", 8, 0, 40);
 const WARM_PER_SESSION_MAX = readIntEnv("WARM_PER_SESSION_MAX", 2, 1, 10);
 const WARM_WEAK_TTL_MS = readIntEnv("WARM_WEAK_TTL_MS", 180_000, 30_000, 3_600_000);
@@ -1469,19 +1474,36 @@ function recordWarmHint(key, strong) {
 function recomputeWarmTargets() {
   pruneWarmHints();
 
-  const usable = listSessions().filter((s) => isSessionUsable(s) && !isCooling(s.slot));
-  const wanted = Math.min(WARM_MAX_PAGES, warmHints.size, usable.length * WARM_PER_SESSION_MAX);
+  const usable = listSessions()
+    .filter((s) => isSessionUsable(s) && !isCooling(s.slot))
+    .sort((a, b) => a.slot - b.slot);
+  // Sticky: one session may hold as many ready pages as it can run jobs at once.
+  const perSessionCap = STICKY_SESSIONS ? perSessionLimit() : WARM_PER_SESSION_MAX;
+  const wanted = Math.min(WARM_MAX_PAGES, warmHints.size, usable.length * perSessionCap);
   const targets = {};
 
   usable.forEach((s) => {
     targets[s.slot] = 0;
   });
 
-  // Round robin over the sessions, starting after the one that got the last page,
-  // so every account gets its share and no single account is loaded first.
-  for (let i = 0; i < wanted; i += 1) {
-    const s = usable[i % usable.length];
-    targets[s.slot] += 1;
+  if (STICKY_SESSIONS) {
+    // Fill the lowest healthy session first; the next session gets pages only when the
+    // first one is full. Sessions that are not needed are not opened at all.
+    let left = wanted;
+
+    for (const s of usable) {
+      if (left <= 0) break;
+      const n = Math.min(left, perSessionCap);
+      targets[s.slot] = n;
+      left -= n;
+    }
+  } else {
+    // Round robin over the sessions, starting after the one that got the last page,
+    // so every account gets its share and no single account is loaded first.
+    for (let i = 0; i < wanted; i += 1) {
+      const s = usable[i % usable.length];
+      targets[s.slot] += 1;
+    }
   }
 
   warmDemandTargets = targets;
@@ -2317,13 +2339,16 @@ async function claimSession(signal, triedSlots, forceSlot = 0) {
     const healthy = forceSlot ? candidates : candidates.filter((s) => !isCooling(s.slot));
     const pool = healthy.length > 0 ? healthy : candidates;
 
-    // Least busy session first, so jobs spread evenly over all accounts.
+    // STICKY_SESSIONS=1: fill the lowest slot first (session 1 takes up to its job limit,
+    // only then session 2, and so on). Accounts that are not needed are never touched.
+    // Otherwise: least busy session first, so jobs spread evenly over all accounts.
     // On a tie, the one used longest ago goes first (round robin, so a session that was resting is tried again).
     const limit = perSessionLimit();
     const free = pool
       .filter((s) => (sessionActive[s.slot] || 0) < limit)
       .sort(
         (a, b) =>
+          (STICKY_SESSIONS ? a.slot - b.slot : 0) ||
           (sessionActive[a.slot] || 0) - (sessionActive[b.slot] || 0) ||
           hasIdleWarmPage(b.slot) - hasIdleWarmPage(a.slot) ||
           (sessionLastClaimAt[a.slot] || 0) - (sessionLastClaimAt[b.slot] || 0) ||
@@ -2687,6 +2712,25 @@ app.post("/notify", (req, res) => {
   return res.json({ success: true });
 });
 
+// Only the GitHub watchdog calls this, after it copied renewed cookies of one session into
+// its GitHub secret. Same random per-run token as /notify. It only records the time for the admin panel.
+app.post("/cookie-pushed", (req, res) => {
+  const token = process.env.NOTIFY_TOKEN || "";
+
+  if (!token || req.get("x-notify-token") !== token) {
+    return res.status(404).end();
+  }
+
+  const slot = Number(req.body && req.body.slot);
+
+  if (!Number.isInteger(slot) || slot < 1 || slot > 99) {
+    return res.status(400).json({ success: false });
+  }
+
+  cookiePushedAt[slot] = Date.now();
+  return res.json({ success: true });
+});
+
 function healthPayload() {
   return {
     success: true,
@@ -2722,6 +2766,8 @@ function healthPayload() {
         lastAdvice: why.advice,
         restingUntil: isCooling(x.slot) ? new Date(h.coolUntil).toISOString() : null,
         usableAgainAt: x.usableAt > Date.now() ? new Date(x.usableAt).toISOString() : null,
+        cookieSavedAt: freshSavedAt[x.slot] ? new Date(freshSavedAt[x.slot]).toISOString() : null,
+        cookiePushedAt: cookiePushedAt[x.slot] ? new Date(cookiePushedAt[x.slot]).toISOString() : null,
       };
     }),
   };
