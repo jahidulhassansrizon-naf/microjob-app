@@ -2637,7 +2637,8 @@ async function runGeminiGenerationInner(options) {
 // --------------------------------------------------
 // TEST ONLY: Duck.ai instead of Gemini (start the bot with DUCKAI_TEST=1)
 //
-// Only the one-image route /edit-image uses it (AI Editor, Bulk Photo Edit). No login is needed.
+// Used by /edit-image (one photo) and by /edit-image-dual + the template route (2-3 photos, uploaded as
+// separate files in order, never stitched). No login is needed.
 // Each job opens its own browser window, uploads the photo, types the prompt, presses Ask,
 // waits for the new picture and downloads it with Duck.ai's own download button.
 // It never tries to get past a check page: if Duck.ai shows a limit or a check, the job fails.
@@ -2980,8 +2981,14 @@ async function trackDuckAiJob(work) {
   }
 }
 
-async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
+// imagePath is the first photo. extraImagePaths are more photos (the dual / template routes).
+// They are uploaded as SEPARATE files, in order, never stitched into one picture, exactly like
+// the Gemini uploader does it.
+async function generateWithDuckAi(imagePath, prompt, outputDir, signal, extraImagePaths = []) {
   throwIfAborted(signal);
+
+  const allImagePaths = [imagePath, ...extraImagePaths.filter(Boolean)];
+  const multi = allImagePaths.length > 1;
 
   const started = Date.now();
   let session = await takeDuckWarmSession();
@@ -3012,31 +3019,57 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
 
     const { page, fileInput } = session;
 
-    // Pixel size of our own photo, so it is never mistaken for the generated picture.
-    const ext = path.extname(imagePath).toLowerCase();
-    const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
-    const b64 = (await fs.readFile(imagePath)).toString("base64");
-    const up = await page.evaluate(
-      async ({ m, d }) => {
-        const img = new Image();
-        img.src = `data:${m};base64,${d}`;
-        await img.decode();
-        return { w: img.naturalWidth, h: img.naturalHeight };
-      },
-      { m: mime, d: b64 },
-    );
+    // Pixel size of EVERY photo we upload, so none of them is mistaken for the generated picture.
+    const uploadedSizes = [];
+
+    for (const p of allImagePaths) {
+      const ext = path.extname(p).toLowerCase();
+      const mime = ext === ".png" ? "image/png" : ext === ".webp" ? "image/webp" : "image/jpeg";
+      const b64 = (await fs.readFile(p)).toString("base64");
+      const size = await page.evaluate(
+        async ({ m, d }) => {
+          const img = new Image();
+          img.src = `data:${m};base64,${d}`;
+          await img.decode();
+          return { w: img.naturalWidth, h: img.naturalHeight };
+        },
+        { m: mime, d: b64 },
+      );
+      uploadedSizes.push(size);
+    }
 
     const countResults = () =>
       page.evaluate(
-        ({ uw, uh }) =>
+        (sizes) =>
           [...document.querySelectorAll("img")].filter(
             (i) =>
               i.naturalWidth >= 400 &&
               i.naturalHeight >= 400 &&
-              !(i.naturalWidth === uw && i.naturalHeight === uh),
+              !sizes.some((s) => s.w === i.naturalWidth && s.h === i.naturalHeight),
           ).length,
-        { uw: up.w, uh: up.h },
+        uploadedSizes,
       );
+
+    // Attaches files to Duck.ai. First all at once; if the upload control takes one file at a
+    // time, one after the other (in the same order, so photo 1 stays photo 1).
+    const attachFiles = async (paths) => {
+      if (paths.length === 1) {
+        await fileInput.setInputFiles(paths[0]);
+        await sleep(2500);
+        return;
+      }
+
+      try {
+        await fileInput.setInputFiles(paths);
+        await sleep(2500 + 1500 * paths.length);
+      } catch {
+        for (const filePath of paths) {
+          await fileInput.setInputFiles(filePath);
+          await sleep(3000);
+          throwIfAborted(signal);
+        }
+      }
+    };
 
     const box = page.locator("textarea, [contenteditable=true]").first();
     const askBtn = page
@@ -3111,19 +3144,12 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
 
     // The photo (and the prompt PDF, if there is one) are attached.
     if (promptPdf) {
-      try {
-        await fileInput.setInputFiles([imagePath, promptPdf]);
-      } catch {
-        // The upload control takes one file at a time: add them one after the other.
-        await fileInput.setInputFiles(imagePath);
-        await sleep(2500);
-        await fileInput.setInputFiles(promptPdf);
-      }
-      console.log("[duckai] photo + prompt PDF attached.");
-      await sleep(4000);
+      await attachFiles([...allImagePaths, promptPdf]);
+      console.log(`[duckai] ${allImagePaths.length} photo(s) + prompt PDF attached.`);
+      await sleep(2000);
     } else {
-      await fileInput.setInputFiles(imagePath);
-      await sleep(2500);
+      await attachFiles(allImagePaths);
+      console.log(`[duckai] ${allImagePaths.length} photo(s) attached as separate files.`);
     }
 
     const before = await countResults();
@@ -3131,13 +3157,15 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
 
     if (promptPdf) {
       await sendText(
-        "I attached my photo and a PDF file (prompt-instructions.pdf). The PDF contains my COMPLETE and detailed instructions. Read the ENTIRE PDF from the first line to the last and follow EVERY instruction in it exactly. Now edit the attached photo according to those instructions and generate the final image.",
+        multi
+          ? `I attached ${allImagePaths.length} separate photos (in order: photo 1, photo 2${allImagePaths.length > 2 ? ", photo 3" : ""}) and a PDF file (prompt-instructions.pdf). The PDF contains my COMPLETE and detailed instructions. Read the ENTIRE PDF from the first line to the last and follow EVERY instruction in it exactly. Now use the attached photos according to those instructions and generate the final image.`
+          : "I attached my photo and a PDF file (prompt-instructions.pdf). The PDF contains my COMPLETE and detailed instructions. Read the ENTIRE PDF from the first line to the last and follow EVERY instruction in it exactly. Now edit the attached photo according to those instructions and generate the final image.",
       );
     } else {
       await sendText(
         parts.length === 1
           ? lastPart
-          : `[PART ${parts.length} OF ${parts.length} - FINAL] ${lastPart}\n\nNow edit the attached photo and generate the image, following ALL parts of my instructions (part 1 to part ${parts.length}) together.`,
+          : `[PART ${parts.length} OF ${parts.length} - FINAL] ${lastPart}\n\nNow ${multi ? "use the attached photos" : "edit the attached photo"} and generate the image, following ALL parts of my instructions (part 1 to part ${parts.length}) together.`,
       );
     }
 
@@ -3241,6 +3269,14 @@ function generateTemplateWithGemini(
   const imagePaths = secondUserImagePath
     ? [templateImagePath, userImagePath, secondUserImagePath]
     : [templateImagePath, userImagePath];
+
+  // With DUCKAI_TEST=1 the two/three-image routes (/edit-image-dual and the template route) also
+  // use Duck.ai. The photos are uploaded as separate files in the same order Gemini gets them.
+  if (DUCKAI_TEST) {
+    return trackDuckAiJob(() =>
+      generateWithDuckAi(imagePaths[0], prompt, outputDir, signal, imagePaths.slice(1)),
+    );
+  }
 
   return runGeminiGeneration({
     imagePaths,
