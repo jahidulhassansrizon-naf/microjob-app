@@ -46,6 +46,21 @@ type BotStatus = {
   problems?: Problem[];
 };
 
+// UI-only label: the real AI provider name is never shown in the admin panel.
+const AI_LABEL = "সৃজন এআই";
+function maskAi<T>(value: T): T {
+  if (typeof value === "string") {
+    return value.replace(/duck\s*duck\s*go(\.com)?\s*(ai|chat)?|duck\.ai|duck\s*ai|duckai|duck/gi, AI_LABEL) as unknown as T;
+  }
+  if (Array.isArray(value)) return value.map((v) => maskAi(v)) as unknown as T;
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) out[k] = maskAi(v);
+    return out as T;
+  }
+  return value;
+}
+
 // Bangladesh time (Asia/Dhaka), 12-hour with AM/PM, e.g. "11:50:01 PM".
 function dhaka(iso?: string): string {
   if (!iso) return "";
@@ -187,7 +202,7 @@ export default function BotStatusPanel() {
       const response = await fetch("/api/admin/bot-status", { credentials: "include", cache: "no-store", headers: getClientAuthHeaders() });
       const body = await response.json().catch(() => ({}));
       if (!response.ok || body?.success !== true) throw new Error(body?.message || "Bot status could not be loaded.");
-      setData(body as BotStatus);
+      setData(maskAi(body) as BotStatus);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bot status could not be loaded.");
     } finally {
@@ -229,7 +244,7 @@ export default function BotStatusPanel() {
 
   let title = "সব ঠিক আছে";
   let sub = `${sessions.length}টা সেশনের সবকটা ঠিক আছে। ছবি বানানো যাচ্ছে।`;
-  if (duck) sub = "Duck.ai দিয়ে ছবি বানানো যাচ্ছে।";
+  if (duck) sub = "সৃজন এআই দিয়ে ছবি বানানো যাচ্ছে।";
   if (offline) {
     title = "বট এখন বন্ধ আছে";
     sub = data?.reason || "বট উত্তর দিচ্ছে না। নতুন করে চালু হতে পারে, ১-২ মিনিট পরে আবার Refresh চাপুন।";
@@ -241,7 +256,7 @@ export default function BotStatusPanel() {
     sub = duck ? "নিচে কারণ আর করণীয় দেওয়া আছে।" : `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ আর করণীয় দেওয়া আছে।`;
   } else if (tone === "warn") {
     title = "বট চলছে, তবে কিছু দেখার আছে";
-    sub = duck ? "Duck.ai দিয়ে ছবি বানানো হচ্ছে, তবে নিচে কিছু দেখার আছে।" : `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ দেওয়া আছে।`;
+    sub = duck ? "সৃজন এআই দিয়ে ছবি বানানো হচ্ছে, তবে নিচে কিছু দেখার আছে।" : `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ দেওয়া আছে।`;
   }
   const t = TONE[tone];
 
@@ -267,7 +282,7 @@ export default function BotStatusPanel() {
               </span>
             )}
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#CDBFA3]">{duck ? "Image bot (Duck.ai)" : "Image bot (Gemini)"}</p>
+              <p className="text-sm font-semibold text-[#CDBFA3]">{duck ? "Image bot (সৃজন এআই)" : "Image bot (Gemini)"}</p>
               <h2 className="text-2xl font-bold leading-snug sm:text-3xl">{data ? title : "বটের অবস্থা দেখুন"}</h2>
               <p className="mt-1 max-w-xl text-base leading-relaxed text-[#E6DAB9]">
                 {data ? sub : "বাটন চাপলে বট চালু আছে কিনা, সেশনগুলো ঠিক আছে কিনা আর কতগুলো ছবি বানানো হয়েছে, সব এক জায়গায় দেখা যাবে।"}
@@ -291,7 +306,7 @@ export default function BotStatusPanel() {
           <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 lg:grid-cols-4">
             {[
               duck
-                ? { k: "Duck.ai পেজ রেডি", v: String(duck.readyPages) }
+                ? { k: "সৃজন এআই পেজ রেডি", v: String(duck.readyPages) }
                 : { k: "সেশন ঠিক আছে", v: `${upSessions}/${sessions.length}` },
               { k: "ছবি বানানো হয়েছে", v: String(s.jobsOk) },
               { k: "সফলতার হার", v: `${rate}%` },
@@ -352,7 +367,7 @@ export default function BotStatusPanel() {
           {duck && (
             <section className={`${PANEL} p-5 sm:p-7`}>
               <SectionTitle
-                title="Duck.ai পেজ আর কাজ"
+                title="সৃজন এআই পেজ আর কাজ"
                 hint={`ছবি বানাতে সর্বোচ্চ ${duck.waitSeconds} সেকেন্ড অপেক্ষা করে। ফটো বাছলে আগে থেকে পেজ খোলা হয়।`}
               />
               <p className={`mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${TONE[duck.limitHits > 0 || (duckDone >= 3 && duckRate < 80) ? "warn" : "ok"].soft}`}>
@@ -364,7 +379,7 @@ export default function BotStatusPanel() {
                 <Fact label="এখন রেডি পেজ" value={duck.readyPages} hint={`সর্বোচ্চ ${duck.maxPages}টা একসাথে খোলা থাকে`} />
                 <Fact label="খোলা হচ্ছে" value={duck.openingPages} hint="একটা একটা করে খোলা হয়" />
                 <Fact label="রেডি পেজ থেকে শুরু" value={duck.pagesUsedInAdvance} hint={duck.jobs > 0 ? `মোট ${duck.jobs}টা ছবির মধ্যে` : "এখনো কোনো ছবি আসেনি"} />
-                <Fact label="Duck.ai লিমিট" value={duck.limitHits} hint="এই রানে কতবার লিমিট ধরেছে" tone={duck.limitHits > 0 ? "warn" : undefined} />
+                <Fact label="সৃজন এআই লিমিট" value={duck.limitHits} hint="এই রানে কতবার লিমিট ধরেছে" tone={duck.limitHits > 0 ? "warn" : undefined} />
               </div>
               {duck.pages.length > 0 && (
                 <ul className="mt-4 space-y-2">
