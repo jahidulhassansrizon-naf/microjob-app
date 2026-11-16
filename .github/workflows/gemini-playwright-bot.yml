@@ -65,7 +65,7 @@ jobs:
       # Machine limit: about 20 headless Chromium pages fit on the 4 vCPU / 16 GB
       # public runner. The jobs per Google account are worked out by the bot from
       # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).
-      MAX_CONCURRENT_GENERATIONS: "5"
+      MAX_CONCURRENT_GENERATIONS: "3"
       MAX_JOB_RETRIES: "2"
       # Warm pages: at the start of every run the bot opens Gemini pages for all sessions,
       # one session after the other, and keeps them open. Set PREWARM to "0" to go back
