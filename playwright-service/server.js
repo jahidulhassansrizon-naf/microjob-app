@@ -3386,6 +3386,17 @@ function healthPayload() {
           openingPages: [...duckWarm.values()].filter((e) => !e.session && !e.closed).length,
           pagesUsedInAdvance: duckStats.usedWarmPage,
           lastError: duckStats.lastError,
+          lastErrorAt: duckStats.lastErrorAt ? new Date(duckStats.lastErrorAt).toISOString() : "",
+          maxPages: DUCKAI_WARM_MAX,
+          pageTtlSeconds: Math.round(DUCKAI_WARM_TTL_MS / 1000),
+          waitSeconds: Math.round(DUCKAI_WAIT_MS / 1000),
+          // One row per ready/opening page: how long until an unused page is closed.
+          pages: [...duckWarm.values()]
+            .filter((e) => !e.closed)
+            .map((e) => ({
+              ready: Boolean(e.session),
+              closesInSeconds: Math.max(0, Math.round((e.expiresAt - Date.now()) / 1000)),
+            })),
         }
       : { enabled: false },
     warmPool: warmStatus(),

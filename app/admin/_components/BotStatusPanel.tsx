@@ -23,6 +23,12 @@ type BotStatus = {
     hits: number; misses: number; replaced: number;
     sessions: Array<{ slot: number; ready: number; open: number; refreshing: number; lastError: string; retryAt: string }>;
   } | null;
+  duck?: {
+    enabled: boolean; jobs: number; ok: number; failed: number; limitHits: number; readyPages: number;
+    openingPages: number; pagesUsedInAdvance: number; lastError: string; lastErrorAt: string;
+    maxPages: number; pageTtlSeconds: number; waitSeconds: number;
+    pages: Array<{ ready: boolean; closesInSeconds: number }>;
+  } | null;
   stats?: {
     jobs: number; jobsOk: number; jobsFailed: number; retries: number; attemptsRefused: number;
     attemptsTimedOut: number; limitHits: number; loggedOutSessions: number; otherErrors: number;
@@ -208,14 +214,22 @@ export default function BotStatusPanel() {
   const warmHitPct = warmJobs > 0 && warm ? Math.round((warm.hits / warmJobs) * 100) : 0;
   const warmTone: Tone = !warm || !warmOn ? "warn" : !warm.startupDone ? "warn" : warmWanted > 0 && warmReady < warmWanted ? "warn" : "ok";
 
+  // Duck.ai mode: the bot makes pictures with Duck.ai, so the Gemini sessions and pages are not shown.
+  const duck = data?.duck && data.duck.enabled ? data.duck : null;
+  const duckDone = duck ? duck.ok + duck.failed : 0;
+  const duckRate = duckDone ? Math.round((duck!.ok / duckDone) * 100) : 100;
+  const duckPages = duck ? duck.readyPages + duck.openingPages : 0;
+  const warnCount = problems.filter((p) => p.level === "warn").length;
+
   const offline = !!data && !data.online;
-  const allDown = sessions.length > 0 && upSessions === 0;
+  const allDown = !duck && sessions.length > 0 && upSessions === 0;
   let tone: Tone = "ok";
   if (offline || allDown || errorsCount > 0) tone = "bad";
-  else if (upSessions < sessions.length || problems.length > 0) tone = "warn";
+  else if (duck ? warnCount > 0 : upSessions < sessions.length || problems.length > 0) tone = "warn";
 
   let title = "সব ঠিক আছে";
   let sub = `${sessions.length}টা সেশনের সবকটা ঠিক আছে। ছবি বানানো যাচ্ছে।`;
+  if (duck) sub = "Duck.ai দিয়ে ছবি বানানো যাচ্ছে।";
   if (offline) {
     title = "বট এখন বন্ধ আছে";
     sub = data?.reason || "বট উত্তর দিচ্ছে না। নতুন করে চালু হতে পারে, ১-২ মিনিট পরে আবার Refresh চাপুন।";
@@ -224,10 +238,10 @@ export default function BotStatusPanel() {
     sub = "নিচে প্রতিটা সেশনের কারণ দেওয়া আছে।";
   } else if (tone === "bad") {
     title = "একটা বড় সমস্যা আছে";
-    sub = `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ আর করণীয় দেওয়া আছে।`;
+    sub = duck ? "নিচে কারণ আর করণীয় দেওয়া আছে।" : `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ আর করণীয় দেওয়া আছে।`;
   } else if (tone === "warn") {
     title = "বট চলছে, তবে কিছু দেখার আছে";
-    sub = `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ দেওয়া আছে।`;
+    sub = duck ? "Duck.ai দিয়ে ছবি বানানো হচ্ছে, তবে নিচে কিছু দেখার আছে।" : `${upSessions}/${sessions.length} সেশন কাজ করছে। নিচে কারণ দেওয়া আছে।`;
   }
   const t = TONE[tone];
 
@@ -253,7 +267,7 @@ export default function BotStatusPanel() {
               </span>
             )}
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#CDBFA3]">Image bot (Gemini)</p>
+              <p className="text-sm font-semibold text-[#CDBFA3]">{duck ? "Image bot (Duck.ai)" : "Image bot (Gemini)"}</p>
               <h2 className="text-2xl font-bold leading-snug sm:text-3xl">{data ? title : "বটের অবস্থা দেখুন"}</h2>
               <p className="mt-1 max-w-xl text-base leading-relaxed text-[#E6DAB9]">
                 {data ? sub : "বাটন চাপলে বট চালু আছে কিনা, সেশনগুলো ঠিক আছে কিনা আর কতগুলো ছবি বানানো হয়েছে, সব এক জায়গায় দেখা যাবে।"}
@@ -276,7 +290,9 @@ export default function BotStatusPanel() {
         {data?.online && s && (
           <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 lg:grid-cols-4">
             {[
-              { k: "সেশন ঠিক আছে", v: `${upSessions}/${sessions.length}` },
+              duck
+                ? { k: "Duck.ai পেজ রেডি", v: String(duck.readyPages) }
+                : { k: "সেশন ঠিক আছে", v: `${upSessions}/${sessions.length}` },
               { k: "ছবি বানানো হয়েছে", v: String(s.jobsOk) },
               { k: "সফলতার হার", v: `${rate}%` },
               { k: "গড় সময়", v: s.jobsOk > 0 ? `${s.avgSeconds} সেকেন্ড` : "–" },
@@ -325,15 +341,52 @@ export default function BotStatusPanel() {
               </div>
             </div>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Fact label="এখন ছবি বানাচ্ছে" value={data.generation?.active ?? 0} hint={`সর্বোচ্চ ${data.generation?.currentCapacity ?? 0}টা একসাথে`} />
+              <Fact label="এখন ছবি বানাচ্ছে" value={data.generation?.active ?? 0} hint={`সর্বোচ্চ ${(duck ? data.generation?.maxConcurrent : data.generation?.currentCapacity) ?? 0}টা একসাথে`} />
               <Fact label="লাইনে অপেক্ষায়" value={data.generation?.waiting ?? 0} hint={`আজকের রানে সর্বোচ্চ ${s.peakWaiting}`} />
               <Fact label="ফেল হয়েছে" value={s.jobsFailed} hint={`মোট ${s.jobs}টা অনুরোধ`} tone={s.jobsFailed > 0 ? "warn" : undefined} />
               <Fact label="অটো রিট্রাই" value={s.retries} hint={`রিফিউজ ${s.attemptsRefused}, টাইমআউট ${s.attemptsTimedOut}`} />
             </div>
           </section>
 
-          {/* Ready pages */}
-          {warm && (
+          {/* Duck.ai (shown instead of the Gemini sections while the bot runs in Duck.ai mode) */}
+          {duck && (
+            <section className={`${PANEL} p-5 sm:p-7`}>
+              <SectionTitle
+                title="Duck.ai পেজ আর কাজ"
+                hint={`ছবি বানাতে সর্বোচ্চ ${duck.waitSeconds} সেকেন্ড অপেক্ষা করে। ফটো বাছলে আগে থেকে পেজ খোলা হয়।`}
+              />
+              <p className={`mt-4 rounded-xl px-4 py-3 text-sm font-semibold ${TONE[duck.limitHits > 0 || (duckDone >= 3 && duckRate < 80) ? "warn" : "ok"].soft}`}>
+                {duckPages > 0
+                  ? `${duck.readyPages}টা পেজ রেডি${duck.openingPages > 0 ? `, ${duck.openingPages}টা খোলা হচ্ছে` : ""}। ছবি এলে সরাসরি রেডি পেজেই কাজ শুরু হবে।`
+                  : "এখন কোনো পেজ আগে থেকে খোলা নেই। কেউ AI editor-এ ফটো বাছলে একটা পেজ খোলা হবে, না হলে ছবির সময় নিজে খুলে নেবে।"}
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Fact label="এখন রেডি পেজ" value={duck.readyPages} hint={`সর্বোচ্চ ${duck.maxPages}টা একসাথে খোলা থাকে`} />
+                <Fact label="খোলা হচ্ছে" value={duck.openingPages} hint="একটা একটা করে খোলা হয়" />
+                <Fact label="রেডি পেজ থেকে শুরু" value={duck.pagesUsedInAdvance} hint={duck.jobs > 0 ? `মোট ${duck.jobs}টা ছবির মধ্যে` : "এখনো কোনো ছবি আসেনি"} />
+                <Fact label="Duck.ai লিমিট" value={duck.limitHits} hint="এই রানে কতবার লিমিট ধরেছে" tone={duck.limitHits > 0 ? "warn" : undefined} />
+              </div>
+              {duck.pages.length > 0 && (
+                <ul className="mt-4 space-y-2">
+                  {duck.pages.map((pg, i) => (
+                    <li key={i} className="flex flex-wrap items-center gap-x-3 rounded-xl bg-[#FBF5E4] px-4 py-3 text-sm text-[#3B2F1E]">
+                      <span className="font-bold text-[#2B2116]">পেজ {i + 1}</span>
+                      <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${pg.ready ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-900"}`}>{pg.ready ? "রেডি" : "খোলা হচ্ছে"}</span>
+                      <span className="ml-auto text-[#6B5A40]">কেউ না নিলে {bnDuration(pg.closesInSeconds)} পরে বন্ধ হবে</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {duck.lastError && (
+                <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-800">
+                  <span className="font-bold">শেষ সমস্যা{duck.lastErrorAt ? ` (${dhaka(duck.lastErrorAt)})` : ""}:</span> {duck.lastError}
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* Ready pages (Gemini) */}
+          {!duck && warm && (
             <section className={`${PANEL} p-5 sm:p-7`}>
               <SectionTitle
                 title="আগে থেকে খোলা Gemini পেজ"
@@ -367,7 +420,8 @@ export default function BotStatusPanel() {
             </section>
           )}
 
-          {/* Sessions */}
+          {/* Sessions (Gemini only) */}
+          {!duck && (
           <section className={`${PANEL} p-5 sm:p-7`}>
             <SectionTitle title="Google সেশন" hint={`${upSessions}/${sessions.length} ঠিক আছে`} />
             <ul className="mt-5 grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
@@ -426,11 +480,12 @@ export default function BotStatusPanel() {
               “বন্ধ” মানে দৈনিক লিমিট শেষ অথবা Google লগ-আউট হয়ে গেছে। “বিশ্রামে” মানে পরপর কয়েকবার ফেল করায় বট কিছুক্ষণ ওই সেশন বাদ দিয়ে পরে আবার চেষ্টা করবে।
             </p>
           </section>
+          )}
 
           {/* Latest images */}
           {data.detailed && (data.jobs ?? []).length > 0 && (
             <section className={`${PANEL} p-5 sm:p-7`}>
-              <SectionTitle title="সাম্প্রতিক ছবি" hint="সবচেয়ে নতুন আগে। একাধিক চেষ্টা মানে প্রথম সেশন ফেল করেছিল।" />
+              <SectionTitle title="সাম্প্রতিক ছবি" hint={duck ? "সবচেয়ে নতুন আগে।" : "সবচেয়ে নতুন আগে। একাধিক চেষ্টা মানে প্রথম সেশন ফেল করেছিল।"} />
               <ul className="mt-4 divide-y divide-[#EADFC4]">
                 {(data.jobs ?? []).slice().reverse().slice(0, 12).map((j, i) => (
                   <li key={`${j.at}-${i}`} className="flex flex-wrap items-center gap-x-4 gap-y-1.5 py-3">

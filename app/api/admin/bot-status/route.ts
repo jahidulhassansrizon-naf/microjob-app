@@ -69,6 +69,47 @@ type Warm = {
   sessions: Array<{ slot: number; ready: number; open: number; refreshing: number; lastError: string; retryAt: string }>;
 };
 
+// Duck.ai mode (the bot runs with DUCKAI_TEST=1): the pictures are made by Duck.ai, not Gemini.
+type Duck = {
+  enabled: boolean;
+  jobs: number;
+  ok: number;
+  failed: number;
+  limitHits: number;
+  readyPages: number;
+  openingPages: number;
+  pagesUsedInAdvance: number;
+  lastError: string;
+  lastErrorAt: string;
+  maxPages: number;
+  pageTtlSeconds: number;
+  waitSeconds: number;
+  pages: Array<{ ready: boolean; closesInSeconds: number }>;
+};
+
+function cleanDuck(value: any): Duck | null {
+  if (!value || typeof value !== "object" || value.enabled !== true) return null;
+  return {
+    enabled: true,
+    jobs: num(value.jobs),
+    ok: num(value.ok),
+    failed: num(value.failed),
+    limitHits: num(value.limitHits),
+    readyPages: num(value.readyPages),
+    openingPages: num(value.openingPages),
+    pagesUsedInAdvance: num(value.pagesUsedInAdvance),
+    lastError: text(value.lastError, 260),
+    lastErrorAt: text(value.lastErrorAt, 40),
+    maxPages: num(value.maxPages),
+    pageTtlSeconds: num(value.pageTtlSeconds),
+    waitSeconds: num(value.waitSeconds),
+    pages: (Array.isArray(value.pages) ? value.pages : []).slice(0, 20).map((p: any) => ({
+      ready: p?.ready === true,
+      closesInSeconds: num(p?.closesInSeconds),
+    })),
+  };
+}
+
 function cleanWarm(value: any): Warm | null {
   if (!value || typeof value !== "object") return null;
   const sessions = value.sessions && typeof value.sessions === "object" ? value.sessions : {};
@@ -106,8 +147,56 @@ function dhakaTime(iso: string): string {
 }
 
 // Turns the raw numbers into a short list: what is wrong, why, and what to do.
-function buildProblems(report: any, runs: Run[] | null, detailed: boolean, warm: Warm | null): Problem[] {
+function buildProblems(report: any, runs: Run[] | null, detailed: boolean, warm: Warm | null, duck: Duck | null = null): Problem[] {
   const out: Problem[] = [];
+
+  // Duck.ai mode: the Google/Gemini sessions are not used, so their problems are left out.
+  if (duck) {
+    const done = duck.ok + duck.failed;
+    if (duck.limitHits > 0) {
+      out.push({
+        level: "warn",
+        title: `Duck.ai usage limit reached ${duck.limitHits} time(s) in this run`,
+        cause: "Every visitor shares this one bot, so Duck.ai sees one IP and can stop it for a while.",
+        advice: "Wait a little. If it keeps happening, the next run (new IP) usually fixes it.",
+      });
+    }
+    if (done >= 3 && duck.failed / done >= 0.2) {
+      out.push({
+        level: "warn",
+        title: `${duck.failed} of ${done} Duck.ai images failed in this run`,
+        cause: duck.lastError || "Duck.ai did not make the picture.",
+        advice: "See the failed images and the [duckai] lines in the bot log below.",
+      });
+    } else if (duck.lastError && duck.failed > 0 && duck.lastErrorAt && Date.now() - new Date(duck.lastErrorAt).getTime() < 10 * 60_000) {
+      out.push({
+        level: "info",
+        title: "Last Duck.ai error (within 10 minutes)",
+        cause: duck.lastError,
+        advice: "The visitor can press Generate again. See the [duckai] lines in the bot log if it repeats.",
+      });
+    }
+    if (runs && runs.length > 0) {
+      const running = runs.find((r) => r.status === "in_progress" || r.status === "queued");
+      if (!running) {
+        out.push({
+          level: "error",
+          title: "No bot run is in progress on GitHub",
+          cause: "The last run ended and no new run started yet.",
+          advice: "The 30-minute schedule should start one. If not, open GitHub Actions and press Run workflow.",
+        });
+      }
+    }
+    if (!detailed) {
+      out.push({
+        level: "info",
+        title: "Detailed information is switched off",
+        cause: "The bot has no BOT_ALERT_KEY (or the website does not), so jobs, events and the bot log are hidden.",
+        advice: "Set the same BOT_ALERT_KEY on Vercel and as a GitHub secret, update the bot, restart it.",
+      });
+    }
+    return out;
+  }
 
   for (const s of report.sessions as any[]) {
     if (s.usable && s.healthy) continue;
@@ -312,6 +401,7 @@ export async function GET(request: Request) {
 
   const runs = await runsPromise;
   const warm = cleanWarm(data.warmPool);
+  const duck = cleanDuck(data.duckai);
 
   return NextResponse.json(
     {
@@ -331,6 +421,7 @@ export async function GET(request: Request) {
       perSessionConcurrency: num(data.perSessionConcurrency),
       maxJobRetries: num(data.maxJobRetries),
       warm,
+      duck,
       ...report,
       recentErrors: (Array.isArray(data.recentErrors) ? data.recentErrors : []).slice(-8).map((e: any) => ({
         at: text(e?.at, 40),
@@ -362,7 +453,7 @@ export async function GET(request: Request) {
         text: text(l?.text, 300),
       })),
       runs,
-      problems: buildProblems(report, runs, detailed, warm),
+      problems: buildProblems(report, runs, detailed, warm, duck),
     },
     { headers: NO_STORE },
   );
