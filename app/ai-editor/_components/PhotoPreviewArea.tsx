@@ -637,6 +637,10 @@ export default function PhotoPreviewArea({
                     {rightImage && (<img src={rightImage} alt="Right person" className="h-full w-full object-contain"/>)}
                   </div>
                 </div>)}
+
+              {dualResultImage && !isGenerating && (<button type="button" onClick={() => setDualResultImage?.(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#3B2F1E]/80 p-1.5 text-white transition hover:bg-red-600" aria-label={t("Remove current photo")}>
+                  <X size={14}/>
+                </button>)}
             </div>
 
             <GateOverlay active={isGenerating} image={dualResultImage} background={currentBgColorValue} splitImages={dualResultImage ? null : [leftImage, rightImage]}/>
