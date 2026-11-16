@@ -40,6 +40,27 @@ const logBuffer = [];
 // Plain-words explanation of a failure message: what it most likely means and what to do.
 function explainFailure(message) {
   const m = String(message || "");
+  if (/^Duck\.ai/i.test(m)) {
+    if (/limit/i.test(m)) {
+      return {
+        cause: "Duck.ai's usage limit is reached (every visitor shares this one bot, so one IP).",
+        advice: "Wait a while. Visitors were asked to try again later.",
+      };
+    }
+    if (/no picture appeared/i.test(m)) {
+      return {
+        cause: "Duck.ai did not make the picture in time (slow, or it answered with text only).",
+        advice: "The visitor can press Generate again. If it repeats, look at the [duckai] lines in the bot log.",
+      };
+    }
+    if (/upload control/i.test(m)) {
+      return {
+        cause: "The Duck.ai page did not show its upload button (the page changed, or a check page appeared).",
+        advice: "Look at the [duckai] lines in the bot log.",
+      };
+    }
+    return { cause: "A Duck.ai job failed.", advice: "See the [duckai] lines in the bot log." };
+  }
   if (/logged-out|signInVisible|accounts\.google\.com/i.test(m)) {
     return {
       cause: "The Google login of this session expired.",
@@ -2900,6 +2921,65 @@ setInterval(() => {
   }
 }, 15_000).unref();
 
+// Counts Duck.ai jobs in the same numbers the admin panel (Bot Status) already shows for Gemini:
+// jobs / ok / failed, average time, "latest images" and the events list.
+const duckStats = { jobs: 0, ok: 0, failed: 0, limitHits: 0, usedWarmPage: 0, lastError: "", lastErrorAt: 0 };
+
+async function trackDuckAiJob(work) {
+  stats.jobs += 1;
+  duckStats.jobs += 1;
+  const startedAt = Date.now();
+
+  const record = (ok, message) => {
+    jobLog.push({
+      at: new Date(startedAt).toISOString(),
+      ms: Date.now() - startedAt,
+      ok,
+      attempts: [],
+      error: message ? String(message).replace(/\s+/g, " ").slice(0, 200) : "",
+    });
+    while (jobLog.length > 100) jobLog.shift();
+  };
+
+  try {
+    const result = await work();
+    stats.jobsOk += 1;
+    stats.totalOkMs += Date.now() - startedAt;
+    duckStats.ok += 1;
+    record(true, "");
+    return result;
+  } catch (error) {
+    if (!(error && error.statusCode === 499)) {
+      const isLimit = Boolean(error && error.statusCode === 503 && error.retryAfter === 900);
+      const message = isLimit
+        ? "Duck.ai: usage limit reached."
+        : error && error.message
+          ? String(error.message).startsWith("Duck.ai")
+            ? error.message
+            : `Duck.ai: ${error.message}`
+          : "Duck.ai: unknown error";
+
+      stats.jobsFailed += 1;
+      duckStats.failed += 1;
+      duckStats.lastError = message;
+      duckStats.lastErrorAt = Date.now();
+      record(false, message);
+
+      if (isLimit) {
+        stats.limitHits += 1;
+        duckStats.limitHits += 1;
+        logEvent("session-limit", 0, message);
+      } else {
+        if (/no picture appeared/i.test(message)) stats.attemptsTimedOut += 1;
+        else stats.otherErrors += 1;
+        logEvent("job-failed", 0, message);
+      }
+    }
+
+    throw error;
+  }
+}
+
 async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
   throwIfAborted(signal);
 
@@ -2907,6 +2987,7 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
   let session = await takeDuckWarmSession();
 
   if (session) {
+    duckStats.usedWarmPage += 1;
     console.log("[duckai] using a page that was opened in advance.");
   } else {
     session = await openDuckAiSession(signal);
@@ -3130,7 +3211,7 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal) {
 function generateWithGemini(imagePath, prompt, outputDir, signal, forceSlot = 0) {
   // TEST ONLY: with DUCKAI_TEST=1 the one-image /edit-image route uses Duck.ai instead of Gemini.
   if (DUCKAI_TEST) {
-    return generateWithDuckAi(imagePath, prompt, outputDir, signal);
+    return trackDuckAiJob(() => generateWithDuckAi(imagePath, prompt, outputDir, signal));
   }
 
   return runGeminiGeneration({
@@ -3258,6 +3339,19 @@ function healthPayload() {
       maxQueue: MAX_QUEUE_LENGTH,
     },
     perSessionConcurrency: perSessionLimit(),
+    duckai: DUCKAI_TEST
+      ? {
+          enabled: true,
+          jobs: duckStats.jobs,
+          ok: duckStats.ok,
+          failed: duckStats.failed,
+          limitHits: duckStats.limitHits,
+          readyPages: [...duckWarm.values()].filter((e) => e.session).length,
+          openingPages: [...duckWarm.values()].filter((e) => !e.session && !e.closed).length,
+          pagesUsedInAdvance: duckStats.usedWarmPage,
+          lastError: duckStats.lastError,
+        }
+      : { enabled: false },
     warmPool: warmStatus(),
     maxJobRetries: MAX_JOB_RETRIES,
     stats,
