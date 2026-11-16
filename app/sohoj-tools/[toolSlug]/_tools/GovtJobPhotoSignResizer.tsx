@@ -25,20 +25,9 @@ import {
   ZoomIn,
   ZoomOut,
 } from "lucide-react";
-import { Hind_Siliguri, Plus_Jakarta_Sans } from "next/font/google";
 
-const jakartaFont = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-govt-jakarta",
-});
-const hindFont = Hind_Siliguri({
-  subsets: ["bengali", "latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  variable: "--font-govt-hind",
-});
+const jakartaFont = { variable: "", style: { fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif' } };
+const hindFont = { variable: "", style: { fontFamily: '"Hind Siliguri"' } };
 /* -------------------------------------------------------------------------- */
 /* Page-specific, hydration-safe English ↔ Bangla translation                */
 /* -------------------------------------------------------------------------- */

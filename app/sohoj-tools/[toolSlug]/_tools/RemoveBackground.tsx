@@ -3,7 +3,6 @@ import { T } from "@/app/sohoj-tools/_i18n";
 import { useI18n } from "@/components/i18n/I18nProvider";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Hind_Siliguri, Plus_Jakarta_Sans } from "next/font/google";
 import {
   Share2,
   ArrowLeft,
@@ -17,18 +16,8 @@ import {
   Scissors,
 } from "lucide-react";
 
-const jakartaFont = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-  variable: "--font-rb-jakarta",
-});
-const hindFont = Hind_Siliguri({
-  subsets: ["bengali", "latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  variable: "--font-rb-hind",
-});
+const jakartaFont = { variable: "", style: { fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif' } };
+const hindFont = { variable: "", style: { fontFamily: '"Hind Siliguri"' } };
 
 const REMOVE_BG_TEXT: Record<string, string> = {
   "Erase portrait, product, or logo backgrounds in your browser — download a transparent PNG.":
