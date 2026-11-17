@@ -45,11 +45,13 @@ const INTRO = [
   "Please edit the attached photo of my own paper document into a clean, flat, easy-to-read scan copy for my personal records, and give me the edited image back.",
   "",
   "This is only a cosmetic clean-up. Keep everything that is written or printed on the page exactly as it is: every letter, number, date, name, line, table box, photo, logo, signature and handwritten word must stay the same, with the same spelling (Bangla and English), the same place, the same size and the same order. Do not retype, rewrite, translate, correct, add, remove or move any text, and do not guess parts that are hard to read: leave them as they are. Keep Bangla letters, vowel signs and conjuncts in their exact shapes and keep Bangla and English digits as they are. Keep the whole page, the same proportions and the same reading direction.",
+  "",
+  "Work word by word. Copy every word exactly as it looks in the photo, letter by letter, and never replace a letter with a similar-looking one (for example Bangla ফ must not become ধ, ব must not become র, ত must not become ভ, ন must not become ল, and a digit must not become another digit). Sharpen text only by making the strokes that are already there clearer, never by redrawing or re-typing the letters. Before you give me the image, check every line, word and number of your result against the photo one by one, and wherever a letter or digit is different from the photo, correct it so that it matches the photo exactly.",
 ].join("\n");
 
 const TASKS: Record<AiPresetKey, string> = {
   clean:
-    "Clean and sharpen: remove shadows, uneven light, creases, fingerprints, dust and paper noise, make the blank paper evenly white, and make blurry or faint text crisp and dark without changing any letter shape. Keep stamps, signatures, handwriting, photos and logos as they are.",
+    "Clean and sharpen: remove shadows, uneven light, creases, fingerprints, dust and paper noise, make the blank paper evenly white, and make blurry or faint text crisp and dark by clearing up the existing strokes, without changing any letter shape. Keep stamps, signatures, handwriting, photos and logos as they are.",
   restore:
     "Restore old colours: this paper is old, faded or yellowed. Bring back the original ink and print colours (faded blue, black and red ink, coloured borders, headings and logos) and remove the yellow-brown tint and age stains from the paper. Do not add colour to parts that were black and white, and do not change any letter.",
   crop:
