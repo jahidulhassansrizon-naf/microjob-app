@@ -5973,6 +5973,8 @@ export default function DocumentScanner() {
         darker: aiChips.includes("darker"),
         brighter: aiChips.includes("brighter"),
         contrast: aiChips.includes("contrast"),
+        // "Clean & sharpen": strokes are sharpened from the person's own pixels, never by AI.
+        sharpen: aiPresets.includes("clean"),
       });
       const aiSrc = capCanvasSize(safeCanvas, MAX_ENHANCE_SIDE).toDataURL(
         "image/png",

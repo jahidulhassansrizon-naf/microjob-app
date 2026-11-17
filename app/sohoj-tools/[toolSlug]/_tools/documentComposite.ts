@@ -18,6 +18,8 @@ export type ComposeOptions = {
   darker?: boolean;
   brighter?: boolean;
   contrast?: boolean;
+  /** Sharpen the strokes of the person's own photo (no AI: no letter is ever redrawn). */
+  sharpen?: boolean;
 };
 
 type Plane = { data: Float32Array; w: number; h: number };
@@ -192,6 +194,19 @@ function sample(
   return (a * (1 - tx) + b * tx) * (1 - ty) + (d * (1 - tx) + e * tx) * ty;
 }
 
+
+/** Unsharp mask on the "ink" picture (values 0..1, 3 channels). Makes blurry strokes crisper
+ *  and darker using only the person's own pixels. */
+function sharpenInk(ink: Float32Array, w: number, h: number): void {
+  const plane: Plane = { data: ink, w, h };
+  const blurred = boxBlur(boxBlur(plane, 1), 1).data;
+  const amount = 1.6;
+  for (let i = 0; i < ink.length; i++) {
+    const v = ink[i] + amount * (ink[i] - blurred[i]);
+    ink[i] = v < 0 ? 0 : v > 1 ? 1 : v;
+  }
+}
+
 /**
  * Pure pixel version (also used by the tests).
  * `orig` and `ai` are RGBA arrays of the SAME size w x h.
@@ -210,18 +225,28 @@ export function composeTextSafePixels(
   const pa = estimatePaper(ai, w, h, 0.85);
   const out = new Uint8ClampedArray(orig.length);
   const bw = opts.colorMode === "bw";
+  // Pass 1: the ink picture (original pixel / original paper), 0 = full ink, 1 = paper.
+  const ink = new Float32Array(w * h * 3);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
-      const ratio = [0, 0, 0];
+      const o = (y * w + x) * 3;
       for (let c = 0; c < 3; c++) {
         const paper = Math.max(8, sample(po.plane, po.f, x, y, c));
         let r = orig[i + c] / paper;
         if (r > 1) r = 1;
         // Near-white noise on the paper becomes clean paper.
-        r = Math.min(1, r / 0.94);
-        ratio[c] = r;
+        ink[o + c] = Math.min(1, r / 0.94);
       }
+    }
+  }
+  if (opts.sharpen) sharpenInk(ink, w, h);
+  // Pass 2: put the ink on the AI paper.
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const o = (y * w + x) * 3;
+      const ratio = [ink[o], ink[o + 1], ink[o + 2]];
       if (bw) {
         const g = 0.299 * ratio[0] + 0.587 * ratio[1] + 0.114 * ratio[2];
         ratio[0] = ratio[1] = ratio[2] = Math.max(0, Math.min(1, (g - 0.25) / 0.75));
