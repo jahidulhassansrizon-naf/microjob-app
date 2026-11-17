@@ -63,6 +63,7 @@ import {
   type AiColorMode,
   type AiPresetKey,
 } from "./documentAi";
+import { composeTextSafe } from "./documentComposite";
 declare global {
   interface Window {
     cv: any;
@@ -3481,8 +3482,9 @@ const DOCUMENT_EXTRA: Record<string, string> = {
     "AI কী করবে বেছে নিন, তারপর “AI চালান” চাপুন।",
   "clean & sharpen": "পরিষ্কার ও স্পষ্ট করুন",
   "shadows, stains, blur": "ছায়া, দাগ, ঝাপসা",
-  "straighten & crop": "সোজা ও ক্রপ করুন",
   "straight, edges cut": "সোজা, কিনারা কাটা",
+  "straighten & crop": "সোজা ও ক্রপ করুন",
+  "no ai: the text is never touched": "AI ছাড়া, লেখা একদম অপরিবর্তিত",
   "remove stamp / marks": "সিল / দাগ মুছুন",
   "seal, ink, dirt": "সিল, কালি, ময়লা",
   "output colour": "ফলাফলের রঙ",
@@ -5964,10 +5966,17 @@ export default function DocumentScanner() {
       const aiImageData: string = result?.image ?? "";
       const aiImg = await loadImage(aiImageData);
       if (isStale()) return;
-      const aiSrc = capCanvasSize(
-        createRotatedCanvas(aiImg, 0),
-        MAX_ENHANCE_SIDE,
-      ).toDataURL("image/png");
+      // The AI picture is used ONLY as the clean paper. Every letter, number and line is taken
+      // from the person's own photo, so the AI can never change the text.
+      const safeCanvas = composeTextSafe(input, aiImg, {
+        colorMode: aiPresets.includes("restore") ? "color" : aiColorMode,
+        darker: aiChips.includes("darker"),
+        brighter: aiChips.includes("brighter"),
+        contrast: aiChips.includes("contrast"),
+      });
+      const aiSrc = capCanvasSize(safeCanvas, MAX_ENHANCE_SIDE).toDataURL(
+        "image/png",
+      );
       // The effect-free "Normal" twin only gets the pending rotation baked in.
       let originalSrc = croppedOriginalSrc || selectedImageSrc;
       if (pendingRotation !== 0) {
@@ -7824,6 +7833,23 @@ export default function DocumentScanner() {
         <p className="text-[12px] leading-snug text-[#6B5A40]">
           {DL("Choose what the AI should do, then press Run AI.")}
         </p>
+
+        <button
+          type="button"
+          onClick={() => void handleTriggerAutoCrop()}
+          disabled={busy}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"
+        >
+          <Crop size={15} className="shrink-0 text-[#DC2626]" />
+          <span className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold">
+              {DL("Straighten & crop")}
+            </span>
+            <span className="text-[11px] font-medium text-[#7A6A50]">
+              {DL("No AI: the text is never touched")}
+            </span>
+          </span>
+        </button>
 
         <div className="space-y-2">
           {AI_PRESET_KEYS.map((key) => {
