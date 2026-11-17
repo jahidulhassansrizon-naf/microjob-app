@@ -161,10 +161,10 @@ function estimatePaper(
   w: number,
   h: number,
   floorRatio: number,
+  radius = 7,
 ): { plane: Plane; f: number } {
   const f = Math.max(1, Math.round(Math.max(w, h) / 500));
   const small = boxDownscale(src, w, h, f);
-  const radius = 7;
   let paper = dilate(small, radius);
   paper = boxBlur(boxBlur(paper, 4), 4);
   for (let c = 0; c < 3; c++) {
@@ -310,23 +310,28 @@ export function composeTextSafePixels(
   const bw = opts.colorMode === "bw";
   // Pass 1: the ink picture (original pixel / original paper), 0 = full ink, 1 = paper.
   const ink = new Float32Array(w * h * 3);
-  // Same picture, but divided by the paper's GREY level (used only to read the ink colour).
+  // Same picture, but the page's own paper tint (yellowish / bluish, one value for the whole
+  // page) is put back, so black ink on tinted paper stays grey. Local changes (a watermark, a
+  // shadow) are still divided out per channel, so they can never tint the text that lies on them.
   const inkN = new Float32Array(w * h * 3);
+  const pref = [0, 1, 2].map((c) => percentile90(po.plane, c));
+  const gref = Math.max(8, 0.299 * pref[0] + 0.587 * pref[1] + 0.114 * pref[2]);
+  const tint = pref.map((v) => Math.max(8, v) / gref);
+  // Paper seen from very close (a few stroke widths). Used ONLY to read the ink colour: next to
+  // a big pale area (a watermark) the "paper" is that area, so it cannot tint the text on it.
+  const pl = estimatePaper(orig, w, h, 0.55, 3);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
       const o = (y * w + x) * 3;
-      const pr = Math.max(8, sample(po.plane, po.f, x, y, 0));
-      const pg = Math.max(8, sample(po.plane, po.f, x, y, 1));
-      const pb = Math.max(8, sample(po.plane, po.f, x, y, 2));
-      const grey = 0.299 * pr + 0.587 * pg + 0.114 * pb;
-      const pp = [pr, pg, pb];
       for (let c = 0; c < 3; c++) {
-        let r = orig[i + c] / pp[c];
+        const paper = Math.max(8, sample(po.plane, po.f, x, y, c));
+        let r = orig[i + c] / paper;
         if (r > 1) r = 1;
         // Near-white noise on the paper becomes clean paper.
         ink[o + c] = Math.min(1, r / 0.94);
-        inkN[o + c] = Math.min(1, orig[i + c] / grey);
+        const near = Math.max(8, sample(pl.plane, pl.f, x, y, c));
+        inkN[o + c] = Math.min(1, (orig[i + c] / near) * tint[c]);
       }
     }
   }
@@ -399,14 +404,26 @@ export function composeTextSafePixels(
           const spread = Math.max(u[0], u[1], u[2]) - Math.min(u[0], u[1], u[2]);
           // Almost no colour difference between channels = black / grey ink: keep it neutral
           // (this removes the faint blue / yellow cast a camera puts on black ink).
-          let t = Math.max(0, Math.min(1, (spread - 0.08) / 0.1));
+          // Colour limit is kept high on purpose: a faint colour difference (a pale watermark, a
+          // dim green border) is too weak to trust, and boosting it would tint black text blue.
+          // The darker the stroke, the more colour difference we need before we believe it:
+          // a very dark stroke with only a faint tint is black ink with camera noise, while a
+          // pale stroke (a dim green border) can be truly coloured with only a faint difference.
+          const rawDark = Math.max(0, Math.min(1, 1 - lum));
+          const lo = 0.035 + 0.06 * Math.max(0, Math.min(1, (rawDark - 0.45) / 0.35));
+          let t = Math.max(0, Math.min(1, (spread - lo) / 0.06));
           t = t * t * (3 - 2 * t);
           // Real coloured ink (blue pen, red seal) gets its colour a bit stronger.
-          const boosted = u.map((v) => Math.max(0, Math.min(1, mean + 1.35 * (v - mean))));
+          const k = 1.3 + 6 * Math.max(0, 1 - spread / 0.3);
+          const boosted = u.map((v) => Math.max(0, Math.min(1, mean + k * (v - mean))));
           const bm = Math.max(boosted[0], boosted[1], boosted[2], 1e-6);
           u = [0, 1, 2].map((c) => (1 - t) + t * (boosted[c] / bm));
           const lumU = 0.299 * u[0] + 0.587 * u[1] + 0.114 * u[2];
-          const s = Math.max(0, Math.min(1, d / Math.max(0.2, lumU)));
+          // Coloured ink also gets stronger, so a pale green line looks freshly drawn.
+          const s = Math.max(
+            0,
+            Math.min(1, (d / Math.max(0.2, lumU)) * (1 + 0.7 * t)),
+          );
           for (let c = 0; c < 3; c++) {
             base[c] = paperV[c] * (1 - s * u[c]);
           }
