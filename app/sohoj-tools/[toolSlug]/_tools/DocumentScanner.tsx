@@ -50,8 +50,6 @@ import { isColorAbort } from "./colorDocument";
 import { detectDocumentCornersCv } from "./documentCorners";
 import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import {
-  AI_CHIP_KEYS,
-  AI_CHIP_LABELS,
   AI_PRESET_HINTS,
   AI_PRESET_KEYS,
   AI_PRESET_LABELS,
@@ -4078,8 +4076,10 @@ export default function DocumentScanner() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   // "Fix with AI" card: what the person ticked + the run flag.
   const [aiPresets, setAiPresets] = useState<AiPresetKey[]>(["clean"]);
-  const [aiColorMode, setAiColorMode] = useState<AiColorMode>("color");
-  const [aiChips, setAiChips] = useState<AiChipKey[]>([]);
+  // The AI tab only cleans the paper / restores colours now; black & white and the dark / bright
+  // sliders live in the Edit tools tab, where the manual tools do them better.
+  const aiColorMode: AiColorMode = "color";
+  const aiChips: AiChipKey[] = [];
   // "Selected part": the AI only works on a box the person draws; the rest of the page is never touched.
   // Right-hand tool panel is split into tabs so nothing is hidden far below the fold.
   const [sidebarTab, setSidebarTab] = useState<"ai" | "tools" | "page">("ai");
@@ -7821,13 +7821,8 @@ export default function DocumentScanner() {
     const ready = hasAiRequest(request);
     const toggleItem = <T,>(list: T[], item: T): T[] =>
       list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
-    // "Restore old colours" always brings colour back, so the colour choice is hidden for it.
-    // Always visible on the whole page: "paper white, text black" is a choice on its own.
+    // "Restore old colours" brings colour back.
     const restoreOn = aiPresets.includes("restore");
-    const showColorMode = true;
-    const effColorMode = restoreOn ? "color" : aiColorMode;
-    const segBtn = (on: boolean) =>
-      `flex-1 px-2 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`;
     return (
       <div className="scanner-tool-card scanner-ai-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
         <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
@@ -7886,64 +7881,6 @@ export default function DocumentScanner() {
               </button>
             );
           })}
-        </div>
-
-        {showColorMode && (
-          <div className="space-y-1.5">
-            <div className="text-[13px] font-bold text-[#3B2F1E]">
-              {DL("Output colour")}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setAiColorMode("color")}
-                disabled={busy || restoreOn}
-                aria-pressed={effColorMode === "color"}
-                className={segBtn(effColorMode === "color")}
-              >
-                {DL("Keep colours")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setAiColorMode("bw")}
-                disabled={busy || restoreOn}
-                aria-pressed={effColorMode === "bw"}
-                className={segBtn(effColorMode === "bw")}
-              >
-                {DL("Black & white")}
-              </button>
-            </div>
-            <p className="text-[11.5px] leading-snug text-[#7A6A50]">
-              {restoreOn
-                ? DL("With Restore old colours the colours are kept.")
-                : effColorMode === "bw"
-                  ? DL("Pure white paper and black text, like a photocopy.")
-                  : DL("Ink and logo colours stay, the paper becomes clean white.")}
-            </p>
-          </div>
-        )}
-
-        <div className="space-y-1.5">
-          <div className="text-[13px] font-bold text-[#3B2F1E]">
-            {DL("Fine tune")}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {AI_CHIP_KEYS.map((key) => {
-              const on = aiChips.includes(key);
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setAiChips((prev) => toggleItem(prev, key))}
-                  disabled={busy}
-                  aria-pressed={on}
-                  className={`px-2.5 py-1 rounded-full text-[12px] font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
-                >
-                  {DL(AI_CHIP_LABELS[key])}
-                </button>
-              );
-            })}
-          </div>
         </div>
 
         <GenerationQuotaNotice size="compact" />
