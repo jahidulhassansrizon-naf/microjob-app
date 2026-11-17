@@ -1,11 +1,9 @@
 // AI helpers for the Document Scanner.
 //
-// The scanner sends the page on screen + one text prompt to /api/image-generate (the same
-// route and Gemini bot that AI Editor, Bulk Photo Edit and AI Template use) and gets ONE
-// finished image back. Nothing is processed in the browser any more, so the page stays light.
-//
-// Documents carry names, numbers and dates, so the prompt's first rule is "never change the
-// content": the AI may only clean / straighten / crop / remove marks, never rewrite text.
+// The scanner sends the current page image and this prompt to /api/image-generate.
+// This prompt is deliberately conservative: the AI is asked to behave like a
+// photo-cleanup tool, never like a document writer, OCR system, or designer.
+// The source image is the only authority for every visible character.
 
 export type AiPresetKey = "clean" | "restore" | "crop" | "stamp";
 export type AiColorMode = "color" | "bw";
@@ -36,65 +34,72 @@ export const AI_CHIP_LABELS: Record<AiChipKey, string> = {
   contrast: "More contrast",
 };
 
-// Prompt design notes (why it is written this way):
-// - It starts with a plain, polite request to tidy the user's OWN paper into a clean scan copy.
-//   Image bots follow a short, friendly "edit this photo" request much more reliably than a long
-//   block of ALL-CAPS rules, which tends to end in a text reply or a refusal instead of an image.
-// - The "keep every word and number exactly" rule is still the first and clearest instruction,
-//   but it is written once, in plain words, and every task repeats only its own short limit.
-// - No "redo until correct" loops and no alarming words (the bot cannot loop, and such words
-//   make a refusal more likely). The ending is always: one image, no text.
-const LETTER_RULE = [
-  "Go through the page line by line, from the top line to the bottom line, and treat every line as a picture to be cleaned, not as text to be read or written. Every line must keep exactly the same words, in the same order, with the same letters, digits, punctuation, spacing and line breaks as in the photo, and the page must keep the same number of lines. This covers the printed text, the handwritten words, the words inside stamps and seals, the small print at the edges and the numbers in the corners: copy what is there, stroke by stroke. Handwriting must stay handwriting in the same hand, and printed text must stay in the same printed letters.",
-  "If a word is blurry, faint, handwritten or hard to read, do not guess it and do not replace it with a word that looks right: keep its own strokes as they are, only a little clearer. Never replace a letter with a similar-looking one (for example Bangla ফ must not become ধ, ব must not become র, ত must not become ভ, ন must not become ল, গ must not become শ, and a digit must not become another digit). Never add a word, a line, a footer or a caption that is not in the photo, and never remove one that is.",
-  "Last check: before you give me the image, go through your result line by line once more and compare each line with the photo: every word, letter, digit, date, name, address, number and punctuation mark. If any line differs in even one letter or digit, correct that line so that it matches the photo exactly. If you cannot make a line match, put that line back exactly as it looks in the photo rather than keeping a changed version.",
+/**
+ * These rules have absolute priority over every visual preset and optional note.
+ * Keep them explicit and unambiguous: generative image models can otherwise
+ * redraw small text while attempting to make a document look cleaner.
+ */
+const DOCUMENT_INTEGRITY_RULES = [
+  "ABSOLUTE PRIORITY — PRESERVE THE ORIGINAL DOCUMENT. The attached image is the one and only source of truth. Edit this exact photograph; do not create, recreate, redesign, typeset, or generate a replacement document. This is a conservative photo-restoration task, NOT a document-generation, OCR, transcription, translation, or text-writing task.",
+  "LOCK ALL CONTENT. Every visible character and mark is protected source content. Preserve every printed letter, Bangla character, vowel sign (কার), conjunct (যুক্তাক্ষর), punctuation mark, English character, Bangla digit, Western digit, date, name, address, registration number, label, heading, footer, table entry, and line of text exactly as it appears. Do not change even one character, digit, symbol, spelling, sequence, space, line break, or punctuation mark. Do not add, delete, move, replace, complete, standardize, or correct anything.",
+  "DO NOT READ AND REWRITE THE DOCUMENT. Do not perform OCR and then recreate the words. Do not interpret what a word or number probably says. Do not use context, common names, familiar forms, grammar, expected date formats, or your knowledge of official documents to guess unclear content. Never autocorrect, translate, transliterate, paraphrase, or substitute a similar-looking character or digit.",
+  "PRESERVE UNCLEAR CONTENT. When a letter, number, seal, handwritten entry, or small-print area is faint, blurred, damaged, or difficult to identify, leave its original appearance alone. Do not guess, complete missing strokes, invent hidden details, or replace uncertain marks with cleaner-looking alternatives. An imperfect original is always preferable to an invented correction.",
+  "PRESERVE THE ORIGINAL MARKS. Keep signatures, handwriting, initials, seals, stamps, logos, emblems, photographs, boxes, borders, lines, and official marks unchanged. Handwriting must remain the same handwriting with the same individual strokes; printed text must retain its original letter shapes. Never convert handwriting into a font or make irregular letters look regular.",
+  "PROTECT TEXT PIXELS AND SHAPES. Do not redraw, retype, vectorize, sharpen by inventing edges, thicken, thin, smooth away, merge, separate, or reshape any letter, digit, vowel sign, conjunct, punctuation mark, or line. Do not use generative fill or reconstruction over text, handwriting, numbers, signatures, seals, or logos. Any enhancement must preserve the original character strokes and their exact identity.",
+  "PRESERVE THE PAGE LAYOUT. Keep the same document, reading direction, content order, relative positions, spacing, alignment, line count, table structure, boxes, and margins. Do not move, resize independently, rearrange, or redesign any content. A permitted crop or perspective correction may transform the page as a whole, but it must not cut off, stretch, replace, or rearrange any part of the document.",
+  "CONFLICT RULE — CONTENT ALWAYS WINS. These preservation rules override every selected preset, colour option, adjustment, and optional note. If a requested visual change could alter, cover, remove, or require guessing any protected content, do not perform that change in the affected area. Leave that area as close to the source as possible. Never sacrifice one character to make the page look cleaner.",
+  "Do not make the document look more official, more complete, more readable, or more consistent by inventing details. Do not add a new heading, seal, signature, stamp, number, line, border, watermark, caption, or explanatory text. Do not remove any existing content.",
 ].join("\n\n");
 
 const buildIntro = (part: boolean): string =>
   [
     part
-      ? "Please edit the attached image, which is one small cropped piece of my own paper document, into a cleaner, easy-to-read version for my personal records, and give me the edited image back."
-      : "Please edit the attached photo of my own paper document into a clean, flat, easy-to-read scan copy for my personal records, and give me the edited image back.",
+      ? "Carefully clean up the attached image of one selected part of my own paper document. Return an edited image of this same source image."
+      : "Carefully clean up the attached photograph of my own paper document and return an edited scan-style image of this same document.",
     "",
-    "This is only a cosmetic clean-up. Keep everything that is written or printed exactly as it is: every letter, number, date, name, line, table box, photo, logo, signature and handwritten word must stay the same, with the same spelling (Bangla and English), the same place, the same size and the same order. Do not retype, rewrite, translate, correct, add, remove or move any text, and do not guess parts that are hard to read: leave them as they are. Keep Bangla letters, vowel signs and conjuncts in their exact shapes and keep Bangla and English digits as they are. " +
-      (part
-        ? "Keep exactly the same crop: the same edges, the same proportions and the same size. Do not extend the image, do not add anything around it and do not cut anything off."
-        : "Keep the whole page, the same proportions and the same reading direction."),
+    DOCUMENT_INTEGRITY_RULES,
     "",
-    LETTER_RULE,
+    part
+      ? "SELECTED-AREA SCOPE: Only the selected crop is being provided. Keep its exact contents and boundaries. Do not imagine or add the parts of the page outside this crop. Do not expand, shrink, rotate, or recrop this selected area."
+      : "WHOLE-PAGE SCOPE: Work on the complete page shown in the source. Keep its aspect ratio and reading direction. You may correct the page's overall perspective only when the Straighten & crop task is selected. Keep every edge and every item printed on the page inside the result.",
   ].join("\n");
 
 const TASKS: Record<AiPresetKey, string> = {
-  clean:
-    "Clean and sharpen: remove shadows, uneven light, creases, fingerprints, dust and paper noise, make the blank paper evenly white, and make the text cleaner and darker only by clearing up the strokes that are already there, without changing any letter shape (if a word is too blurry to be sure of, leave it as it is). Keep stamps, signatures, handwriting, photos and logos as they are.",
-  restore:
-    "Restore old colours: this paper is old, faded or yellowed. Bring back the original ink and print colours (faded blue, black and red ink, coloured borders, headings and logos) and remove the yellow-brown tint and age stains from the paper. Do not add colour to parts that were black and white, and do not change any letter.",
-  crop:
-    "Straighten and crop: make the page upright and flat with straight edges and horizontal text lines, then crop out the table, hands and background so the page fills the image. Do not cut off any part of the page.",
-  stamp:
-    "Remove marks: remove stray pen marks, scribbles, ink blots, smudges, stains and ink stamp marks that cover the writing, and show the clean paper and the printed text underneath where it can be seen. Do not remove any printed text, line, box, photo, logo or signature, and do not write any new text where something was covered.",
+  clean: [
+    "VISUAL TASK — CLEAN & SHARPEN: Make only conservative photographic corrections to uneven lighting, soft shadows, mild paper stains, dust, and background noise. Improve overall clarity and local contrast gently. Keep the existing ink strokes exactly as they are: do not redraw, thicken, thin, merge, complete, or sharpen characters by inventing new stroke details. Do not erase folds or marks if doing so would touch text, handwriting, a signature, a seal, or a logo. Keep all original content visible.",
+  ].join(" "),
+  restore: [
+    "VISUAL TASK — RESTORE ORIGINAL COLOURS: Gently reduce yellowing and fading using only colour information that is actually visible in the source. Preserve the original colour identity and location of every ink, stamp, seal, signature, logo, and printed element. Do not invent a colour for a faded or uncertain area. Do not turn black-and-white content into colour. If the original colour cannot be determined confidently, retain the source colour rather than guessing. Keep the paper natural and neutral without altering any content.",
+  ].join(" "),
+  crop: [
+    "VISUAL TASK — STRAIGHTEN & CROP: Correct only the overall page perspective and rotation so the existing page appears upright. Crop away only the surrounding table, hands, or background outside the physical page. Keep the entire physical document, including all four edges, corners, small-print text, seals, signatures, and footers. Do not crop inside the page, extend missing page areas, synthesize cut-off corners, or alter the layout. If a complete page cannot be preserved safely, do not crop it.",
+  ].join(" "),
+  stamp: [
+    "VISUAL TASK — REMOVE UNWANTED MARKS: Remove only clearly unwanted, isolated dirt, dust, smudges, or stray marks that are outside all text and official content. Do not remove or alter a real official seal, stamp, signature, logo, printed line, handwriting, or any meaningful mark. If an unwanted mark touches, crosses, covers, or is close to any letter, digit, line, signature, seal, or other meaningful content, leave it there. Never reconstruct or guess text hidden underneath a mark. Preserving the original content is more important than removing a mark.",
+  ].join(" "),
 };
 
 const COLOR_RULE: Record<AiColorMode, string> = {
   color:
-    "Colour: keep the natural colours of ink and logos (blue or red pen, coloured stamps) but make them clean, and make the blank paper clean white.",
-  bw: "Colour: make the result a clean black-and-white photocopy-style scan: pure white paper and solid black text and lines, with no grey or coloured background and no colour tint. Keep faint text and thin lines visible.",
+    "COLOUR FINISH: Retain the source document's existing natural ink, pen, seal, stamp, and logo colours. Make the unprinted paper look clean and neutral only where this can be done without changing or obscuring original marks. Do not invent, relocate, or intensify uncertain colours.",
+  bw:
+    "COLOUR FINISH — BLACK AND WHITE: Convert the photograph gently to a neutral black-and-white scan. Preserve every faint character, thin stroke, dot, vowel sign, conjunct, punctuation mark, table line, and pale printed detail. Do not use aggressive thresholding, posterization, or processing that makes strokes disappear, merge, thicken, or change shape. Keep all original content legible and in its original form.",
 };
 
 const CHIP_RULE: Record<AiChipKey, string> = {
   darker:
-    "Make the text a bit darker so it prints well, without making letters fat or merged.",
+    "TONAL ADJUSTMENT — DARKER TEXT: Apply a small, even tonal adjustment to improve the visibility of existing ink only. Do not thicken, redraw, complete, or reshape any stroke. Do not turn faint marks into different characters.",
   brighter:
-    "Make the paper brighter and whiter, keeping faint text and thin lines visible.",
+    "TONAL ADJUSTMENT — BRIGHTER PAPER: Gently brighten the unprinted paper while retaining faint text, light ink, thin lines, stamps, and pale details. Do not wash out any original content.",
   contrast:
-    "Increase the contrast between text and paper, keeping thin strokes, dots and light table lines visible.",
+    "TONAL ADJUSTMENT — MORE CONTRAST: Increase document-to-paper contrast gently and evenly. Preserve fine strokes, dots, vowel signs, conjuncts, small print, light table lines, and faint handwriting. Do not use harsh contrast that merges or removes details.",
 };
 
 const buildOutro = (part: boolean): string =>
   [
-    "If you are unsure about any part, leave that part as it is.",
+    "FINAL CONTENT CHECK: Compare the result directly with the supplied source image as visual artwork, not by guessing what the document should say. No character, digit, date, name, address, number, symbol, handwritten stroke, seal, signature, or printed detail may differ. If any requested enhancement risks changing content, skip that enhancement. If you cannot preserve the source content faithfully, return the original source image unchanged instead of inventing or approximating anything.",
     "",
-    `Give me exactly one finished image of this ${part ? "piece" : "one page"}, as sharp as possible: not a collage, not a before-and-after, and with no added text, captions, borders or watermarks. Reply with the image only.`,
+    `Return exactly one finished image of this ${part ? "selected piece" : "single page"}. Do not return a collage, a before-and-after comparison, multiple versions, a text explanation, OCR, captions, labels, decorative borders, or watermarks. The output must be the same original document with only the safely requested photographic cleanup applied. Return the image only.`,
   ].join("\n");
 
 export type DocumentAiRequest = {
@@ -119,8 +124,9 @@ export function buildDocumentAiPrompt(r: DocumentAiRequest): string {
   for (const key of AI_PRESET_KEYS) {
     if (r.presets.includes(key)) tasks.push(`- ${TASKS[key]}`);
   }
+
   // Colour / finishing rules only matter when the AI is also touching the look of the page.
-  // "Restore old colours" always keeps / brings back colour, so black & white never applies to it.
+  // Restoring original colours takes precedence over a black-and-white conversion.
   const restore = r.presets.includes("restore");
   const touchesLook =
     r.presets.includes("clean") ||
@@ -128,21 +134,25 @@ export function buildDocumentAiPrompt(r: DocumentAiRequest): string {
     r.chips.length > 0 ||
     r.colorMode === "bw";
   if (touchesLook) tasks.push(`- ${COLOR_RULE[restore ? "color" : r.colorMode]}`);
+
   for (const key of AI_CHIP_KEYS) {
     if (r.chips.includes(key)) tasks.push(`- ${CHIP_RULE[key]}`);
   }
+
   const note = r.part ? (r.partNote ?? "").trim().slice(0, AI_PART_NOTE_MAX) : "";
   if (note) {
-    // Looks only. The text rule stays on top: a request to change words or numbers is ignored.
     tasks.push(
-      `- Extra request for this piece only (it is only about how the piece looks; every letter, digit and symbol must still stay exactly the same, so if this request asks to change, add, remove or re-write any text or number, ignore that part of the request): ${note}`,
+      `- OPTIONAL APPEARANCE NOTE FOR THIS SELECTED PIECE ONLY: ${note}. This note is lower priority than every document-integrity rule above. It may affect appearance only. Ignore any part of the note that asks to add, delete, alter, guess, rewrite, cover, or remove text, numbers, handwriting, signatures, stamps, seals, logos, or other original content.`,
     );
   }
+
   return [
     buildIntro(!!r.part),
     "",
-    "What to do (only these things):",
-    ...tasks,
+    "REQUESTED VISUAL OPERATIONS (perform only the selected operations below):",
+    ...(tasks.length > 0 ? tasks : ["- No visual operation was selected. Do not alter the image."]),
+    "",
+    "The preservation rules at the beginning of this prompt always override these visual operations.",
     "",
     buildOutro(!!r.part),
   ].join("\n");

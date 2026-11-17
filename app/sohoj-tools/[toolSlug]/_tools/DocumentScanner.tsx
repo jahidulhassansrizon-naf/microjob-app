@@ -10308,62 +10308,6 @@ export default function DocumentScanner() {
                   </div>
                 </div>
               )}
-
-              {/* Hanging warning note: hangs on the right side of the Enhance card
-                  (desktop fit mode, hung on the right edge) or sits under the buttons (narrow screens). */}
-              <div
-                role="note"
-                className="scanner-note-wrap relative mt-1 shrink-0"
-              >
-                <div>
-                  <div className="rounded-lg bg-[#FFF176] border-2 border-[#E6C200] shadow-[3px_8px_16px_rgba(90,74,50,0.32)] overflow-hidden">
-                    <div className="flex items-center gap-2 bg-[#DC2626] text-white px-3 py-2">
-                      <span className="relative flex w-3.5 h-3.5 shrink-0">
-                        <span className="absolute inline-flex w-full h-full rounded-full bg-white opacity-75 animate-ping" />
-                        <span className="relative inline-flex w-3.5 h-3.5 rounded-full bg-white" />
-                      </span>
-                      <AlertCircle size={16} className="shrink-0" />
-                      <span className="text-[13px] font-extrabold uppercase tracking-wider">
-                        <DocumentText>{"Important"}</DocumentText>
-                      </span>
-                    </div>
-                    <div className="px-3 py-3 space-y-3">
-                      <p className="text-[19px] leading-tight font-extrabold text-[#3B2F1E]">
-                        <DocumentText>{"Blurry photo?"}</DocumentText>
-                      </p>
-                      <div className="flex items-start gap-2">
-                        <span className="shrink-0 w-6 h-6 rounded-full bg-[#DC2626] text-white text-[13px] font-bold flex items-center justify-center">
-                          1
-                        </span>
-                        <p className="text-[15px] leading-snug font-semibold text-[#3B2F1E]">
-                          <DocumentText>
-                            {"Photo blurry? First press Fix Blur."}
-                          </DocumentText>
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="shrink-0 w-6 h-6 rounded-full bg-[#DC2626] text-white text-[13px] font-bold flex items-center justify-center">
-                          2
-                        </span>
-                        <p className="text-[15px] leading-snug font-semibold text-[#3B2F1E]">
-                          <DocumentText>
-                            {"Then press Document Clean."}
-                          </DocumentText>
-                        </p>
-                      </div>
-                      <div className="border-t-2 border-dashed border-[#C9A800] pt-2.5">
-                        <p className="text-[14px] leading-snug font-bold text-[#7A1F1F]">
-                          <DocumentText>
-                            {
-                              "Photo already sharp? Skip Fix Blur — go straight to Document Clean."
-                            }
-                          </DocumentText>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
                 </>
               )}
 
