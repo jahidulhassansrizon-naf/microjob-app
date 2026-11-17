@@ -41,13 +41,22 @@ export const AI_CHIP_LABELS: Record<AiChipKey, string> = {
 //   but it is written once, in plain words, and every task repeats only its own short limit.
 // - No "redo until correct" loops and no alarming words (the bot cannot loop, and such words
 //   make a refusal more likely). The ending is always: one image, no text.
-const INTRO = [
-  "Please edit the attached photo of my own paper document into a clean, flat, easy-to-read scan copy for my personal records, and give me the edited image back.",
-  "",
-  "This is only a cosmetic clean-up. Keep everything that is written or printed on the page exactly as it is: every letter, number, date, name, line, table box, photo, logo, signature and handwritten word must stay the same, with the same spelling (Bangla and English), the same place, the same size and the same order. Do not retype, rewrite, translate, correct, add, remove or move any text, and do not guess parts that are hard to read: leave them as they are. Keep Bangla letters, vowel signs and conjuncts in their exact shapes and keep Bangla and English digits as they are. Keep the whole page, the same proportions and the same reading direction.",
-  "",
-  "Work word by word. Copy every word exactly as it looks in the photo, letter by letter, and never replace a letter with a similar-looking one (for example Bangla ফ must not become ধ, ব must not become র, ত must not become ভ, ন must not become ল, and a digit must not become another digit). Sharpen text only by making the strokes that are already there clearer, never by redrawing or re-typing the letters. Before you give me the image, check every line, word and number of your result against the photo one by one, and wherever a letter or digit is different from the photo, correct it so that it matches the photo exactly.",
-].join("\n");
+const LETTER_RULE =
+  "Work word by word. Copy every word exactly as it looks in the photo, letter by letter, and never replace a letter with a similar-looking one (for example Bangla ফ must not become ধ, ব must not become র, ত must not become ভ, ন must not become ল, and a digit must not become another digit). Sharpen text only by making the strokes that are already there clearer, never by redrawing or re-typing the letters. Before you give me the image, check every line, word and number of your result against the photo one by one, and wherever a letter or digit is different from the photo, correct it so that it matches the photo exactly.";
+
+const buildIntro = (part: boolean): string =>
+  [
+    part
+      ? "Please edit the attached image, which is one small cropped piece of my own paper document, into a cleaner, easy-to-read version for my personal records, and give me the edited image back."
+      : "Please edit the attached photo of my own paper document into a clean, flat, easy-to-read scan copy for my personal records, and give me the edited image back.",
+    "",
+    "This is only a cosmetic clean-up. Keep everything that is written or printed exactly as it is: every letter, number, date, name, line, table box, photo, logo, signature and handwritten word must stay the same, with the same spelling (Bangla and English), the same place, the same size and the same order. Do not retype, rewrite, translate, correct, add, remove or move any text, and do not guess parts that are hard to read: leave them as they are. Keep Bangla letters, vowel signs and conjuncts in their exact shapes and keep Bangla and English digits as they are. " +
+      (part
+        ? "Keep exactly the same crop: the same edges, the same proportions and the same size. Do not extend the image, do not add anything around it and do not cut anything off."
+        : "Keep the whole page, the same proportions and the same reading direction."),
+    "",
+    LETTER_RULE,
+  ].join("\n");
 
 const TASKS: Record<AiPresetKey, string> = {
   clean:
@@ -75,16 +84,19 @@ const CHIP_RULE: Record<AiChipKey, string> = {
     "Increase the contrast between text and paper, keeping thin strokes, dots and light table lines visible.",
 };
 
-const OUTRO = [
-  "If you are unsure about any part, leave that part as it is.",
-  "",
-  "Give me exactly one finished image of this one page, as sharp as possible: not a collage, not a before-and-after, and with no added text, captions, borders or watermarks. Reply with the image only.",
-].join("\n");
+const buildOutro = (part: boolean): string =>
+  [
+    "If you are unsure about any part, leave that part as it is.",
+    "",
+    `Give me exactly one finished image of this ${part ? "piece" : "one page"}, as sharp as possible: not a collage, not a before-and-after, and with no added text, captions, borders or watermarks. Reply with the image only.`,
+  ].join("\n");
 
 export type DocumentAiRequest = {
   presets: AiPresetKey[];
   colorMode: AiColorMode;
   chips: AiChipKey[];
+  /** true when only a selected piece of the page is sent (the rest of the page is never touched). */
+  part?: boolean;
 };
 
 /** true when the request asks the AI for something (a preset or a chip). */
@@ -105,12 +117,12 @@ export function buildDocumentAiPrompt(r: DocumentAiRequest): string {
     if (r.chips.includes(key)) tasks.push(`- ${CHIP_RULE[key]}`);
   }
   return [
-    INTRO,
+    buildIntro(!!r.part),
     "",
     "What to do (only these things):",
     ...tasks,
     "",
-    OUTRO,
+    buildOutro(!!r.part),
   ].join("\n");
 }
 

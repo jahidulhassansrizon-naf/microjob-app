@@ -3494,6 +3494,19 @@ const DOCUMENT_EXTRA: Record<string, string> = {
   "check before you download or print": "ডাউনলোড বা প্রিন্টের আগে মিলিয়ে নিন",
   "ai can make small mistakes. match names, dates, numbers and bangla text with your original. if anything is different, press undo and try again.":
     "AI মাঝে মাঝে ছোট ভুল করতে পারে। নাম, তারিখ, নম্বর আর বাংলা লেখা আসল ডকুমেন্টের সাথে মিলিয়ে নিন। কোথাও আলাদা হলে “পূর্বাবস্থায় ফিরুন” চাপুন, তারপর আবার চেষ্টা করুন।",
+  "whole page": "পুরো পাতা",
+  "selected part": "নির্দিষ্ট অংশ",
+  "drag a box on the document to choose the part. the rest of the page stays exactly as it is.":
+    "ডকুমেন্টের ওপর মাউস টেনে একটা বক্স করে অংশটি বেছে নিন। বাকি পাতা হুবহু আগের মতোই থাকবে।",
+  "part chosen. you can drag again to change it. the rest of the page stays exactly as it is.":
+    "অংশ বাছা হয়েছে। বদলাতে চাইলে আবার টানুন। বাকি পাতা হুবহু আগের মতোই থাকবে।",
+  "clear selection": "বাছাই মুছুন",
+  "choose the part first: drag a box on the document.":
+    "আগে ডকুমেন্টের ওপর টেনে একটি অংশ বেছে নিন।",
+  "drag to choose the part": "টেনে অংশটি বেছে নিন",
+  "please select a bigger part of the page.": "আরও একটু বড় অংশ বেছে নিন।",
+  "the ai changed the shape of the selected part. please select again and try once more.":
+    "AI অংশটির আকার বদলে ফেলেছে। অংশটি আবার বেছে নিয়ে চেষ্টা করুন।",
   "edit tools": "এডিট টুলস",
   "page & print": "পেজ ও প্রিন্ট",
   "run ai": "AI চালান",
@@ -4049,10 +4062,18 @@ export default function DocumentScanner() {
   const [aiPresets, setAiPresets] = useState<AiPresetKey[]>(["clean"]);
   const [aiColorMode, setAiColorMode] = useState<AiColorMode>("color");
   const [aiChips, setAiChips] = useState<AiChipKey[]>([]);
+  // "Selected part": the AI only works on a box the person draws; the rest of the page is never touched.
+  const [aiScope, setAiScope] = useState<"page" | "part">("page");
+  const [aiArea, setAiArea] = useState<FractionRect | null>(null);
+  const aiAreaStartRef = useRef<{ x: number; y: number } | null>(null);
   // Right-hand tool panel is split into tabs so nothing is hidden far below the fold.
   const [sidebarTab, setSidebarTab] = useState<"ai" | "tools" | "page">("ai");
   // While a markup / eraser tool is active its options live in "Edit tools", so jump there.
   const activeSidebarTab = isErasing ? "tools" : sidebarTab;
+  useEffect(() => {
+    setAiArea(null);
+    aiAreaStartRef.current = null;
+  }, [cleanBaseSrc, selectedIndex]);
   const [isAiRunning, setIsAiRunning] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -5829,12 +5850,17 @@ export default function DocumentScanner() {
   // and Gemini bot that AI Editor / Bulk Photo Edit / AI Template use) and swaps the page for the
   // finished image. It is ONE history step, so "Undo" brings the previous page back.
   const applyAiStep = async () => {
+    const partBox = aiScope === "part" ? aiArea : null;
     const request = {
-      presets: aiPresets,
+      // Straighten & crop makes no sense for one piece of the page.
+      presets:
+        aiScope === "part" ? aiPresets.filter((k) => k !== "crop") : aiPresets,
       colorMode: aiColorMode,
       chips: aiChips,
+      part: aiScope === "part",
     };
     if (!hasAiRequest(request)) return;
+    if (aiScope === "part" && !partBox) return;
     if (!canChangeImage()) return;
     cancelActiveProcessing();
     cancelCloudinarySaveRequest();
@@ -5863,7 +5889,39 @@ export default function DocumentScanner() {
       const inputImg = await loadImage(cleanBaseSrc);
       if (isStale()) return;
       const input = createRotatedCanvas(inputImg, pendingRotation);
-      const blob = await canvasToAiBlob(input);
+      // Selected part: cut only that box out of the page (made bigger when it is small, so the
+      // AI can see the letters clearly) and send just that piece.
+      let sendCanvas: HTMLCanvasElement = input;
+      let piece: { sx: number; sy: number; sw: number; sh: number } | null = null;
+      if (partBox) {
+        const sx = Math.max(0, Math.round(partBox.x0 * input.width));
+        const sy = Math.max(0, Math.round(partBox.y0 * input.height));
+        const sw = Math.min(
+          input.width - sx,
+          Math.round((partBox.x1 - partBox.x0) * input.width),
+        );
+        const sh = Math.min(
+          input.height - sy,
+          Math.round((partBox.y1 - partBox.y0) * input.height),
+        );
+        if (sw < 16 || sh < 16) {
+          throw new DocumentAiError("Please select a bigger part of the page.");
+        }
+        const up = Math.min(3, Math.max(1, 1200 / Math.max(sw, sh)));
+        const cutCanvas = document.createElement("canvas");
+        cutCanvas.width = Math.round(sw * up);
+        cutCanvas.height = Math.round(sh * up);
+        const cutCtx = cutCanvas.getContext("2d");
+        if (!cutCtx) throw new Error("Canvas context unavailable");
+        cutCtx.fillStyle = "#ffffff";
+        cutCtx.fillRect(0, 0, cutCanvas.width, cutCanvas.height);
+        cutCtx.imageSmoothingEnabled = true;
+        cutCtx.imageSmoothingQuality = "high";
+        cutCtx.drawImage(input, sx, sy, sw, sh, 0, 0, cutCanvas.width, cutCanvas.height);
+        sendCanvas = cutCanvas;
+        piece = { sx, sy, sw, sh };
+      }
+      const blob = await canvasToAiBlob(sendCanvas);
       if (isStale()) return;
       const prompt = buildDocumentAiPrompt(request);
       let response: Response;
@@ -5933,10 +5991,50 @@ export default function DocumentScanner() {
       const aiImageData: string = result?.image ?? "";
       const aiImg = await loadImage(aiImageData);
       if (isStale()) return;
-      const aiSrc = capCanvasSize(
-        createRotatedCanvas(aiImg, 0),
-        MAX_ENHANCE_SIDE,
-      ).toDataURL("image/png");
+      let aiSrc: string;
+      if (piece) {
+        // The AI must hand back the same shape; a stretched piece would distort the letters.
+        const aiRatio = aiImg.naturalWidth / Math.max(1, aiImg.naturalHeight);
+        const pieceRatio = piece.sw / piece.sh;
+        if (Math.abs(aiRatio / pieceRatio - 1) > 0.08) {
+          throw new DocumentAiError(
+            "The AI changed the shape of the selected part. Please select again and try once more.",
+          );
+        }
+        // Put the finished piece back into the untouched page. The piece's own edge is blended
+        // over a few pixels so no visible box shows up; everything outside the box stays as it was.
+        const outCanvas = document.createElement("canvas");
+        outCanvas.width = input.width;
+        outCanvas.height = input.height;
+        const outCtx = outCanvas.getContext("2d");
+        if (!outCtx) throw new Error("Canvas context unavailable");
+        outCtx.drawImage(input, 0, 0);
+        const tile = document.createElement("canvas");
+        tile.width = piece.sw;
+        tile.height = piece.sh;
+        const tileCtx = tile.getContext("2d", { willReadFrequently: true });
+        if (!tileCtx) throw new Error("Canvas context unavailable");
+        tileCtx.imageSmoothingEnabled = true;
+        tileCtx.imageSmoothingQuality = "high";
+        tileCtx.drawImage(aiImg, 0, 0, piece.sw, piece.sh);
+        const tileData = tileCtx.getImageData(0, 0, piece.sw, piece.sh);
+        const feather = Math.max(2, Math.round(Math.min(piece.sw, piece.sh) * 0.015));
+        for (let y = 0; y < piece.sh; y++) {
+          const fy = Math.min(1, (y + 1) / feather, (piece.sh - y) / feather);
+          for (let x = 0; x < piece.sw; x++) {
+            const f = Math.min(fy, (x + 1) / feather, (piece.sw - x) / feather);
+            if (f < 1) tileData.data[(y * piece.sw + x) * 4 + 3] = Math.round(255 * f);
+          }
+        }
+        tileCtx.putImageData(tileData, 0, 0);
+        outCtx.drawImage(tile, piece.sx, piece.sy);
+        aiSrc = capCanvasSize(outCanvas, MAX_ENHANCE_SIDE).toDataURL("image/png");
+      } else {
+        aiSrc = capCanvasSize(
+          createRotatedCanvas(aiImg, 0),
+          MAX_ENHANCE_SIDE,
+        ).toDataURL("image/png");
+      }
       // The effect-free "Normal" twin only gets the pending rotation baked in.
       let originalSrc = croppedOriginalSrc || selectedImageSrc;
       if (pendingRotation !== 0) {
@@ -7582,12 +7680,15 @@ export default function DocumentScanner() {
       isSavingDocument ||
       isManualCropping ||
       isErasing;
+    const isPart = aiScope === "part";
     const request = {
-      presets: aiPresets,
+      presets: isPart ? aiPresets.filter((k) => k !== "crop") : aiPresets,
       colorMode: aiColorMode,
       chips: aiChips,
+      part: isPart,
     };
-    const ready = hasAiRequest(request);
+    const needsArea = isPart && !aiArea;
+    const ready = hasAiRequest(request) && !needsArea;
     const toggleItem = <T,>(list: T[], item: T): T[] =>
       list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
     // "Restore old colours" always brings colour back, so the colour choice is hidden for it.
@@ -7607,8 +7708,50 @@ export default function DocumentScanner() {
           {DL("Choose what the AI should do, then press Run AI.")}
         </p>
 
+        <div className="space-y-1.5">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setAiScope("page")}
+              disabled={busy}
+              aria-pressed={!isPart}
+              className={segBtn(!isPart)}
+            >
+              {DL("Whole page")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setAiScope("part")}
+              disabled={busy}
+              aria-pressed={isPart}
+              className={segBtn(isPart)}
+            >
+              {DL("Selected part")}
+            </button>
+          </div>
+          {isPart && (
+            <div className="flex items-start justify-between gap-2 rounded-lg border border-dashed border-[#C9A800] bg-[#FFF7D6] px-2.5 py-1.5">
+              <p className="text-[12px] leading-snug text-[#6B5A40]">
+                {aiArea
+                  ? DL("Part chosen. You can drag again to change it. The rest of the page stays exactly as it is.")
+                  : DL("Drag a box on the document to choose the part. The rest of the page stays exactly as it is.")}
+              </p>
+              {aiArea && (
+                <button
+                  type="button"
+                  onClick={() => setAiArea(null)}
+                  disabled={busy}
+                  className="shrink-0 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] px-2 py-0.5 text-[11.5px] font-semibold text-[#5A4A32] hover:bg-[#EFE3C8] cursor-pointer disabled:opacity-50"
+                >
+                  {DL("Clear selection")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="space-y-2">
-          {AI_PRESET_KEYS.map((key) => {
+          {AI_PRESET_KEYS.filter((key) => !(isPart && key === "crop")).map((key) => {
             const on = aiPresets.includes(key);
             return (
               <button
@@ -7702,9 +7845,11 @@ export default function DocumentScanner() {
           {DL("Run AI")}
         </button>
         <p className="text-[12px] leading-snug text-[#6B5A40] text-center">
-          {ready
-            ? DL("Takes about a minute.")
-            : DL("Choose at least one option above.")}
+          {needsArea
+            ? DL("Choose the part first: drag a box on the document.")
+            : ready
+              ? DL("Takes about a minute.")
+              : DL("Choose at least one option above.")}
         </p>
 
         <div
@@ -9737,6 +9882,68 @@ export default function DocumentScanner() {
                           title={DL("Move the document (drag)")}
                         />
                       )}
+
+                    {aiScope === "part" &&
+                      activeSidebarTab === "ai" &&
+                      !isErasing &&
+                      !isManualCropping &&
+                      !isProcessing &&
+                      !isComparing &&
+                      !handMode &&
+                      !!cleanBaseSrc && (
+                        <div
+                          className="absolute inset-0 z-[36] cursor-crosshair"
+                          style={{ touchAction: "none" }}
+                          title={DL("Drag to choose the part")}
+                          onPointerDown={(e) => {
+                            const r = e.currentTarget.getBoundingClientRect();
+                            if (!r.width || !r.height) return;
+                            e.currentTarget.setPointerCapture(e.pointerId);
+                            const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+                            const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+                            aiAreaStartRef.current = { x, y };
+                            setAiArea({ x0: x, y0: y, x1: x, y1: y });
+                          }}
+                          onPointerMove={(e) => {
+                            const start = aiAreaStartRef.current;
+                            if (!start) return;
+                            const r = e.currentTarget.getBoundingClientRect();
+                            if (!r.width || !r.height) return;
+                            const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+                            const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+                            setAiArea({
+                              x0: Math.min(start.x, x),
+                              y0: Math.min(start.y, y),
+                              x1: Math.max(start.x, x),
+                              y1: Math.max(start.y, y),
+                            });
+                          }}
+                          onPointerUp={() => {
+                            aiAreaStartRef.current = null;
+                            // A tiny box is just a click: drop it.
+                            setAiArea((prev) =>
+                              prev && (prev.x1 - prev.x0 < 0.02 || prev.y1 - prev.y0 < 0.02)
+                                ? null
+                                : prev,
+                            );
+                          }}
+                          onPointerCancel={() => {
+                            aiAreaStartRef.current = null;
+                          }}
+                        />
+                      )}
+                    {aiScope === "part" && aiArea && !isComparing && (
+                      <div
+                        style={{
+                          left: `${aiArea.x0 * 100}%`,
+                          top: `${aiArea.y0 * 100}%`,
+                          width: `${(aiArea.x1 - aiArea.x0) * 100}%`,
+                          height: `${(aiArea.y1 - aiArea.y0) * 100}%`,
+                          boxShadow: "0 0 0 9999px rgba(59,47,30,0.28)",
+                        }}
+                        className="absolute z-[37] pointer-events-none border-2 border-dashed border-[#DC2626] bg-[#DC2626]/10"
+                      />
+                    )}
 
                     {isManualCropping && !isComparing && (
                       <div className="absolute inset-0 bg-[#3B2F1E]/35 pointer-events-auto z-20">
