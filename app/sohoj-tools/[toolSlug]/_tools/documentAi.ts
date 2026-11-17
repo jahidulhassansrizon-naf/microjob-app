@@ -75,7 +75,7 @@ const TASKS: Record<AiPresetKey, string> = {
 const COLOR_RULE: Record<AiColorMode, string> = {
   color:
     "Colour: keep the natural colours of ink and logos (blue or red pen, coloured stamps) but make them clean, and make the blank paper clean white.",
-  bw: "Colour: make the result a clean black-and-white scan with pure white paper and solid black text and lines. Keep faint text and thin lines visible.",
+  bw: "Colour: make the result a clean black-and-white photocopy-style scan: pure white paper and solid black text and lines, with no grey or coloured background and no colour tint. Keep faint text and thin lines visible.",
 };
 
 const CHIP_RULE: Record<AiChipKey, string> = {
@@ -108,6 +108,7 @@ export type DocumentAiRequest = {
 export const hasAiRequest = (r: DocumentAiRequest): boolean =>
   r.presets.length > 0 ||
   r.chips.length > 0 ||
+  r.colorMode === "bw" ||
   (!!r.part && (r.partNote ?? "").trim().length > 0);
 
 export function buildDocumentAiPrompt(r: DocumentAiRequest): string {
@@ -118,7 +119,11 @@ export function buildDocumentAiPrompt(r: DocumentAiRequest): string {
   // Colour / finishing rules only matter when the AI is also touching the look of the page.
   // "Restore old colours" always keeps / brings back colour, so black & white never applies to it.
   const restore = r.presets.includes("restore");
-  const touchesLook = r.presets.includes("clean") || restore || r.chips.length > 0;
+  const touchesLook =
+    r.presets.includes("clean") ||
+    restore ||
+    r.chips.length > 0 ||
+    r.colorMode === "bw";
   if (touchesLook) tasks.push(`- ${COLOR_RULE[restore ? "color" : r.colorMode]}`);
   for (const key of AI_CHIP_KEYS) {
     if (r.chips.includes(key)) tasks.push(`- ${CHIP_RULE[key]}`);

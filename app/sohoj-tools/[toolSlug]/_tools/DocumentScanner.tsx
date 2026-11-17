@@ -3489,6 +3489,12 @@ const DOCUMENT_EXTRA: Record<string, string> = {
   "output colour": "ফলাফলের রঙ",
   "keep colours": "রঙ রাখুন",
   "black & white": "সাদা-কালো",
+  "with restore old colours the colours are kept.":
+    "“পুরানো রঙ ফিরিয়ে আনুন” চালু থাকলে রঙ রাখা হয়।",
+  "pure white paper and black text, like a photocopy.":
+    "কাগজ পুরো সাদা আর লেখা কালো, ফটোকপির মতো।",
+  "ink and logo colours stay, the paper becomes clean white.":
+    "কালি আর লোগোর রঙ থাকবে, কাগজ পরিষ্কার সাদা হবে।",
   "fine tune": "ফাইন-টিউন",
   "darker text": "লেখা আরও গাঢ়",
   "brighter paper": "কাগজ আরও উজ্জ্বল",
@@ -7684,6 +7690,56 @@ export default function DocumentScanner() {
       </div>
     );
   };
+  const renderEffectRow = (
+    key: "color" | "clean",
+    label: string,
+    icon: React.ReactNode,
+  ) => {
+    const active = effects[key];
+    const busy =
+      isProcessing ||
+      images.length === 0 ||
+      !cleanBaseSrc ||
+      isSavingDocument ||
+      isManualCropping ||
+      isErasing;
+    const canRemove = findEffectUndoIndex(key) >= 0;
+    return (
+      <div className="flex items-stretch gap-2">
+        <button
+          type="button"
+          onClick={() => handleApplyEffect(key)}
+          disabled={busy}
+          aria-pressed={active}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+        >
+          {active ? <Check size={14} /> : icon}
+          {DL(label)}
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            active ? handleUndoEffect(key) : handleApplyEffect(key)
+          }
+          disabled={busy || (active && !canRemove)}
+          title={
+            active
+              ? canRemove
+                ? DL(`Remove ${label}`)
+                : DL(
+                    "This cannot be removed separately after cropping or erasing — press Undo.",
+                  )
+              : DL(`Add ${label}`)
+          }
+          aria-label={active ? DL(`Remove ${label}`) : DL(`Add ${label}`)}
+          className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#FBF6E8] border-[#FBB6B6] text-[#B91C1C] hover:bg-[#FEE9E9]" : "bg-[#FBF6E8] border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+        >
+          {active ? <Minus size={14} /> : <Plus size={14} />}
+        </button>
+      </div>
+    );
+  };
   // ---- "Selected part": the hand tools from the old version (no AI here) ------------
   const renderPartToolsSection = () => {
     const markupBusy =
@@ -7716,7 +7772,9 @@ export default function DocumentScanner() {
     };
     return (
       <div className="space-y-3">
-        <div className="text-[13px] font-bold text-[#3B2F1E]">
+        {renderEffectRow("clean", "Document Clean", <Wand2 size={14} />)}
+
+        <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
           {DL("Markup & eraser")}
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -7771,9 +7829,10 @@ export default function DocumentScanner() {
     const toggleItem = <T,>(list: T[], item: T): T[] =>
       list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
     // "Restore old colours" always brings colour back, so the colour choice is hidden for it.
-    const showColorMode =
-      (aiPresets.includes("clean") || aiChips.length > 0) &&
-      !aiPresets.includes("restore");
+    // Always visible on the whole page: "paper white, text black" is a choice on its own.
+    const restoreOn = aiPresets.includes("restore");
+    const showColorMode = !isPart;
+    const effColorMode = restoreOn ? "color" : aiColorMode;
     const segBtn = (on: boolean) =>
       `flex-1 px-2 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`;
     return (
@@ -7857,22 +7916,29 @@ export default function DocumentScanner() {
               <button
                 type="button"
                 onClick={() => setAiColorMode("color")}
-                disabled={busy}
-                aria-pressed={aiColorMode === "color"}
-                className={segBtn(aiColorMode === "color")}
+                disabled={busy || restoreOn}
+                aria-pressed={effColorMode === "color"}
+                className={segBtn(effColorMode === "color")}
               >
                 {DL("Keep colours")}
               </button>
               <button
                 type="button"
                 onClick={() => setAiColorMode("bw")}
-                disabled={busy}
-                aria-pressed={aiColorMode === "bw"}
-                className={segBtn(aiColorMode === "bw")}
+                disabled={busy || restoreOn}
+                aria-pressed={effColorMode === "bw"}
+                className={segBtn(effColorMode === "bw")}
               >
                 {DL("Black & white")}
               </button>
             </div>
+            <p className="text-[11.5px] leading-snug text-[#7A6A50]">
+              {restoreOn
+                ? DL("With Restore old colours the colours are kept.")
+                : effColorMode === "bw"
+                  ? DL("Pure white paper and black text, like a photocopy.")
+                  : DL("Ink and logo colours stay, the paper becomes clean white.")}
+            </p>
           </div>
         )}
 
