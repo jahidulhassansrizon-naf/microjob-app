@@ -52,7 +52,6 @@ import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import {
   AI_CHIP_KEYS,
   AI_CHIP_LABELS,
-  AI_PART_NOTE_MAX,
   AI_PRESET_HINTS,
   AI_PRESET_KEYS,
   AI_PRESET_LABELS,
@@ -4080,20 +4079,10 @@ export default function DocumentScanner() {
   const [aiColorMode, setAiColorMode] = useState<AiColorMode>("color");
   const [aiChips, setAiChips] = useState<AiChipKey[]>([]);
   // "Selected part": the AI only works on a box the person draws; the rest of the page is never touched.
-  const [aiScope, setAiScope] = useState<"page" | "part">("page");
-  const [aiArea, setAiArea] = useState<FractionRect | null>(null);
-  const aiAreaStartRef = useRef<{ x: number; y: number } | null>(null);
-  const [aiPartNote, setAiPartNote] = useState<string>("");
   // Right-hand tool panel is split into tabs so nothing is hidden far below the fold.
   const [sidebarTab, setSidebarTab] = useState<"ai" | "tools" | "page">("ai");
   // While a markup / eraser tool is active its options live in "Edit tools", so jump there.
-  const activeSidebarTab =
-    isErasing && !(sidebarTab === "ai" && aiScope === "part") ? "tools" : sidebarTab;
-  useEffect(() => {
-    setAiArea(null);
-    setAiPartNote("");
-    aiAreaStartRef.current = null;
-  }, [cleanBaseSrc, selectedIndex]);
+  const activeSidebarTab = isErasing ? "tools" : sidebarTab;
   const [isAiRunning, setIsAiRunning] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -5870,18 +5859,12 @@ export default function DocumentScanner() {
   // and Gemini bot that AI Editor / Bulk Photo Edit / AI Template use) and swaps the page for the
   // finished image. It is ONE history step, so "Undo" brings the previous page back.
   const applyAiStep = async () => {
-    const partBox = aiScope === "part" ? aiArea : null;
     const request = {
-      // Straighten & crop makes no sense for one piece of the page.
-      presets:
-        aiScope === "part" ? aiPresets.filter((k) => k !== "crop") : aiPresets,
+      presets: aiPresets,
       colorMode: aiColorMode,
       chips: aiChips,
-      part: aiScope === "part",
-      partNote: aiScope === "part" ? aiPartNote : "",
     };
     if (!hasAiRequest(request)) return;
-    if (aiScope === "part" && !partBox) return;
     if (!canChangeImage()) return;
     cancelActiveProcessing();
     cancelCloudinarySaveRequest();
@@ -5910,38 +5893,7 @@ export default function DocumentScanner() {
       const inputImg = await loadImage(cleanBaseSrc);
       if (isStale()) return;
       const input = createRotatedCanvas(inputImg, pendingRotation);
-      // Selected part: cut only that box out of the page (made bigger when it is small, so the
-      // AI can see the letters clearly) and send just that piece.
-      let sendCanvas: HTMLCanvasElement = input;
-      let piece: { sx: number; sy: number; sw: number; sh: number } | null = null;
-      if (partBox) {
-        const sx = Math.max(0, Math.round(partBox.x0 * input.width));
-        const sy = Math.max(0, Math.round(partBox.y0 * input.height));
-        const sw = Math.min(
-          input.width - sx,
-          Math.round((partBox.x1 - partBox.x0) * input.width),
-        );
-        const sh = Math.min(
-          input.height - sy,
-          Math.round((partBox.y1 - partBox.y0) * input.height),
-        );
-        if (sw < 16 || sh < 16) {
-          throw new DocumentAiError("Please select a bigger part of the page.");
-        }
-        const up = Math.min(3, Math.max(1, 1200 / Math.max(sw, sh)));
-        const cutCanvas = document.createElement("canvas");
-        cutCanvas.width = Math.round(sw * up);
-        cutCanvas.height = Math.round(sh * up);
-        const cutCtx = cutCanvas.getContext("2d");
-        if (!cutCtx) throw new Error("Canvas context unavailable");
-        cutCtx.fillStyle = "#ffffff";
-        cutCtx.fillRect(0, 0, cutCanvas.width, cutCanvas.height);
-        cutCtx.imageSmoothingEnabled = true;
-        cutCtx.imageSmoothingQuality = "high";
-        cutCtx.drawImage(input, sx, sy, sw, sh, 0, 0, cutCanvas.width, cutCanvas.height);
-        sendCanvas = cutCanvas;
-        piece = { sx, sy, sw, sh };
-      }
+      const sendCanvas: HTMLCanvasElement = input;
       const blob = await canvasToAiBlob(sendCanvas);
       if (isStale()) return;
       const prompt = buildDocumentAiPrompt(request);
@@ -6012,50 +5964,10 @@ export default function DocumentScanner() {
       const aiImageData: string = result?.image ?? "";
       const aiImg = await loadImage(aiImageData);
       if (isStale()) return;
-      let aiSrc: string;
-      if (piece) {
-        // The AI must hand back the same shape; a stretched piece would distort the letters.
-        const aiRatio = aiImg.naturalWidth / Math.max(1, aiImg.naturalHeight);
-        const pieceRatio = piece.sw / piece.sh;
-        if (Math.abs(aiRatio / pieceRatio - 1) > 0.08) {
-          throw new DocumentAiError(
-            "The AI changed the shape of the selected part. Please select again and try once more.",
-          );
-        }
-        // Put the finished piece back into the untouched page. The piece's own edge is blended
-        // over a few pixels so no visible box shows up; everything outside the box stays as it was.
-        const outCanvas = document.createElement("canvas");
-        outCanvas.width = input.width;
-        outCanvas.height = input.height;
-        const outCtx = outCanvas.getContext("2d");
-        if (!outCtx) throw new Error("Canvas context unavailable");
-        outCtx.drawImage(input, 0, 0);
-        const tile = document.createElement("canvas");
-        tile.width = piece.sw;
-        tile.height = piece.sh;
-        const tileCtx = tile.getContext("2d", { willReadFrequently: true });
-        if (!tileCtx) throw new Error("Canvas context unavailable");
-        tileCtx.imageSmoothingEnabled = true;
-        tileCtx.imageSmoothingQuality = "high";
-        tileCtx.drawImage(aiImg, 0, 0, piece.sw, piece.sh);
-        const tileData = tileCtx.getImageData(0, 0, piece.sw, piece.sh);
-        const feather = Math.max(2, Math.round(Math.min(piece.sw, piece.sh) * 0.015));
-        for (let y = 0; y < piece.sh; y++) {
-          const fy = Math.min(1, (y + 1) / feather, (piece.sh - y) / feather);
-          for (let x = 0; x < piece.sw; x++) {
-            const f = Math.min(fy, (x + 1) / feather, (piece.sw - x) / feather);
-            if (f < 1) tileData.data[(y * piece.sw + x) * 4 + 3] = Math.round(255 * f);
-          }
-        }
-        tileCtx.putImageData(tileData, 0, 0);
-        outCtx.drawImage(tile, piece.sx, piece.sy);
-        aiSrc = capCanvasSize(outCanvas, MAX_ENHANCE_SIDE).toDataURL("image/png");
-      } else {
-        aiSrc = capCanvasSize(
-          createRotatedCanvas(aiImg, 0),
-          MAX_ENHANCE_SIDE,
-        ).toDataURL("image/png");
-      }
+      const aiSrc = capCanvasSize(
+        createRotatedCanvas(aiImg, 0),
+        MAX_ENHANCE_SIDE,
+      ).toDataURL("image/png");
       // The effect-free "Normal" twin only gets the pending rotation baked in.
       let originalSrc = croppedOriginalSrc || selectedImageSrc;
       if (pendingRotation !== 0) {
@@ -7659,17 +7571,22 @@ export default function DocumentScanner() {
         <div className="text-[13px] font-bold text-[#3B2F1E]">
           {DL("Document tools")}
         </div>
-        <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {docTool("invert", <Contrast size={14} />)}
+          {docTool("straighten", <RotateCw size={14} />)}
         </div>
 
         <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
           {DL("Markup & eraser")}
         </div>
         <div className="grid grid-cols-2 gap-2">
+          {markupBtn("erase", "Eraser", <Eraser size={14} />)}
           {markupBtn("pen", "Pen", <Pen size={14} />)}
           {markupBtn("highlight", "Highlighter", <Highlighter size={14} />)}
-          {markupBtn("redact", "Black marker", <Square size={14} fill="currentColor" />, "col-span-2")}
+          {markupBtn("redact", "Black marker", <Square size={14} fill="currentColor" />)}
+          {markupBtn("stamp", "Remove stamp", <Wand2 size={14} />, "col-span-2")}
+          {markupBtn("recolor", "Restore color", <Palette size={14} />, "col-span-2")}
+          {markupBtn("seal", "Add seal", <Stamp size={14} />, "col-span-2")}
         </div>
 
         <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
@@ -7687,6 +7604,57 @@ export default function DocumentScanner() {
             "col-span-2",
           )}
         </div>
+      </div>
+    );
+  };
+  const handleColorDocument = () => {
+    if (!canChangeImage()) return;
+    setPendingRecolor(true);
+    if (!effects.color) void applyEffectStep("color");
+  };
+  const renderColorDocumentRow = () => {
+    const active = effects.color;
+    const busy =
+      isProcessing ||
+      images.length === 0 ||
+      !cleanBaseSrc ||
+      isSavingDocument ||
+      isManualCropping ||
+      isErasing;
+    const canRemove = findEffectUndoIndex("color") >= 0;
+    return (
+      <div className="flex items-stretch gap-2">
+        <button
+          type="button"
+          onClick={handleColorDocument}
+          disabled={busy}
+          aria-pressed={active}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+        >
+          {active ? <Check size={14} /> : <Palette size={14} />}
+          {DL("Color Document")}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => (active ? handleUndoEffect("color") : handleColorDocument())}
+          disabled={busy || (active && !canRemove)}
+          title={
+            active
+              ? canRemove
+                ? DL("Remove Color Document")
+                : DL(
+                    "This cannot be removed separately after cropping or erasing — press Undo.",
+                  )
+              : DL("Add Color Document")
+          }
+          aria-label={
+            active ? DL("Remove Color Document") : DL("Add Color Document")
+          }
+          className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#FBF6E8] border-[#FBB6B6] text-[#B91C1C] hover:bg-[#FEE9E9]" : "bg-[#FBF6E8] border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+        >
+          {active ? <Minus size={14} /> : <Plus size={14} />}
+        </button>
       </div>
     );
   };
@@ -7740,74 +7708,89 @@ export default function DocumentScanner() {
       </div>
     );
   };
-  // ---- "Selected part": the hand tools from the old version (no AI here) ------------
-  const renderPartToolsSection = () => {
-    const markupBusy =
-      !isErasing &&
-      (isProcessing ||
-        images.length === 0 ||
-        !cleanBaseSrc ||
-        isSavingDocument ||
-        isManualCropping);
-    const markupBtn = (
-      tool: BrushTool,
-      label: string,
-      icon: React.ReactNode,
-      extra = "",
-    ) => {
-      const on = isErasing && brushTool === tool;
-      return (
-        <button
-          key={tool}
-          type="button"
-          onClick={() => void handleToggleEraser(tool)}
-          disabled={markupBusy}
-          aria-pressed={on}
-          className={`${extra} flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[13px] leading-tight font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
-        >
-          {icon}
-          <span>{DL(label)}</span>
-        </button>
-      );
-    };
+  const renderMagicCleanRow = () => {
+    const passes = effects.enhance;
+    const active = passes > 0;
+    const atMax = passes >= MAX_ENHANCE_PASSES;
+    const canRemove = findEffectUndoIndex("enhance") >= 0;
+    const busy =
+      isProcessing ||
+      images.length === 0 ||
+      !cleanBaseSrc ||
+      isSavingDocument ||
+      isManualCropping ||
+      isErasing;
     return (
-      <div className="space-y-3">
-        {renderEffectRow("clean", "Document Clean", <Wand2 size={14} />)}
+      <div className="space-y-2">
+        <div className="flex items-stretch gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (!active) handleApplyEffect("enhance");
+            }}
+            disabled={busy}
+            aria-pressed={active}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+          >
+            {active ? <Check size={14} /> : <Sparkles size={14} />}
+            {DL(ENHANCE_LABEL)}
+            {passes > 1 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-[#FBF6E8]/25 text-[12px] font-bold">
+                <DocumentText>{"\u00D7"}</DocumentText>
+                {passes}
+              </span>
+            )}
+          </button>
 
-        <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
-          {DL("Markup & eraser")}
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {markupBtn("erase", "Eraser", <Eraser size={14} />)}
-          {markupBtn("pen", "Pen", <Pen size={14} />)}
-          {markupBtn("highlight", "Highlighter", <Highlighter size={14} />)}
-          {markupBtn("redact", "Black marker", <Square size={14} fill="currentColor" />)}
-          {markupBtn("stamp", "Remove stamp", <Wand2 size={14} />, "col-span-2")}
-          {markupBtn("recolor", "Restore color", <Palette size={14} />, "col-span-2")}
-          {markupBtn("seal", "Add seal", <Stamp size={14} />, "col-span-2")}
+          <button
+            type="button"
+            onClick={() =>
+              active
+                ? handleUndoEffect("enhance")
+                : handleApplyEffect("enhance")
+            }
+            disabled={busy || (active && !canRemove)}
+            title={
+              active
+                ? canRemove
+                  ? DL("Remove the last Fix Blur step.")
+                  : DL(
+                      "This cannot be removed separately after cropping or erasing — press Undo.",
+                    )
+                : DL(`Add ${ENHANCE_LABEL}`)
+            }
+            aria-label={
+              active
+                ? DL(`Remove ${ENHANCE_LABEL}`)
+                : DL(`Add ${ENHANCE_LABEL}`)
+            }
+            className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#FBF6E8] border-[#FBB6B6] text-[#B91C1C] hover:bg-[#FEE9E9]" : "bg-[#FBF6E8] border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+          >
+            {active ? <Minus size={14} /> : <Plus size={14} />}
+          </button>
         </div>
 
-        <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
-          {DL("Lines & borders")}
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {markupBtn("dots", "Dotted line", <MoreHorizontal size={14} />)}
-          {markupBtn("underline", "Underline", <Underline size={14} />)}
-          {markupBtn("border", "Border", <Frame size={14} />, "col-span-2")}
-          {markupBtn("write", "Handwriting", <PenLine size={14} />, "col-span-2")}
-          {markupBtn(
-            "punct",
-            "Punctuation",
-            <span className="text-[15px] font-bold leading-none">।,;</span>,
-            "col-span-2",
-          )}
-        </div>
+        {active && (
+          <button
+            type="button"
+            onClick={() => handleApplyEffect("enhance")}
+            disabled={busy || atMax}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer bg-[#D42020] border border-[#DC2626] text-white hover:bg-[#AE1717] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RotateCw size={14} />
+            {atMax ? (
+              <DocumentText>{`${ENHANCE_LABEL} has reached the maximum.`}</DocumentText>
+            ) : (
+              <DocumentText>{`${ENHANCE_LABEL} Again`}</DocumentText>
+            )}
+          </button>
+        )}
       </div>
     );
   };
   // ---- "Fix with AI" card ----------------------------------------------------
-  // Replaces the old Auto crop / Straighten / Color Document / Fix Blur / Document Clean /
-  // Eraser / Stamp tools and the Adjustments sliders: all of that is now one AI request.
+  // Whole-page AI only. Every manual tool (Auto crop, Straighten, Color Document, Fix Blur,
+  // Document Clean, Eraser, Stamp, Seal, Adjustments ...) lives in the "Edit tools" tab.
   const renderAiCard = () => {
     const busy =
       isProcessing ||
@@ -7816,22 +7799,18 @@ export default function DocumentScanner() {
       isSavingDocument ||
       isManualCropping ||
       isErasing;
-    const isPart = aiScope === "part";
     const request = {
-      presets: isPart ? aiPresets.filter((k) => k !== "crop") : aiPresets,
+      presets: aiPresets,
       colorMode: aiColorMode,
       chips: aiChips,
-      part: isPart,
-      partNote: isPart ? aiPartNote : "",
     };
-    const needsArea = isPart && !aiArea;
-    const ready = hasAiRequest(request) && !needsArea;
+    const ready = hasAiRequest(request);
     const toggleItem = <T,>(list: T[], item: T): T[] =>
       list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
     // "Restore old colours" always brings colour back, so the colour choice is hidden for it.
     // Always visible on the whole page: "paper white, text black" is a choice on its own.
     const restoreOn = aiPresets.includes("restore");
-    const showColorMode = !isPart;
+    const showColorMode = true;
     const effColorMode = restoreOn ? "color" : aiColorMode;
     const segBtn = (on: boolean) =>
       `flex-1 px-2 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`;
@@ -7842,41 +7821,12 @@ export default function DocumentScanner() {
           <Sparkles size={14} className="text-[#DC2626]" />
           {DL("Fix with AI")}
         </div>
-        {!isPart && (
-          <p className="text-[12px] leading-snug text-[#6B5A40]">
-            {DL("Choose what the AI should do, then press Run AI.")}
-          </p>
-        )}
+        <p className="text-[12px] leading-snug text-[#6B5A40]">
+          {DL("Choose what the AI should do, then press Run AI.")}
+        </p>
 
-        <div className="space-y-1.5">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setAiScope("page")}
-              disabled={busy}
-              aria-pressed={!isPart}
-              className={segBtn(!isPart)}
-            >
-              {DL("Whole page")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setAiScope("part")}
-              disabled={busy}
-              aria-pressed={isPart}
-              className={segBtn(isPart)}
-            >
-              {DL("Selected part")}
-            </button>
-          </div>
-        </div>
-
-        {isPart && renderPartToolsSection()}
-
-        {!isPart && (
-          <>
         <div className="space-y-2">
-          {AI_PRESET_KEYS.filter((key) => !(isPart && key === "crop")).map((key) => {
+          {AI_PRESET_KEYS.map((key) => {
             const on = aiPresets.includes(key);
             return (
               <button
@@ -7965,28 +7915,6 @@ export default function DocumentScanner() {
           </div>
         </div>
 
-        {isPart && (
-          <div className="space-y-1.5">
-            <div className="text-[13px] font-bold text-[#3B2F1E]">
-              {DL("Write what to do in this part (optional)")}
-            </div>
-            <textarea
-              value={aiPartNote}
-              onChange={(e) =>
-                setAiPartNote(e.target.value.slice(0, AI_PART_NOTE_MAX))
-              }
-              disabled={busy}
-              rows={2}
-              maxLength={AI_PART_NOTE_MAX}
-              placeholder={DL("e.g. make this word darker and clearer")}
-              className="w-full rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] px-2.5 py-1.5 text-[13px] text-[#3B2F1E] resize-none select-text outline-none focus:border-[#DC2626] disabled:opacity-60"
-            />
-            <p className="text-[11.5px] leading-snug text-[#7A6A50]">
-              {DL("Only for the look of this part. Text and numbers are never changed.")}
-            </p>
-          </div>
-        )}
-
         <GenerationQuotaNotice size="compact" />
 
         <button
@@ -7999,11 +7927,9 @@ export default function DocumentScanner() {
           {DL("Run AI")}
         </button>
         <p className="text-[12px] leading-snug text-[#6B5A40] text-center">
-          {needsArea
-            ? DL("Choose the part first: drag a box on the document.")
-            : ready
-              ? DL("Takes about a minute.")
-              : DL("Choose at least one option above.")}
+          {ready
+            ? DL("Takes about a minute.")
+            : DL("Choose at least one option above.")}
         </p>
 
         <div
@@ -8022,8 +7948,6 @@ export default function DocumentScanner() {
             </p>
           </div>
         </div>
-          </>
-        )}
 
         <button
           type="button"
@@ -10225,6 +10149,20 @@ export default function DocumentScanner() {
 
                 <div className="space-y-2">
                   <button
+                    onClick={handleTriggerAutoCrop}
+                    disabled={
+                      isProcessing ||
+                      images.length === 0 ||
+                      isSavingDocument ||
+                      isErasing
+                    }
+                    className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${autoCrop && !isManualCropping ? "bg-[#DC2626] text-white" : "bg-[#DC2626] hover:bg-[#B91C1C] text-white"}`}
+                  >
+                    <Crop size={14} />
+                    <DocumentText>{"Auto crop\n                "}</DocumentText>
+                  </button>
+
+                  <button
                     onClick={handleTriggerManualCrop}
                     disabled={images.length === 0 || isSavingDocument || isErasing}
                     className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${isManualCropping ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
@@ -10240,10 +10178,220 @@ export default function DocumentScanner() {
             )}
 
             <div className="scanner-tools-col">
-              {(activeSidebarTab === "tools" || (activeSidebarTab === "ai" && aiScope === "part")) &&
-                renderToolOptionsPanel()}
+              {activeSidebarTab === "tools" && renderToolOptionsPanel()}
 
               {activeSidebarTab === "ai" && renderAiCard()}
+
+              {activeSidebarTab === "tools" && (
+                <>
+              {!isErasing && (
+                <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
+                  <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
+                    <span className="w-1.5 h-3 bg-[#DC2626] rounded-xs" />
+                    <DocumentText>{"Enhance Document\n              "}</DocumentText>
+                  </div>
+
+                  {renderColorDocumentRow()}
+                  {renderMagicCleanRow()}
+                  {renderEffectRow("clean", "Document Clean", <Wand2 size={14} />)}
+                  <button
+                    type="button"
+                    onClick={handleUndoLast}
+                    disabled={
+                      history.length === 0 ||
+                      isProcessing ||
+                      isManualCropping ||
+                      isErasing ||
+                      isSavingDocument
+                    }
+                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-semibold border border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#EFE3C8] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <RotateCcw size={12} />
+                    {history.length > 0 ? (
+                      <DocumentText>{`Undo: ${STEP_LABELS[history[history.length - 1].step]}`}</DocumentText>
+                    ) : (
+                      <DocumentText>{"Undo"}</DocumentText>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
+                <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
+                  <span className="w-1.5 h-3 bg-[#DC2626] rounded-xs" />
+                  <DocumentText>{"Mode\n              "}</DocumentText>
+                </div>
+
+                <div className="space-y-2">
+                  <button
+                    onMouseDown={() => setIsHoldingOriginal(true)}
+                    onMouseUp={() => setIsHoldingOriginal(false)}
+                    onMouseLeave={() => setIsHoldingOriginal(false)}
+                    onTouchStart={() => setIsHoldingOriginal(true)}
+                    onTouchEnd={() => setIsHoldingOriginal(false)}
+                    disabled={images.length === 0}
+                    className={`w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-xl transition-all cursor-pointer select-none active:scale-98 ${isHoldingOriginal ? "bg-[#DC2626] text-white shadow-xs" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"} disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    <Eye size={14} />
+                    <span>
+                      {isHoldingOriginal ? (
+                        <DocumentText>{"Showing Original..."}</DocumentText>
+                      ) : (
+                        <DocumentText>
+                          {"Hold for Normal (original)"}
+                        </DocumentText>
+                      )}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {!isErasing && (
+                <div className="scanner-tool-card scanner-adjustments-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3 transition-all sm:col-span-2 lg:col-span-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
+                      <span className="w-1.5 h-3 bg-[#DC2626] rounded-xs" />
+                      <DocumentText>{"Adjustments\n                "}</DocumentText>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleResetAdjustments}
+                      disabled={
+                        images.length === 0 ||
+                        (blackness === 0 && contrast === 0 && brightness === 0)
+                      }
+                      className="px-2 py-1 rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E] text-[12px] font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={DL("Reset only adjustments")}
+                    >
+                      <DocumentText>{"Reset\n                "}</DocumentText>
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <div className="flex justify-between font-semibold text-[#5A4A32] mb-1">
+                        <span>
+                          <DocumentText>{"Black"}</DocumentText>
+                        </span>
+                        <span>{blackness}</span>
+                      </div>
+                      <input
+                        type="range"
+                        disabled={isErasing}
+                        min="-100"
+                        max="100"
+                        value={blackness}
+                        onChange={(e) => {
+                          setBlackness(Number(e.target.value));
+                          setHasUnsavedChanges(true);
+                        }}
+                        className="w-full accent-[#DC2626] h-1.5 bg-[#F3E9D2] rounded-lg cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between font-semibold text-[#5A4A32] mb-1">
+                        <span>
+                          <DocumentText>{"Color"}</DocumentText>
+                        </span>
+                        <span>{brightness}</span>
+                      </div>
+                      <input
+                        type="range"
+                        disabled={isErasing}
+                        min="-100"
+                        max="100"
+                        value={brightness}
+                        onChange={(e) => {
+                          setBrightness(Number(e.target.value));
+                          setHasUnsavedChanges(true);
+                        }}
+                        className="w-full accent-[#DC2626] h-1.5 bg-[#F3E9D2] rounded-lg cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between font-semibold text-[#5A4A32] mb-1">
+                        <span>
+                          <DocumentText>{"Contrast"}</DocumentText>
+                        </span>
+                        <span>{contrast}</span>
+                      </div>
+                      <input
+                        type="range"
+                        disabled={isErasing}
+                        min="-100"
+                        max="100"
+                        value={contrast}
+                        onChange={(e) => {
+                          setContrast(Number(e.target.value));
+                          setHasUnsavedChanges(true);
+                        }}
+                        className="w-full accent-[#DC2626] h-1.5 bg-[#F3E9D2] rounded-lg cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Hanging warning note: hangs on the right side of the Enhance card
+                  (desktop fit mode, hung on the right edge) or sits under the buttons (narrow screens). */}
+              <div
+                role="note"
+                className="scanner-note-wrap relative mt-1"
+              >
+                <div>
+                  <div className="rounded-lg bg-[#FFF176] border-2 border-[#E6C200] shadow-[3px_8px_16px_rgba(90,74,50,0.32)] overflow-hidden">
+                    <div className="flex items-center gap-2 bg-[#DC2626] text-white px-3 py-2">
+                      <span className="relative flex w-3.5 h-3.5 shrink-0">
+                        <span className="absolute inline-flex w-full h-full rounded-full bg-white opacity-75 animate-ping" />
+                        <span className="relative inline-flex w-3.5 h-3.5 rounded-full bg-white" />
+                      </span>
+                      <AlertCircle size={16} className="shrink-0" />
+                      <span className="text-[13px] font-extrabold uppercase tracking-wider">
+                        <DocumentText>{"Important"}</DocumentText>
+                      </span>
+                    </div>
+                    <div className="px-3 py-3 space-y-3">
+                      <p className="text-[19px] leading-tight font-extrabold text-[#3B2F1E]">
+                        <DocumentText>{"Blurry photo?"}</DocumentText>
+                      </p>
+                      <div className="flex items-start gap-2">
+                        <span className="shrink-0 w-6 h-6 rounded-full bg-[#DC2626] text-white text-[13px] font-bold flex items-center justify-center">
+                          1
+                        </span>
+                        <p className="text-[15px] leading-snug font-semibold text-[#3B2F1E]">
+                          <DocumentText>
+                            {"Photo blurry? First press Fix Blur."}
+                          </DocumentText>
+                        </p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="shrink-0 w-6 h-6 rounded-full bg-[#DC2626] text-white text-[13px] font-bold flex items-center justify-center">
+                          2
+                        </span>
+                        <p className="text-[15px] leading-snug font-semibold text-[#3B2F1E]">
+                          <DocumentText>
+                            {"Then press Document Clean."}
+                          </DocumentText>
+                        </p>
+                      </div>
+                      <div className="border-t-2 border-dashed border-[#C9A800] pt-2.5">
+                        <p className="text-[14px] leading-snug font-bold text-[#7A1F1F]">
+                          <DocumentText>
+                            {
+                              "Photo already sharp? Skip Fix Blur — go straight to Document Clean."
+                            }
+                          </DocumentText>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+                </>
+              )}
 
               {activeSidebarTab !== "page" && (
               <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
