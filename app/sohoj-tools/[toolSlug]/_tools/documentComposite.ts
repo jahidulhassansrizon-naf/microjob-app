@@ -20,6 +20,9 @@ export type ComposeOptions = {
   contrast?: boolean;
   /** Sharpen the strokes of the person's own photo (no AI: no letter is ever redrawn). */
   sharpen?: boolean;
+  /** "Restore old colours": the ink COLOUR is taken from the AI picture (blurred, so no AI
+   *  letter shape can come through) and put on the strokes of the person's own photo. */
+  restoreColor?: boolean;
 };
 
 type Plane = { data: Float32Array; w: number; h: number };
@@ -207,6 +210,45 @@ function sharpenInk(ink: Float32Array, w: number, h: number): void {
   }
 }
 
+
+/**
+ * Ink colour field from the AI picture: for every place, the colour of the dark strokes
+ * nearby. It is averaged over a small neighbourhood, so the AI's own letter shapes are lost
+ * and only "this area is written in blue / black / red" is kept.
+ */
+function inkColorField(
+  ai: Uint8ClampedArray,
+  w: number,
+  h: number,
+  aiPaper: { plane: Plane; f: number },
+): { color: Plane; weight: Plane; f: number } {
+  const n = w * h;
+  const cs = new Uint8ClampedArray(n * 4);
+  const ws = new Uint8ClampedArray(n * 4);
+  // Both are stored x255 in 8 bit planes for the box downscale (precision is plenty here).
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const pr = Math.max(8, sample(aiPaper.plane, aiPaper.f, x, y, 0));
+      const pg = Math.max(8, sample(aiPaper.plane, aiPaper.f, x, y, 1));
+      const pb = Math.max(8, sample(aiPaper.plane, aiPaper.f, x, y, 2));
+      const lum =
+        (0.299 * ai[i] / pr + 0.587 * ai[i + 1] / pg + 0.114 * ai[i + 2] / pb);
+      const d = Math.max(0, Math.min(1, 1 - lum));
+      const wgt = d * d * d;
+      ws[i] = ws[i + 1] = ws[i + 2] = Math.round(wgt * 255);
+      cs[i] = Math.round(wgt * ai[i]);
+      cs[i + 1] = Math.round(wgt * ai[i + 1]);
+      cs[i + 2] = Math.round(wgt * ai[i + 2]);
+      cs[i + 3] = ws[i + 3] = 255;
+    }
+  }
+  const f = Math.max(1, Math.round(Math.max(w, h) / 500));
+  const color = boxBlur(boxBlur(boxDownscale(cs, w, h, f), 3), 3);
+  const weight = boxBlur(boxBlur(boxDownscale(ws, w, h, f), 3), 3);
+  return { color, weight, f };
+}
+
 /**
  * Pure pixel version (also used by the tests).
  * `orig` and `ai` are RGBA arrays of the SAME size w x h.
@@ -241,6 +283,34 @@ export function composeTextSafePixels(
     }
   }
   if (opts.sharpen) sharpenInk(ink, w, h);
+  const field =
+    opts.restoreColor && opts.colorMode !== "bw"
+      ? inkColorField(ai, w, h, pa)
+      : null;
+  // Faded ink: stretch the darkest strokes of the page up to full strength, so old pale ink
+  // comes back as strong as new ink (only the strokes' own strength changes, never their shape).
+  let inkStretch = 1;
+  if (field) {
+    const hist = new Uint32Array(101);
+    let count = 0;
+    for (let k = 0; k < ink.length; k += 3) {
+      const dd = 1 - (0.299 * ink[k] + 0.587 * ink[k + 1] + 0.114 * ink[k + 2]);
+      if (dd > 0.15) {
+        hist[Math.min(100, Math.round(dd * 100))]++;
+        count++;
+      }
+    }
+    if (count > 200) {
+      let acc = 0;
+      for (let v = 0; v <= 100; v++) {
+        acc += hist[v];
+        if (acc >= count * 0.97) {
+          inkStretch = 1 / Math.max(0.3, v / 100);
+          break;
+        }
+      }
+    }
+  }
   // Pass 2: put the ink on the AI paper.
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -251,16 +321,33 @@ export function composeTextSafePixels(
         const g = 0.299 * ratio[0] + 0.587 * ratio[1] + 0.114 * ratio[2];
         ratio[0] = ratio[1] = ratio[2] = Math.max(0, Math.min(1, (g - 0.25) / 0.75));
       }
+      const base = [0, 0, 0];
+      const paperV = [0, 0, 0];
       for (let c = 0; c < 3; c++) {
         let r = ratio[c];
         if (opts.darker) r = Math.pow(r, 1.5);
         if (opts.contrast) r = Math.max(0, Math.min(1, (r - 0.5) * 1.25 + 0.5));
         let paperA = sample(pa.plane, pa.f, x, y, c);
         if (bw || opts.brighter) paperA = 255;
-        let v = paperA * r;
-        if (v > 255) v = 255;
-        out[i + c] = v;
+        paperV[c] = paperA;
+        base[c] = Math.min(255, paperA * r);
+        ratio[c] = r;
       }
+      if (field) {
+        // How much ink is here (from the person's own strokes only).
+        const lum = 0.299 * ratio[0] + 0.587 * ratio[1] + 0.114 * ratio[2];
+        const d = Math.max(0, Math.min(1, (1 - lum) * inkStretch));
+        const wsum = sample(field.weight, field.f, x, y, 0);
+        const conf = Math.max(0, Math.min(1, wsum / 255 / 0.04));
+        if (conf > 0 && d > 0) {
+          for (let c = 0; c < 3; c++) {
+            const k = sample(field.color, field.f, x, y, c) / Math.max(1e-6, wsum / 255);
+            const colored = paperV[c] * (1 - d) + Math.min(255, k) * d;
+            base[c] = base[c] * (1 - conf) + colored * conf;
+          }
+        }
+      }
+      for (let c = 0; c < 3; c++) out[i + c] = base[c];
       out[i + 3] = 255;
     }
   }

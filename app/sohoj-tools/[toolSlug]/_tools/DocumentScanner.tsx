@@ -5975,6 +5975,8 @@ export default function DocumentScanner() {
         contrast: aiChips.includes("contrast"),
         // "Clean & sharpen": strokes are sharpened from the person's own pixels, never by AI.
         sharpen: aiPresets.includes("clean"),
+        // "Restore old colours": ink colour comes from the AI, the strokes stay the original's.
+        restoreColor: aiPresets.includes("restore"),
       });
       const aiSrc = capCanvasSize(safeCanvas, MAX_ENHANCE_SIDE).toDataURL(
         "image/png",
