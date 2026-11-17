@@ -19,6 +19,10 @@ import {
 import { useI18n } from "@/components/i18n/I18nProvider";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import { replaceSiteNameInText } from "@/lib/siteSettings";
+import { CREATOR, FOUNDER_IMAGE_URL } from "@/app/_lib/creator";
+
+const CREATOR_ROLE_EN: string = CREATOR.roleEn;
+const CREATOR_ROLE_BN: string = CREATOR.roleBn;
 
 const copy = {
   en: {
@@ -26,7 +30,7 @@ const copy = {
     titleA: "Built independently.",
     titleB: "Growing with every step.",
     intro:
-      "I’m an independent full-stack developer building Seba Lagbe hands-on. Over the last two months, I’ve been turning an idea into a working platform for everyday digital tasks—and improving it one feature at a time.",
+      "I’m Jahidul Hassan Srizon, an independent full-stack developer building Seba Lagbe hands-on. Over the last two months, I’ve been turning an idea into a working platform for everyday digital tasks—and improving it one feature at a time.",
     introNote:
       "This is a living project, built piece by piece, with plenty of room to improve and grow.",
     aboutLabel: "THE PERSON BEHIND Seba Lagbe",
@@ -70,13 +74,14 @@ const copy = {
     primaryCta: "Let’s talk about collaborating",
     secondaryCta: "Explore the tools",
     smallNote: "Built independently. Open to thoughtful collaboration.",
+    founderRole: CREATOR_ROLE_EN,
   },
   bn: {
     eyebrow: "বড় লক্ষ্য নিয়ে একটি ব্যক্তিগত উদ্যোগ",
     titleA: "নিজের হাতে তৈরি।",
     titleB: "প্রতিটি ধাপে এগিয়ে চলা।",
     intro:
-      "আমি একজন স্বতন্ত্র ফুল-স্ট্যাক ডেভেলপার; নিজের হাতে ‘সেবা লাগবে’ তৈরি করছি। গত দুই মাস ধরে একটি ধারণাকে দৈনন্দিন ডিজিটাল কাজের ব্যবহারযোগ্য প্ল্যাটফর্মে রূপ দিচ্ছি এবং ধাপে ধাপে নতুন ফিচার যোগ করে উন্নত করছি।",
+      "আমি জাহিদুল হাসান সৃজন, একজন স্বতন্ত্র ফুল-স্ট্যাক ডেভেলপার; নিজের হাতে ‘সেবা লাগবে’ তৈরি করছি। গত দুই মাস ধরে একটি ধারণাকে দৈনন্দিন ডিজিটাল কাজের ব্যবহারযোগ্য প্ল্যাটফর্মে রূপ দিচ্ছি এবং ধাপে ধাপে নতুন ফিচার যোগ করে উন্নত করছি।",
     introNote:
       "এটি ধাপে ধাপে গড়ে ওঠা একটি চলমান প্রকল্প—উন্নতি ও বড় হয়ে ওঠার অনেক সুযোগ রয়েছে।",
     aboutLabel: "‘সেবা লাগবে’-এর পেছনের মানুষটি",
@@ -120,6 +125,7 @@ const copy = {
     primaryCta: "সহযোগিতা নিয়ে কথা বলুন",
     secondaryCta: "টুলগুলো দেখুন",
     smallNote: "নিজের হাতে তৈরি। আন্তরিক সহযোগিতার জন্য উন্মুক্ত।",
+    founderRole: CREATOR_ROLE_BN,
   },
 } as const;
 
@@ -162,7 +168,21 @@ export default function AboutContent() {
                 {t.titleB}
               </span>
             </h1>
-            <p className="mx-auto mt-7 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg sm:leading-9">
+            <div className="mt-7 inline-flex items-center gap-3 rounded-full border border-indigo-100 bg-white/85 py-1.5 pl-1.5 pr-5 shadow-sm shadow-indigo-900/5 backdrop-blur">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={FOUNDER_IMAGE_URL}
+                alt={`${CREATOR.nameBn} (${CREATOR.nameEn})`}
+                width={44}
+                height={44}
+                className="h-11 w-11 rounded-full object-cover object-[center_25%] ring-2 ring-white"
+              />
+              <span className="text-left leading-tight">
+                <span className="block text-base font-extrabold text-slate-900">{CREATOR.nameBn}</span>
+                <span className="block text-xs font-semibold text-indigo-600">{t.founderRole}</span>
+              </span>
+            </div>
+            <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg sm:leading-9">
               {t.intro}
             </p>
             <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-500">
@@ -216,8 +236,20 @@ export default function AboutContent() {
           <div className="mt-5 h-1 w-16 rounded-full bg-gradient-to-r from-blue-600 to-violet-600" />
         </div>
         <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-[0_16px_50px_rgba(15,23,42,0.045)] sm:p-8 lg:p-10">
-          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-violet-600 text-white shadow-md shadow-indigo-600/20">
-            <Code2 size={23} />
+          <div className="mb-6 flex items-center gap-4 sm:gap-5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={FOUNDER_IMAGE_URL}
+              alt={`${CREATOR.nameBn} (${CREATOR.nameEn})`}
+              width={96}
+              height={120}
+              className="h-28 w-24 shrink-0 rounded-2xl object-cover object-[center_25%] shadow-md shadow-indigo-600/20 ring-1 ring-slate-200 sm:h-32 sm:w-28"
+            />
+            <div className="min-w-0">
+              <h3 className="text-2xl font-black leading-tight tracking-tight text-slate-950 sm:text-3xl">{CREATOR.nameBn}</h3>
+              <p className="mt-1 text-sm font-semibold text-slate-500">{CREATOR.nameEn}</p>
+              <p className="mt-2 text-sm font-bold text-indigo-600">{t.founderRole}</p>
+            </div>
           </div>
           <p className="text-base leading-8 text-slate-600 sm:text-lg sm:leading-9">{t.aboutBody}</p>
           <div className="mt-7 flex items-start gap-3 rounded-2xl bg-emerald-50/80 p-4 text-sm leading-6 text-emerald-900 ring-1 ring-inset ring-emerald-100">

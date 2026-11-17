@@ -17,6 +17,14 @@ import { DEFAULT_SITE_SETTINGS, buildSiteTitle } from "@/lib/siteSettings";
 import { getServerSiteSettings } from "@/lib/serverSiteSettings";
 import { I18nProvider } from "@/components/i18n/I18nProvider";
 import { DEFAULT_LOCALE } from "@/lib/i18n";
+import {
+  ABOUT_URL,
+  CREATOR,
+  SITE_NAME,
+  SITE_URL,
+  jsonLdString,
+  siteJsonLd,
+} from "./_lib/creator";
 import "./globals.css";
 
 // The root layout no longer reads cookies, so pages without their own dynamic code are
@@ -55,7 +63,19 @@ export async function generateMetadata(): Promise<Metadata> {
   // Keep the original app/favicon.ico, app/icon.png and apple-icon assets as
   // browser icons. The full horizontal logo is not a suitable favicon: using
   // it here made the recognizable tab icon appear tiny/unclear.
-  return { title, description };
+  // Sitewide author info: Google reads these (and the JSON-LD below) to learn who made the site.
+  return {
+    metadataBase: new URL(SITE_URL),
+    title,
+    description,
+    applicationName: SITE_NAME,
+    authors: [
+      { name: CREATOR.nameBn, url: ABOUT_URL },
+      { name: CREATOR.nameEn, url: ABOUT_URL },
+    ],
+    creator: CREATOR.nameBn,
+    publisher: SITE_NAME,
+  };
 }
 
 export default async function RootLayout({
@@ -77,6 +97,10 @@ export default async function RootLayout({
       <head>
         {/* Restores cached layout values before first paint -> no UI pop-in on reload. */}
         <PrePaintScript />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdString(siteJsonLd()) }}
+        />
       </head>
       <body
         className="min-h-screen text-gray-900 antialiased"
