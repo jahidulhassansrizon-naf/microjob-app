@@ -18,16 +18,13 @@ import {
   Loader2,
   Columns,
   AlertCircle,
-  Palette,
   Sparkles,
-  Wand2,
   Check,
   Eye,
   Edit,
   Save,
   ChevronLeft,
   ChevronRight,
-  Eraser,
   Pen,
   Highlighter,
   Contrast,
@@ -37,7 +34,6 @@ import {
   MoreHorizontal,
   Frame,
   PenLine,
-  Stamp,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import {
@@ -48,6 +44,22 @@ import {
 import { cleanDocumentCanvas, isCleanAbort } from "./documentClean";
 import { isColorAbort } from "./colorDocument";
 import { detectDocumentCornersCv } from "./documentCorners";
+import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
+import {
+  AI_CHIP_KEYS,
+  AI_CHIP_LABELS,
+  AI_CUSTOM_MAX,
+  AI_PRESET_HINTS,
+  AI_PRESET_KEYS,
+  AI_PRESET_LABELS,
+  DocumentAiError,
+  buildDocumentAiPrompt,
+  canvasToAiBlob,
+  hasAiRequest,
+  type AiChipKey,
+  type AiColorMode,
+  type AiPresetKey,
+} from "./documentAi";
 declare global {
   interface Window {
     cv: any;
@@ -114,6 +126,7 @@ type StepKind =
   | "autoCrop"
   | "manualCrop"
   | "erase"
+  | "ai"
   | DocToolKind;
 // The state right before a step ran. Restoring it undoes that step.
 type Snapshot = {
@@ -135,6 +148,7 @@ const STEP_LABELS: Record<StepKind, string> = {
   autoCrop: "Auto crop",
   manualCrop: "Manual crop",
   erase: "Eraser / Pen",
+  ai: "AI Fix",
   invert: "Invert colors",
   straighten: "Straighten page",
 };
@@ -3459,6 +3473,45 @@ const DOCUMENT_EXACT: Record<string, string> = {
 };
 
 const DOCUMENT_EXTRA: Record<string, string> = {
+  "fix with ai": "AI দিয়ে ঠিক করুন",
+  "choose what the ai should do, then press run ai.":
+    "AI কী করবে বেছে নিন, তারপর “AI চালান” চাপুন।",
+  "clean & sharpen": "পরিষ্কার ও স্পষ্ট করুন",
+  "shadows, stains, blur": "ছায়া, দাগ, ঝাপসা",
+  "straighten & crop": "সোজা ও ক্রপ করুন",
+  "straight, edges cut": "সোজা, কিনারা কাটা",
+  "remove stamp / marks": "সিল / দাগ মুছুন",
+  "seal, ink, dirt": "সিল, কালি, ময়লা",
+  "output colour": "ফলাফলের রঙ",
+  "keep colours": "রঙ রাখুন",
+  "black & white": "সাদা-কালো",
+  "fine tune": "ফাইন-টিউন",
+  "darker text": "লেখা আরও গাঢ়",
+  "brighter paper": "কাগজ আরও উজ্জ্বল",
+  "more contrast": "আরও কনট্রাস্ট",
+  "write in your own words (optional)": "নিজের কথায় লিখুন (ঐচ্ছিক)",
+  "e.g. remove the pen marks at the bottom":
+    "যেমন: নিচের কলমের দাগ মুছে দাও",
+  "run ai": "AI চালান",
+  "choose at least one option above.": "ওপর থেকে অন্তত একটি অপশন বেছে নিন।",
+  "takes about a minute. text and numbers are never rewritten.":
+    "প্রায় ১ মিনিট লাগে। লেখা ও সংখ্যা কখনো বদলানো হয় না।",
+  "ai is working… this can take up to a minute.":
+    "AI কাজ করছে… এতে ১ মিনিট পর্যন্ত লাগতে পারে।",
+  "ai could not finish this time. please try again.":
+    "AI এবার কাজটি শেষ করতে পারেনি। আবার চেষ্টা করুন।",
+  "an active subscription is required to use ai.":
+    "AI ব্যবহার করতে সক্রিয় সাবস্ক্রিপশন লাগবে।",
+  "the ai took too long. please try again.":
+    "AI-র অনেক বেশি সময় লাগছে। আবার চেষ্টা করুন।",
+  "important": "গুরুত্বপূর্ণ",
+  "photo blurry, dirty or crooked?": "ছবি ঝাপসা, ময়লা বা বাঁকা?",
+  "tick what you need in “fix with ai”.":
+    "“AI দিয়ে ঠিক করুন” কার্ডে যা দরকার টিক দিন।",
+  "press “run ai” and wait about a minute.":
+    "“AI চালান” চাপুন এবং প্রায় ১ মিনিট অপেক্ষা করুন।",
+  "not happy with the result? press undo and try again — the original is never lost.":
+    "ফলাফল পছন্দ না হলে “পূর্বাবস্থায় ফিরুন” চাপুন — আসল ছবি কখনো হারায় না।",
   "straighten page": "পেজ সোজা করুন",
   "the page already looks straight.": "পেজ আগে থেকেই সোজা আছে।",
   "noto sans": "নোটো সান্স",
@@ -3640,6 +3693,7 @@ const translateDocumentText = (
       "Auto crop": "স্বয়ংক্রিয় ক্রপ",
       "Manual crop": "ম্যানুয়াল ক্রপ",
       "Eraser / Pen": "ইরেজার / কলম",
+      "AI Fix": "AI দিয়ে ঠিক করা",
       "Invert colors": "রঙ উল্টান",
       "Straighten page": "পেজ সোজা করুন",
     };
@@ -3987,6 +4041,12 @@ export default function DocumentScanner() {
   const [enhanceProgress, setEnhanceProgress] =
     useState<EnhanceProgress | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // "Fix with AI" card: what the person ticked + the run flag.
+  const [aiPresets, setAiPresets] = useState<AiPresetKey[]>(["clean"]);
+  const [aiColorMode, setAiColorMode] = useState<AiColorMode>("color");
+  const [aiChips, setAiChips] = useState<AiChipKey[]>([]);
+  const [aiCustom, setAiCustom] = useState<string>("");
+  const [isAiRunning, setIsAiRunning] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -5757,6 +5817,161 @@ export default function DocumentScanner() {
     if (stage === "enhance" && effects.enhance >= MAX_ENHANCE_PASSES) return;
     void applyEffectStep(stage);
   };
+  // ---- Fix with AI -----------------------------------------------------------
+  // Sends the page that is on screen + one prompt to /api/image-generate (the same route, limits
+  // and Gemini bot that AI Editor / Bulk Photo Edit / AI Template use) and swaps the page for the
+  // finished image. It is ONE history step, so "Undo" brings the previous page back.
+  const applyAiStep = async () => {
+    const request = {
+      presets: aiPresets,
+      colorMode: aiColorMode,
+      chips: aiChips,
+      custom: aiCustom,
+    };
+    if (!hasAiRequest(request)) return;
+    if (!canChangeImage()) return;
+    cancelActiveProcessing();
+    cancelCloudinarySaveRequest();
+    enhanceAbortRef.current?.abort();
+    const currentProcessingId = ++processingIdRef.current;
+    const controller = new AbortController();
+    enhanceAbortRef.current = controller;
+    const rotationAtStart = rotation;
+    const pendingRotation = normalizeAngle(rotation - bakedRotation);
+    const isStale = () =>
+      controller.signal.aborted ||
+      currentProcessingId !== processingIdRef.current;
+    // The route itself gives up after ~300 s; stop a little later than that.
+    let timedOut = false;
+    const timer = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 310_000);
+    const startedAt = Date.now();
+    try {
+      setErrorMessage(null);
+      setActiveStage(null);
+      setIsAiRunning(true);
+      setIsProcessing(true);
+      // Input = what the person sees now (all earlier steps included).
+      const inputImg = await loadImage(cleanBaseSrc);
+      if (isStale()) return;
+      const input = createRotatedCanvas(inputImg, pendingRotation);
+      const blob = await canvasToAiBlob(input);
+      if (isStale()) return;
+      const prompt = buildDocumentAiPrompt(request);
+      let response: Response;
+      let result: {
+        success?: boolean;
+        image?: string;
+        error?: string;
+        code?: string;
+        retryAfter?: number;
+      } | null = null;
+      let retried = false;
+      while (true) {
+        const formData = new FormData();
+        formData.append("image", blob, "document.jpg");
+        formData.append("prompt", prompt);
+        response = await fetch("/api/image-generate", {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+          cache: "no-store",
+          credentials: "include",
+        });
+        result = await response.json().catch(() => null);
+        // One quiet automatic retry for temporary failures (bot busy, gateway timeout).
+        const retryAfterSeconds =
+          Number(result?.retryAfter) ||
+          Number(response.headers.get("retry-after")) ||
+          0;
+        const canRetry =
+          !response.ok &&
+          [502, 503, 504].includes(response.status) &&
+          result?.code !== "SUBSCRIPTION_REQUIRED" &&
+          retryAfterSeconds <= 30 &&
+          Date.now() - startedAt < 150000;
+        if (canRetry && !retried) {
+          retried = true;
+          await new Promise((resolve) => window.setTimeout(resolve, 3000));
+          if (isStale()) return;
+          continue;
+        }
+        break;
+      }
+      if (!response.ok || !result?.success || typeof result.image !== "string") {
+        if (response.status === 403 && result?.code === "SUBSCRIPTION_REQUIRED") {
+          window.dispatchEvent(new Event("sohozkaj:subscription-required"));
+          throw new DocumentAiError(
+            "An active subscription is required to use AI.",
+          );
+        }
+        if (response.status === 429 && typeof result?.error === "string") {
+          // Hourly / daily limit or "one image at a time": the server text is written for visitors.
+          throw new DocumentAiError(result.error);
+        }
+        // Never show raw technical text (bot page URL, button lists, stack info).
+        const raw = typeof result?.error === "string" ? result.error : "";
+        const looksTechnical =
+          raw.length > 300 ||
+          /\[page:|signInVisible|buttons:|playwright|gemini\.google|https?:\/\//i.test(
+            raw,
+          );
+        throw new DocumentAiError(
+          !raw || looksTechnical
+            ? "AI could not finish this time. Please try again."
+            : raw,
+        );
+      }
+      const aiImageData: string = result?.image ?? "";
+      const aiImg = await loadImage(aiImageData);
+      if (isStale()) return;
+      const aiSrc = capCanvasSize(
+        createRotatedCanvas(aiImg, 0),
+        MAX_ENHANCE_SIDE,
+      ).toDataURL("image/png");
+      // The effect-free "Normal" twin only gets the pending rotation baked in.
+      let originalSrc = croppedOriginalSrc || selectedImageSrc;
+      if (pendingRotation !== 0) {
+        const originalImg = await loadImage(originalSrc);
+        originalSrc = createRotatedCanvas(
+          originalImg,
+          pendingRotation,
+        ).toDataURL("image/png");
+      }
+      if (isStale()) return;
+      pushHistory("ai");
+      setHasUnsavedChanges(true);
+      setCroppedOriginalSrc(originalSrc);
+      setRotatedOriginalSrc(originalSrc);
+      setCleanBaseSrc(aiSrc);
+      setBakedRotation(rotationAtStart);
+    } catch (error) {
+      if (currentProcessingId !== processingIdRef.current) return;
+      if (error instanceof DOMException && error.name === "AbortError") {
+        // Cancel pressed -> quiet. Timer fired -> tell the person.
+        if (timedOut) setErrorMessage("The AI took too long. Please try again.");
+        return;
+      }
+      console.error("AI fix failed:", error);
+      setErrorMessage(
+        error instanceof DocumentAiError
+          ? error.message
+          : "AI could not finish this time. Please try again.",
+      );
+    } finally {
+      window.clearTimeout(timer);
+      // Lets the "images left this hour" notice refresh at once.
+      window.dispatchEvent(new Event("sohozkaj:generation-finished"));
+      if (enhanceAbortRef.current === controller) {
+        enhanceAbortRef.current = null;
+        setIsProcessing(false);
+        setIsAiRunning(false);
+        setActiveStage(null);
+      }
+    }
+  };
   // ---- crop -----------------------------------------------------------------
   const handleTriggerAutoCrop = async () => {
     if (!canChangeImage()) return;
@@ -7219,107 +7434,6 @@ export default function DocumentScanner() {
     isErasing,
     effects.color,
   ]);
-  const handleColorDocument = () => {
-    if (!canChangeImage()) return;
-    setPendingRecolor(true);
-    if (!effects.color) void applyEffectStep("color");
-  };
-  const renderColorDocumentRow = () => {
-    const active = effects.color;
-    const busy =
-      isProcessing ||
-      images.length === 0 ||
-      !cleanBaseSrc ||
-      isSavingDocument ||
-      isManualCropping ||
-      isErasing;
-    const canRemove = findEffectUndoIndex("color") >= 0;
-    return (
-      <div className="flex items-stretch gap-2">
-        <button
-          type="button"
-          onClick={handleColorDocument}
-          disabled={busy}
-          aria-pressed={active}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
-        >
-          {active ? <Check size={14} /> : <Palette size={14} />}
-          {DL("Color Document")}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => (active ? handleUndoEffect("color") : handleColorDocument())}
-          disabled={busy || (active && !canRemove)}
-          title={
-            active
-              ? canRemove
-                ? DL("Remove Color Document")
-                : DL(
-                    "This cannot be removed separately after cropping or erasing — press Undo.",
-                  )
-              : DL("Add Color Document")
-          }
-          aria-label={
-            active ? DL("Remove Color Document") : DL("Add Color Document")
-          }
-          className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#FBF6E8] border-[#FBB6B6] text-[#B91C1C] hover:bg-[#FEE9E9]" : "bg-[#FBF6E8] border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
-        >
-          {active ? <Minus size={14} /> : <Plus size={14} />}
-        </button>
-      </div>
-    );
-  };
-  const renderEffectRow = (
-    key: "color" | "clean",
-    label: string,
-    icon: React.ReactNode,
-  ) => {
-    const active = effects[key];
-    const busy =
-      isProcessing ||
-      images.length === 0 ||
-      !cleanBaseSrc ||
-      isSavingDocument ||
-      isManualCropping ||
-      isErasing;
-    const canRemove = findEffectUndoIndex(key) >= 0;
-    return (
-      <div className="flex items-stretch gap-2">
-        <button
-          type="button"
-          onClick={() => handleApplyEffect(key)}
-          disabled={busy}
-          aria-pressed={active}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
-        >
-          {active ? <Check size={14} /> : icon}
-          {DL(label)}
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            active ? handleUndoEffect(key) : handleApplyEffect(key)
-          }
-          disabled={busy || (active && !canRemove)}
-          title={
-            active
-              ? canRemove
-                ? DL(`Remove ${label}`)
-                : DL(
-                    "This cannot be removed separately after cropping or erasing — press Undo.",
-                  )
-              : DL(`Add ${label}`)
-          }
-          aria-label={active ? DL(`Remove ${label}`) : DL(`Add ${label}`)}
-          className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#FBF6E8] border-[#FBB6B6] text-[#B91C1C] hover:bg-[#FEE9E9]" : "bg-[#FBF6E8] border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
-        >
-          {active ? <Minus size={14} /> : <Plus size={14} />}
-        </button>
-      </div>
-    );
-  };
   const renderSwatches = (
     colors: string[],
     value: string,
@@ -7420,22 +7534,17 @@ export default function DocumentScanner() {
         <div className="text-[13px] font-bold text-[#3B2F1E]">
           {DL("Document tools")}
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {docTool("invert", <Contrast size={14} />)}
-          {docTool("straighten", <RotateCw size={14} />)}
         </div>
 
         <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
           {DL("Markup & eraser")}
         </div>
         <div className="grid grid-cols-2 gap-2">
-          {markupBtn("erase", "Eraser", <Eraser size={14} />)}
           {markupBtn("pen", "Pen", <Pen size={14} />)}
           {markupBtn("highlight", "Highlighter", <Highlighter size={14} />)}
-          {markupBtn("redact", "Black marker", <Square size={14} fill="currentColor" />)}
-          {markupBtn("stamp", "Remove stamp", <Wand2 size={14} />, "col-span-2")}
-          {markupBtn("recolor", "Restore color", <Palette size={14} />, "col-span-2")}
-          {markupBtn("seal", "Add seal", <Stamp size={14} />, "col-span-2")}
+          {markupBtn("redact", "Black marker", <Square size={14} fill="currentColor" />, "col-span-2")}
         </div>
 
         <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
@@ -7453,6 +7562,177 @@ export default function DocumentScanner() {
             "col-span-2",
           )}
         </div>
+      </div>
+    );
+  };
+  // ---- "Fix with AI" card ----------------------------------------------------
+  // Replaces the old Auto crop / Straighten / Color Document / Fix Blur / Document Clean /
+  // Eraser / Stamp tools and the Adjustments sliders: all of that is now one AI request.
+  const renderAiCard = () => {
+    const busy =
+      isProcessing ||
+      images.length === 0 ||
+      !cleanBaseSrc ||
+      isSavingDocument ||
+      isManualCropping ||
+      isErasing;
+    const request = {
+      presets: aiPresets,
+      colorMode: aiColorMode,
+      chips: aiChips,
+      custom: aiCustom,
+    };
+    const ready = hasAiRequest(request);
+    const toggleItem = <T,>(list: T[], item: T): T[] =>
+      list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
+    const showColorMode = aiPresets.includes("clean") || aiChips.length > 0;
+    const segBtn = (on: boolean) =>
+      `flex-1 px-2 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`;
+    return (
+      <div className="scanner-tool-card scanner-ai-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
+        <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
+          <span className="w-1.5 h-3 bg-[#DC2626] rounded-xs" />
+          <Sparkles size={14} className="text-[#DC2626]" />
+          {DL("Fix with AI")}
+        </div>
+        <p className="text-[12px] leading-snug text-[#6B5A40]">
+          {DL("Choose what the AI should do, then press Run AI.")}
+        </p>
+
+        <div className="space-y-2">
+          {AI_PRESET_KEYS.map((key) => {
+            const on = aiPresets.includes(key);
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setAiPresets((prev) => toggleItem(prev, key))}
+                disabled={busy}
+                aria-pressed={on}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white shadow-xs" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+              >
+                <span
+                  className={`w-4 h-4 shrink-0 rounded-md border flex items-center justify-center ${on ? "border-white bg-white/20" : "border-[#C9B88E] bg-[#FBF6E8]"}`}
+                >
+                  {on && <Check size={11} />}
+                </span>
+                <span className="flex flex-col leading-tight">
+                  <span className="text-sm font-semibold">
+                    {DL(AI_PRESET_LABELS[key])}
+                  </span>
+                  <span
+                    className={`text-[11px] font-medium ${on ? "text-white/80" : "text-[#7A6A50]"}`}
+                  >
+                    {DL(AI_PRESET_HINTS[key])}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {showColorMode && (
+          <div className="space-y-1.5">
+            <div className="text-[13px] font-bold text-[#3B2F1E]">
+              {DL("Output colour")}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setAiColorMode("color")}
+                disabled={busy}
+                aria-pressed={aiColorMode === "color"}
+                className={segBtn(aiColorMode === "color")}
+              >
+                {DL("Keep colours")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAiColorMode("bw")}
+                disabled={busy}
+                aria-pressed={aiColorMode === "bw"}
+                className={segBtn(aiColorMode === "bw")}
+              >
+                {DL("Black & white")}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <div className="text-[13px] font-bold text-[#3B2F1E]">
+            {DL("Fine tune")}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {AI_CHIP_KEYS.map((key) => {
+              const on = aiChips.includes(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setAiChips((prev) => toggleItem(prev, key))}
+                  disabled={busy}
+                  aria-pressed={on}
+                  className={`px-2.5 py-1 rounded-full text-[12px] font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+                >
+                  {DL(AI_CHIP_LABELS[key])}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="text-[13px] font-bold text-[#3B2F1E]">
+            {DL("Write in your own words (optional)")}
+          </div>
+          <textarea
+            value={aiCustom}
+            onChange={(e) => setAiCustom(e.target.value.slice(0, AI_CUSTOM_MAX))}
+            disabled={busy}
+            rows={2}
+            maxLength={AI_CUSTOM_MAX}
+            placeholder={DL("e.g. remove the pen marks at the bottom")}
+            className="w-full rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] px-2.5 py-1.5 text-[13px] text-[#3B2F1E] resize-none select-text outline-none focus:border-[#DC2626] disabled:opacity-60"
+          />
+        </div>
+
+        <GenerationQuotaNotice size="compact" />
+
+        <button
+          type="button"
+          onClick={() => void applyAiStep()}
+          disabled={busy || !ready}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all shadow-xs cursor-pointer bg-[#DC2626] hover:bg-[#B91C1C] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Sparkles size={15} />
+          {DL("Run AI")}
+        </button>
+        <p className="text-[12px] leading-snug text-[#6B5A40] text-center">
+          {ready
+            ? DL("Takes about a minute. Text and numbers are never rewritten.")
+            : DL("Choose at least one option above.")}
+        </p>
+
+        <button
+          type="button"
+          onClick={handleUndoLast}
+          disabled={
+            history.length === 0 ||
+            isProcessing ||
+            isManualCropping ||
+            isErasing ||
+            isSavingDocument
+          }
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-semibold border border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#EFE3C8] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <RotateCcw size={12} />
+          {history.length > 0 ? (
+            <DocumentText>{`Undo: ${STEP_LABELS[history[history.length - 1].step]}`}</DocumentText>
+          ) : (
+            <DocumentText>{"Undo"}</DocumentText>
+          )}
+        </button>
       </div>
     );
   };
@@ -8252,86 +8532,6 @@ export default function DocumentScanner() {
             </button>
           </div>
         </div>
-      </div>
-    );
-  };
-  const renderMagicCleanRow = () => {
-    const passes = effects.enhance;
-    const active = passes > 0;
-    const atMax = passes >= MAX_ENHANCE_PASSES;
-    const canRemove = findEffectUndoIndex("enhance") >= 0;
-    const busy =
-      isProcessing ||
-      images.length === 0 ||
-      !cleanBaseSrc ||
-      isSavingDocument ||
-      isManualCropping ||
-      isErasing;
-    return (
-      <div className="space-y-2">
-        <div className="flex items-stretch gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              if (!active) handleApplyEffect("enhance");
-            }}
-            disabled={busy}
-            aria-pressed={active}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
-          >
-            {active ? <Check size={14} /> : <Sparkles size={14} />}
-            {DL(ENHANCE_LABEL)}
-            {passes > 1 && (
-              <span className="px-1.5 py-0.5 rounded-md bg-[#FBF6E8]/25 text-[12px] font-bold">
-                <DocumentText>{"\u00D7"}</DocumentText>
-                {passes}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              active
-                ? handleUndoEffect("enhance")
-                : handleApplyEffect("enhance")
-            }
-            disabled={busy || (active && !canRemove)}
-            title={
-              active
-                ? canRemove
-                  ? DL("Remove the last Fix Blur step.")
-                  : DL(
-                      "This cannot be removed separately after cropping or erasing — press Undo.",
-                    )
-                : DL(`Add ${ENHANCE_LABEL}`)
-            }
-            aria-label={
-              active
-                ? DL(`Remove ${ENHANCE_LABEL}`)
-                : DL(`Add ${ENHANCE_LABEL}`)
-            }
-            className={`w-9 shrink-0 flex items-center justify-center rounded-xl border transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${active ? "bg-[#FBF6E8] border-[#FBB6B6] text-[#B91C1C] hover:bg-[#FEE9E9]" : "bg-[#FBF6E8] border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
-          >
-            {active ? <Minus size={14} /> : <Plus size={14} />}
-          </button>
-        </div>
-
-        {active && (
-          <button
-            type="button"
-            onClick={() => handleApplyEffect("enhance")}
-            disabled={busy || atMax}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer bg-[#D42020] border border-[#DC2626] text-white hover:bg-[#AE1717] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RotateCw size={14} />
-            {atMax ? (
-              <DocumentText>{`${ENHANCE_LABEL} has reached the maximum.`}</DocumentText>
-            ) : (
-              <DocumentText>{`${ENHANCE_LABEL} Again`}</DocumentText>
-            )}
-          </button>
-        )}
       </div>
     );
   };
@@ -9288,7 +9488,9 @@ export default function DocumentScanner() {
                           className="text-[#DC2626] animate-spin"
                         />
                         <span className="text-sm font-bold text-[#3B2F1E]">
-                          {enhanceProgress
+                          {isAiRunning
+                            ? DL("AI is working… this can take up to a minute.")
+                            : enhanceProgress
                             ? enhanceProgress.stage === "download"
                               ? DL(
                                   `Downloading AI model… ${enhanceProgress.percent}% (first run)`,
@@ -9310,7 +9512,7 @@ export default function DocumentScanner() {
                                     ? DL("Coloring document…")
                                     : DL("Processing Image...")}
                         </span>
-                        {(enhanceProgress || isWaitingForOpenCv) && (
+                        {(enhanceProgress || isWaitingForOpenCv || isAiRunning) && (
                           <button
                             type="button"
                             onClick={() => enhanceAbortRef.current?.abort()}
@@ -9706,20 +9908,6 @@ export default function DocumentScanner() {
 
                 <div className="space-y-2">
                   <button
-                    onClick={handleTriggerAutoCrop}
-                    disabled={
-                      isProcessing ||
-                      images.length === 0 ||
-                      isSavingDocument ||
-                      isErasing
-                    }
-                    className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${autoCrop && !isManualCropping ? "bg-[#DC2626] text-white" : "bg-[#DC2626] hover:bg-[#B91C1C] text-white"}`}
-                  >
-                    <Crop size={14} />
-                    <DocumentText>{"Auto crop\n                "}</DocumentText>
-                  </button>
-
-                  <button
                     onClick={handleTriggerManualCrop}
                     disabled={images.length === 0 || isSavingDocument || isErasing}
                     className={`w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${isManualCropping ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
@@ -9736,37 +9924,7 @@ export default function DocumentScanner() {
             <div className="scanner-tools-col">
               {renderToolOptionsPanel()}
 
-              {!isErasing && (
-                <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
-                  <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
-                    <span className="w-1.5 h-3 bg-[#DC2626] rounded-xs" />
-                    <DocumentText>{"Enhance Document\n              "}</DocumentText>
-                  </div>
-
-                  {renderColorDocumentRow()}
-                  {renderMagicCleanRow()}
-                  {renderEffectRow("clean", "Document Clean", <Wand2 size={14} />)}
-                  <button
-                    type="button"
-                    onClick={handleUndoLast}
-                    disabled={
-                      history.length === 0 ||
-                      isProcessing ||
-                      isManualCropping ||
-                      isErasing ||
-                      isSavingDocument
-                    }
-                    className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-semibold border border-[#E3D6B8] bg-[#FBF6E8] text-[#5A4A32] hover:bg-[#EFE3C8] transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <RotateCcw size={12} />
-                    {history.length > 0 ? (
-                      <DocumentText>{`Undo: ${STEP_LABELS[history[history.length - 1].step]}`}</DocumentText>
-                    ) : (
-                      <DocumentText>{"Undo"}</DocumentText>
-                    )}
-                  </button>
-                </div>
-              )}
+              {!isErasing && renderAiCard()}
 
               <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
                 <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
@@ -9797,95 +9955,6 @@ export default function DocumentScanner() {
                   </button>
                 </div>
               </div>
-
-              {!isErasing && (
-                <div className="scanner-tool-card scanner-adjustments-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3 transition-all sm:col-span-2 lg:col-span-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
-                      <span className="w-1.5 h-3 bg-[#DC2626] rounded-xs" />
-                      <DocumentText>{"Adjustments\n                "}</DocumentText>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleResetAdjustments}
-                      disabled={
-                        images.length === 0 ||
-                        (blackness === 0 && contrast === 0 && brightness === 0)
-                      }
-                      className="px-2 py-1 rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] text-[#5A4A32] hover:bg-[#EFE3C8] hover:text-[#3B2F1E] text-[12px] font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                      title={DL("Reset only adjustments")}
-                    >
-                      <DocumentText>{"Reset\n                "}</DocumentText>
-                    </button>
-                  </div>
-
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <div className="flex justify-between font-semibold text-[#5A4A32] mb-1">
-                        <span>
-                          <DocumentText>{"Black"}</DocumentText>
-                        </span>
-                        <span>{blackness}</span>
-                      </div>
-                      <input
-                        type="range"
-                        disabled={isErasing}
-                        min="-100"
-                        max="100"
-                        value={blackness}
-                        onChange={(e) => {
-                          setBlackness(Number(e.target.value));
-                          setHasUnsavedChanges(true);
-                        }}
-                        className="w-full accent-[#DC2626] h-1.5 bg-[#F3E9D2] rounded-lg cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between font-semibold text-[#5A4A32] mb-1">
-                        <span>
-                          <DocumentText>{"Color"}</DocumentText>
-                        </span>
-                        <span>{brightness}</span>
-                      </div>
-                      <input
-                        type="range"
-                        disabled={isErasing}
-                        min="-100"
-                        max="100"
-                        value={brightness}
-                        onChange={(e) => {
-                          setBrightness(Number(e.target.value));
-                          setHasUnsavedChanges(true);
-                        }}
-                        className="w-full accent-[#DC2626] h-1.5 bg-[#F3E9D2] rounded-lg cursor-pointer"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between font-semibold text-[#5A4A32] mb-1">
-                        <span>
-                          <DocumentText>{"Contrast"}</DocumentText>
-                        </span>
-                        <span>{contrast}</span>
-                      </div>
-                      <input
-                        type="range"
-                        disabled={isErasing}
-                        min="-100"
-                        max="100"
-                        value={contrast}
-                        onChange={(e) => {
-                          setContrast(Number(e.target.value));
-                          setHasUnsavedChanges(true);
-                        }}
-                        className="w-full accent-[#DC2626] h-1.5 bg-[#F3E9D2] rounded-lg cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {!isErasing && (
                 <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3 sm:col-span-2 lg:col-span-1">
@@ -10030,7 +10099,7 @@ export default function DocumentScanner() {
                     </div>
                     <div className="px-3 py-3 space-y-3">
                       <p className="text-[19px] leading-tight font-extrabold text-[#3B2F1E]">
-                        <DocumentText>{"Blurry photo?"}</DocumentText>
+                        <DocumentText>{"Photo blurry, dirty or crooked?"}</DocumentText>
                       </p>
                       <div className="flex items-start gap-2">
                         <span className="shrink-0 w-6 h-6 rounded-full bg-[#DC2626] text-white text-[13px] font-bold flex items-center justify-center">
@@ -10038,7 +10107,7 @@ export default function DocumentScanner() {
                         </span>
                         <p className="text-[15px] leading-snug font-semibold text-[#3B2F1E]">
                           <DocumentText>
-                            {"Photo blurry? First press Fix Blur."}
+                            {"Tick what you need in “Fix with AI”."}
                           </DocumentText>
                         </p>
                       </div>
@@ -10048,7 +10117,7 @@ export default function DocumentScanner() {
                         </span>
                         <p className="text-[15px] leading-snug font-semibold text-[#3B2F1E]">
                           <DocumentText>
-                            {"Then press Document Clean."}
+                            {"Press “Run AI” and wait about a minute."}
                           </DocumentText>
                         </p>
                       </div>
@@ -10056,7 +10125,7 @@ export default function DocumentScanner() {
                         <p className="text-[14px] leading-snug font-bold text-[#7A1F1F]">
                           <DocumentText>
                             {
-                              "Photo already sharp? Skip Fix Blur — go straight to Document Clean."
+                              "Not happy with the result? Press Undo and try again — the original is never lost."
                             }
                           </DocumentText>
                         </p>
