@@ -34,6 +34,10 @@ import {
   MoreHorizontal,
   Frame,
   PenLine,
+  Eraser,
+  Wand2,
+  Palette,
+  Stamp,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import {
@@ -4077,7 +4081,8 @@ export default function DocumentScanner() {
   // Right-hand tool panel is split into tabs so nothing is hidden far below the fold.
   const [sidebarTab, setSidebarTab] = useState<"ai" | "tools" | "page">("ai");
   // While a markup / eraser tool is active its options live in "Edit tools", so jump there.
-  const activeSidebarTab = isErasing ? "tools" : sidebarTab;
+  const activeSidebarTab =
+    isErasing && !(sidebarTab === "ai" && aiScope === "part") ? "tools" : sidebarTab;
   useEffect(() => {
     setAiArea(null);
     setAiPartNote("");
@@ -7679,6 +7684,69 @@ export default function DocumentScanner() {
       </div>
     );
   };
+  // ---- "Selected part": the hand tools from the old version (no AI here) ------------
+  const renderPartToolsSection = () => {
+    const markupBusy =
+      !isErasing &&
+      (isProcessing ||
+        images.length === 0 ||
+        !cleanBaseSrc ||
+        isSavingDocument ||
+        isManualCropping);
+    const markupBtn = (
+      tool: BrushTool,
+      label: string,
+      icon: React.ReactNode,
+      extra = "",
+    ) => {
+      const on = isErasing && brushTool === tool;
+      return (
+        <button
+          key={tool}
+          type="button"
+          onClick={() => void handleToggleEraser(tool)}
+          disabled={markupBusy}
+          aria-pressed={on}
+          className={`${extra} flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[13px] leading-tight font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`}
+        >
+          {icon}
+          <span>{DL(label)}</span>
+        </button>
+      );
+    };
+    return (
+      <div className="space-y-3">
+        <div className="text-[13px] font-bold text-[#3B2F1E]">
+          {DL("Markup & eraser")}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {markupBtn("erase", "Eraser", <Eraser size={14} />)}
+          {markupBtn("pen", "Pen", <Pen size={14} />)}
+          {markupBtn("highlight", "Highlighter", <Highlighter size={14} />)}
+          {markupBtn("redact", "Black marker", <Square size={14} fill="currentColor" />)}
+          {markupBtn("stamp", "Remove stamp", <Wand2 size={14} />, "col-span-2")}
+          {markupBtn("recolor", "Restore color", <Palette size={14} />, "col-span-2")}
+          {markupBtn("seal", "Add seal", <Stamp size={14} />, "col-span-2")}
+        </div>
+
+        <div className="text-[13px] font-bold text-[#3B2F1E] pt-1">
+          {DL("Lines & borders")}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {markupBtn("dots", "Dotted line", <MoreHorizontal size={14} />)}
+          {markupBtn("underline", "Underline", <Underline size={14} />)}
+          {markupBtn("border", "Border", <Frame size={14} />, "col-span-2")}
+          {markupBtn("write", "Handwriting", <PenLine size={14} />, "col-span-2")}
+          {markupBtn(
+            "punct",
+            "Punctuation",
+            <span className="text-[15px] font-bold leading-none">।,;</span>,
+            "col-span-2",
+          )}
+        </div>
+      </div>
+    );
+  };
   // ---- "Fix with AI" card ----------------------------------------------------
   // Replaces the old Auto crop / Straighten / Color Document / Fix Blur / Document Clean /
   // Eraser / Stamp tools and the Adjustments sliders: all of that is now one AI request.
@@ -7715,9 +7783,11 @@ export default function DocumentScanner() {
           <Sparkles size={14} className="text-[#DC2626]" />
           {DL("Fix with AI")}
         </div>
-        <p className="text-[12px] leading-snug text-[#6B5A40]">
-          {DL("Choose what the AI should do, then press Run AI.")}
-        </p>
+        {!isPart && (
+          <p className="text-[12px] leading-snug text-[#6B5A40]">
+            {DL("Choose what the AI should do, then press Run AI.")}
+          </p>
+        )}
 
         <div className="space-y-1.5">
           <div className="flex gap-2">
@@ -7740,27 +7810,12 @@ export default function DocumentScanner() {
               {DL("Selected part")}
             </button>
           </div>
-          {isPart && (
-            <div className="flex items-start justify-between gap-2 rounded-lg border border-dashed border-[#C9A800] bg-[#FFF7D6] px-2.5 py-1.5">
-              <p className="text-[12px] leading-snug text-[#6B5A40]">
-                {aiArea
-                  ? DL("Part chosen. You can drag again to change it. The rest of the page stays exactly as it is.")
-                  : DL("Drag a box on the document to choose the part. The rest of the page stays exactly as it is.")}
-              </p>
-              {aiArea && (
-                <button
-                  type="button"
-                  onClick={() => setAiArea(null)}
-                  disabled={busy}
-                  className="shrink-0 rounded-md border border-[#E3D6B8] bg-[#FBF6E8] px-2 py-0.5 text-[11.5px] font-semibold text-[#5A4A32] hover:bg-[#EFE3C8] cursor-pointer disabled:opacity-50"
-                >
-                  {DL("Clear selection")}
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
+        {isPart && renderPartToolsSection()}
+
+        {!isPart && (
+          <>
         <div className="space-y-2">
           {AI_PRESET_KEYS.filter((key) => !(isPart && key === "crop")).map((key) => {
             const on = aiPresets.includes(key);
@@ -7901,6 +7956,8 @@ export default function DocumentScanner() {
             </p>
           </div>
         </div>
+          </>
+        )}
 
         <button
           type="button"
@@ -9916,68 +9973,6 @@ export default function DocumentScanner() {
                         />
                       )}
 
-                    {aiScope === "part" &&
-                      activeSidebarTab === "ai" &&
-                      !isErasing &&
-                      !isManualCropping &&
-                      !isProcessing &&
-                      !isComparing &&
-                      !handMode &&
-                      !!cleanBaseSrc && (
-                        <div
-                          className="absolute inset-0 z-[36] cursor-crosshair"
-                          style={{ touchAction: "none" }}
-                          title={DL("Drag to choose the part")}
-                          onPointerDown={(e) => {
-                            const r = e.currentTarget.getBoundingClientRect();
-                            if (!r.width || !r.height) return;
-                            e.currentTarget.setPointerCapture(e.pointerId);
-                            const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-                            const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
-                            aiAreaStartRef.current = { x, y };
-                            setAiArea({ x0: x, y0: y, x1: x, y1: y });
-                          }}
-                          onPointerMove={(e) => {
-                            const start = aiAreaStartRef.current;
-                            if (!start) return;
-                            const r = e.currentTarget.getBoundingClientRect();
-                            if (!r.width || !r.height) return;
-                            const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-                            const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
-                            setAiArea({
-                              x0: Math.min(start.x, x),
-                              y0: Math.min(start.y, y),
-                              x1: Math.max(start.x, x),
-                              y1: Math.max(start.y, y),
-                            });
-                          }}
-                          onPointerUp={() => {
-                            aiAreaStartRef.current = null;
-                            // A tiny box is just a click: drop it.
-                            setAiArea((prev) =>
-                              prev && (prev.x1 - prev.x0 < 0.02 || prev.y1 - prev.y0 < 0.02)
-                                ? null
-                                : prev,
-                            );
-                          }}
-                          onPointerCancel={() => {
-                            aiAreaStartRef.current = null;
-                          }}
-                        />
-                      )}
-                    {aiScope === "part" && aiArea && !isComparing && (
-                      <div
-                        style={{
-                          left: `${aiArea.x0 * 100}%`,
-                          top: `${aiArea.y0 * 100}%`,
-                          width: `${(aiArea.x1 - aiArea.x0) * 100}%`,
-                          height: `${(aiArea.y1 - aiArea.y0) * 100}%`,
-                          boxShadow: "0 0 0 9999px rgba(59,47,30,0.28)",
-                        }}
-                        className="absolute z-[37] pointer-events-none border-2 border-dashed border-[#DC2626] bg-[#DC2626]/10"
-                      />
-                    )}
-
                     {isManualCropping && !isComparing && (
                       <div className="absolute inset-0 bg-[#3B2F1E]/35 pointer-events-auto z-20">
                         <svg
@@ -10179,7 +10174,8 @@ export default function DocumentScanner() {
             )}
 
             <div className="scanner-tools-col">
-              {activeSidebarTab === "tools" && renderToolOptionsPanel()}
+              {(activeSidebarTab === "tools" || (activeSidebarTab === "ai" && aiScope === "part")) &&
+                renderToolOptionsPanel()}
 
               {activeSidebarTab === "ai" && renderAiCard()}
 
