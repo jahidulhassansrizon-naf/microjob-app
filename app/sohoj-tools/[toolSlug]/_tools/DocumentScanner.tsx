@@ -48,7 +48,6 @@ import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import {
   AI_CHIP_KEYS,
   AI_CHIP_LABELS,
-  AI_CUSTOM_MAX,
   AI_PRESET_HINTS,
   AI_PRESET_KEYS,
   AI_PRESET_LABELS,
@@ -3489,9 +3488,14 @@ const DOCUMENT_EXTRA: Record<string, string> = {
   "darker text": "লেখা আরও গাঢ়",
   "brighter paper": "কাগজ আরও উজ্জ্বল",
   "more contrast": "আরও কনট্রাস্ট",
-  "write in your own words (optional)": "নিজের কথায় লিখুন (ঐচ্ছিক)",
-  "e.g. remove the pen marks at the bottom":
-    "যেমন: নিচের কলমের দাগ মুছে দাও",
+  "restore old colours": "পুরোনো রঙ ফিরিয়ে আনুন",
+  "faded, yellowed, old paper": "ফ্যাকাশে, হলদে, পুরোনো কাগজ",
+  "takes about a minute.": "প্রায় ১ মিনিট লাগে।",
+  "check before you download or print": "ডাউনলোড বা প্রিন্টের আগে মিলিয়ে নিন",
+  "ai can make small mistakes. match names, dates, numbers and bangla text with your original. if anything is different, press undo and try again.":
+    "AI মাঝে মাঝে ছোট ভুল করতে পারে। নাম, তারিখ, নম্বর আর বাংলা লেখা আসল ডকুমেন্টের সাথে মিলিয়ে নিন। কোথাও আলাদা হলে “পূর্বাবস্থায় ফিরুন” চাপুন, তারপর আবার চেষ্টা করুন।",
+  "edit tools": "এডিট টুলস",
+  "page & print": "পেজ ও প্রিন্ট",
   "run ai": "AI চালান",
   "choose at least one option above.": "ওপর থেকে অন্তত একটি অপশন বেছে নিন।",
   "takes about a minute. text and numbers are never rewritten.":
@@ -4045,7 +4049,10 @@ export default function DocumentScanner() {
   const [aiPresets, setAiPresets] = useState<AiPresetKey[]>(["clean"]);
   const [aiColorMode, setAiColorMode] = useState<AiColorMode>("color");
   const [aiChips, setAiChips] = useState<AiChipKey[]>([]);
-  const [aiCustom, setAiCustom] = useState<string>("");
+  // Right-hand tool panel is split into tabs so nothing is hidden far below the fold.
+  const [sidebarTab, setSidebarTab] = useState<"ai" | "tools" | "page">("ai");
+  // While a markup / eraser tool is active its options live in "Edit tools", so jump there.
+  const activeSidebarTab = isErasing ? "tools" : sidebarTab;
   const [isAiRunning, setIsAiRunning] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -5826,7 +5833,6 @@ export default function DocumentScanner() {
       presets: aiPresets,
       colorMode: aiColorMode,
       chips: aiChips,
-      custom: aiCustom,
     };
     if (!hasAiRequest(request)) return;
     if (!canChangeImage()) return;
@@ -7580,12 +7586,14 @@ export default function DocumentScanner() {
       presets: aiPresets,
       colorMode: aiColorMode,
       chips: aiChips,
-      custom: aiCustom,
     };
     const ready = hasAiRequest(request);
     const toggleItem = <T,>(list: T[], item: T): T[] =>
       list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
-    const showColorMode = aiPresets.includes("clean") || aiChips.length > 0;
+    // "Restore old colours" always brings colour back, so the colour choice is hidden for it.
+    const showColorMode =
+      (aiPresets.includes("clean") || aiChips.length > 0) &&
+      !aiPresets.includes("restore");
     const segBtn = (on: boolean) =>
       `flex-1 px-2 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"}`;
     return (
@@ -7682,21 +7690,6 @@ export default function DocumentScanner() {
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <div className="text-[13px] font-bold text-[#3B2F1E]">
-            {DL("Write in your own words (optional)")}
-          </div>
-          <textarea
-            value={aiCustom}
-            onChange={(e) => setAiCustom(e.target.value.slice(0, AI_CUSTOM_MAX))}
-            disabled={busy}
-            rows={2}
-            maxLength={AI_CUSTOM_MAX}
-            placeholder={DL("e.g. remove the pen marks at the bottom")}
-            className="w-full rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] px-2.5 py-1.5 text-[13px] text-[#3B2F1E] resize-none select-text outline-none focus:border-[#DC2626] disabled:opacity-60"
-          />
-        </div>
-
         <GenerationQuotaNotice size="compact" />
 
         <button
@@ -7710,9 +7703,26 @@ export default function DocumentScanner() {
         </button>
         <p className="text-[12px] leading-snug text-[#6B5A40] text-center">
           {ready
-            ? DL("Takes about a minute. Text and numbers are never rewritten.")
+            ? DL("Takes about a minute.")
             : DL("Choose at least one option above.")}
         </p>
+
+        <div
+          role="note"
+          className="flex items-start gap-2 rounded-xl border border-[#E6C200]/70 bg-[#FFF7D6] px-2.5 py-2"
+        >
+          <AlertCircle size={15} className="mt-0.5 shrink-0 text-[#B45309]" />
+          <div className="space-y-0.5">
+            <p className="text-[13px] font-bold leading-snug text-[#7A3B0A]">
+              {DL("Check before you download or print")}
+            </p>
+            <p className="text-[12px] leading-snug text-[#6B5A40]">
+              {DL(
+                "AI can make small mistakes. Match names, dates, numbers and Bangla text with your original. If anything is different, press Undo and try again.",
+              )}
+            </p>
+          </div>
+        </div>
 
         <button
           type="button"
@@ -8960,21 +8970,6 @@ export default function DocumentScanner() {
 
         /* Desktop fit mode: keep the scanner, all editing controls, saved area,
            and helper note visible inside one viewport without page scrolling. */
-        .scanner-hang-note {
-          transform-origin: 50% 0;
-          animation: scannerNoteSwing 5s ease-in-out infinite;
-        }
-        @keyframes scannerNoteSwing {
-          0%, 100% { transform: rotate(-1.4deg); }
-          50% { transform: rotate(1.4deg); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .scanner-hang-note { animation: none; }
-        }
-        .scanner-note-nail,
-        .scanner-note-strings {
-          display: none;
-        }
         /* On small screens the two tool columns dissolve into the normal grid. */
         .scanner-tools-col {
           display: contents;
@@ -9005,9 +9000,8 @@ export default function DocumentScanner() {
             overflow: hidden;
           }
 
-          /* Content sits to the left; the warning note hangs on the right. */
           .scanner-main-content {
-            width: calc(100% - 262px);
+            width: 100%;
             max-width: none;
             min-width: 0;
             min-height: 0;
@@ -9016,19 +9010,6 @@ export default function DocumentScanner() {
             flex-direction: column;
             gap: 8px;
             margin: 0;
-          }
-
-          .scanner-note-wrap {
-            position: fixed !important;
-            top: 74px;
-            right: 14px;
-            width: 236px;
-            margin-top: 0 !important;
-            z-index: 20;
-          }
-          .scanner-note-nail,
-          .scanner-note-strings {
-            display: block !important;
           }
 
           .scanner-page-header {
@@ -9073,14 +9054,14 @@ export default function DocumentScanner() {
           }
 
           .scanner-tools-sidebar {
-            width: 580px !important;
+            width: 340px !important;
             min-width: 0;
             min-height: 0;
             max-height: 100%;
             overflow-y: auto;
             scrollbar-width: thin;
-            flex: 0 0 580px;
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            flex: 0 0 340px;
+            grid-template-columns: minmax(0, 1fr) !important;
             align-content: start;
             align-items: start;
             gap: 8px !important;
@@ -9135,7 +9116,7 @@ export default function DocumentScanner() {
           }
 
           .scanner-saved-section {
-            width: calc(100% - 262px);
+            width: 100%;
             max-width: none;
             box-sizing: border-box;
             /* Keep the title and the full empty-state / saved-document row visible. */
@@ -9208,7 +9189,7 @@ export default function DocumentScanner() {
           }
 
           .scanner-footer-note {
-            width: calc(100% - 262px);
+            width: 100%;
             max-width: none;
             flex: 0 0 auto;
             margin: 0 !important;
@@ -9899,6 +9880,41 @@ export default function DocumentScanner() {
           </div>
 
           <div className="scanner-tools-sidebar w-full lg:w-[320px] shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
+            {/* Tabs: one clear group of tools at a time, so nothing is lost far below the fold. */}
+            <div
+              role="tablist"
+              className="col-span-full sticky top-0 z-10 flex gap-1 rounded-2xl border border-[#E3D6B8] bg-[#F2E8D2] p-1 shadow-xs"
+            >
+              {(
+                [
+                  ["ai", "Fix with AI"],
+                  ["tools", "Edit tools"],
+                  ["page", "Page & print"],
+                ] as const
+              ).map(([key, label], index) => {
+                const on = activeSidebarTab === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    onClick={() => setSidebarTab(key)}
+                    disabled={isErasing}
+                    className={`flex-1 min-w-0 flex flex-col items-center gap-0.5 rounded-xl px-1.5 py-1.5 text-[12.5px] leading-tight font-bold transition-all cursor-pointer disabled:cursor-not-allowed ${on ? "bg-[#DC2626] text-white shadow-xs" : "text-[#5A4A32] hover:bg-[#EFE3C8] disabled:opacity-50"}`}
+                  >
+                    <span
+                      className={`w-4 h-4 rounded-full text-[10px] flex items-center justify-center ${on ? "bg-white/25" : "bg-[#E3D6B8]"}`}
+                    >
+                      {index + 1}
+                    </span>
+                    <span className="text-center">{DL(label)}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {activeSidebarTab === "tools" && (
             <div className="scanner-tools-col">
               <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
                 <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
@@ -9920,12 +9936,14 @@ export default function DocumentScanner() {
                 {renderDocToolsSection()}
               </div>
             </div>
+            )}
 
             <div className="scanner-tools-col">
-              {renderToolOptionsPanel()}
+              {activeSidebarTab === "tools" && renderToolOptionsPanel()}
 
-              {!isErasing && renderAiCard()}
+              {activeSidebarTab === "ai" && renderAiCard()}
 
+              {activeSidebarTab !== "page" && (
               <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
                 <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
                   <span className="w-1.5 h-3 bg-[#DC2626] rounded-xs" />
@@ -9956,7 +9974,9 @@ export default function DocumentScanner() {
                 </div>
               </div>
 
-              {!isErasing && (
+              )}
+
+              {activeSidebarTab === "page" && (
                 <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3 sm:col-span-2 lg:col-span-1">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
@@ -10060,80 +10080,6 @@ export default function DocumentScanner() {
                 </div>
               )}
             </div>
-
-              {/* Hanging warning note: hangs on the right side of the Enhance card
-                  (desktop fit mode, hung on the right edge) or sits under the buttons (narrow screens). */}
-              <div
-                role="note"
-                className="scanner-note-wrap relative mt-4 sm:col-span-2 lg:col-span-1"
-              >
-                <span
-                  aria-hidden="true"
-                  className="scanner-note-nail absolute -top-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-[#5A4A32] border-2 border-[#FBF6E8] shadow z-10"
-                />
-                <div className="scanner-hang-note">
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 100 30"
-                    preserveAspectRatio="none"
-                    className="scanner-note-strings w-full h-7"
-                  >
-                    <path
-                      d="M50 3 L14 30 M50 3 L86 30"
-                      stroke="#8A6D2B"
-                      strokeWidth="1.6"
-                      fill="none"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </svg>
-                  <div className="rounded-lg bg-[#FFF176] border-2 border-[#E6C200] shadow-[3px_8px_16px_rgba(90,74,50,0.32)] overflow-hidden">
-                    <div className="flex items-center gap-2 bg-[#DC2626] text-white px-3 py-2">
-                      <span className="relative flex w-3.5 h-3.5 shrink-0">
-                        <span className="absolute inline-flex w-full h-full rounded-full bg-white opacity-75 animate-ping" />
-                        <span className="relative inline-flex w-3.5 h-3.5 rounded-full bg-white" />
-                      </span>
-                      <AlertCircle size={16} className="shrink-0" />
-                      <span className="text-[13px] font-extrabold uppercase tracking-wider">
-                        <DocumentText>{"Important"}</DocumentText>
-                      </span>
-                    </div>
-                    <div className="px-3 py-3 space-y-3">
-                      <p className="text-[19px] leading-tight font-extrabold text-[#3B2F1E]">
-                        <DocumentText>{"Photo blurry, dirty or crooked?"}</DocumentText>
-                      </p>
-                      <div className="flex items-start gap-2">
-                        <span className="shrink-0 w-6 h-6 rounded-full bg-[#DC2626] text-white text-[13px] font-bold flex items-center justify-center">
-                          1
-                        </span>
-                        <p className="text-[15px] leading-snug font-semibold text-[#3B2F1E]">
-                          <DocumentText>
-                            {"Tick what you need in “Fix with AI”."}
-                          </DocumentText>
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <span className="shrink-0 w-6 h-6 rounded-full bg-[#DC2626] text-white text-[13px] font-bold flex items-center justify-center">
-                          2
-                        </span>
-                        <p className="text-[15px] leading-snug font-semibold text-[#3B2F1E]">
-                          <DocumentText>
-                            {"Press “Run AI” and wait about a minute."}
-                          </DocumentText>
-                        </p>
-                      </div>
-                      <div className="border-t-2 border-dashed border-[#C9A800] pt-2.5">
-                        <p className="text-[14px] leading-snug font-bold text-[#7A1F1F]">
-                          <DocumentText>
-                            {
-                              "Not happy with the result? Press Undo and try again — the original is never lost."
-                            }
-                          </DocumentText>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
           </div>
         </div>
       </div>
