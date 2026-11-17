@@ -9284,6 +9284,7 @@ export default function DocumentScanner() {
             min-height: 0;
             max-height: 100%;
             overflow-y: auto;
+            overflow-x: hidden;
             scrollbar-width: thin;
             flex: 0 0 340px;
             grid-template-columns: minmax(0, 1fr) !important;
@@ -9300,7 +9301,9 @@ export default function DocumentScanner() {
             flex-direction: column;
             gap: 8px;
             min-width: 0;
-            min-height: 0;
+            /* Never let the grid squeeze a column smaller than its cards: the sidebar scrolls instead. */
+            min-height: auto;
+            flex-shrink: 0;
           }
 
           .scanner-options-card {
@@ -9310,6 +9313,7 @@ export default function DocumentScanner() {
           }
 
           .scanner-tool-card {
+            flex-shrink: 0;
             min-width: 0;
             padding: 9px !important;
             gap: 7px !important;
@@ -10216,36 +10220,6 @@ export default function DocumentScanner() {
                 </div>
               )}
 
-              <div className="scanner-tool-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3">
-                <div className="flex items-center gap-1.5 text-sm font-bold text-[#3B2F1E] uppercase tracking-wider">
-                  <span className="w-1.5 h-3 bg-[#DC2626] rounded-xs" />
-                  <DocumentText>{"Mode\n              "}</DocumentText>
-                </div>
-
-                <div className="space-y-2">
-                  <button
-                    onMouseDown={() => setIsHoldingOriginal(true)}
-                    onMouseUp={() => setIsHoldingOriginal(false)}
-                    onMouseLeave={() => setIsHoldingOriginal(false)}
-                    onTouchStart={() => setIsHoldingOriginal(true)}
-                    onTouchEnd={() => setIsHoldingOriginal(false)}
-                    disabled={images.length === 0}
-                    className={`w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold rounded-xl transition-all cursor-pointer select-none active:scale-98 ${isHoldingOriginal ? "bg-[#DC2626] text-white shadow-xs" : "bg-[#F6EEDB] border border-[#E3D6B8] text-[#5A4A32] hover:bg-[#EFE3C8]"} disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    <Eye size={14} />
-                    <span>
-                      {isHoldingOriginal ? (
-                        <DocumentText>{"Showing Original..."}</DocumentText>
-                      ) : (
-                        <DocumentText>
-                          {"Hold for Normal (original)"}
-                        </DocumentText>
-                      )}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
               {!isErasing && (
                 <div className="scanner-tool-card scanner-adjustments-card bg-[#FBF6E8] border border-[#E3D6B8] rounded-2xl p-4 shadow-xs space-y-3 transition-all sm:col-span-2 lg:col-span-1">
                   <div className="flex items-center justify-between gap-2">
@@ -10339,7 +10313,7 @@ export default function DocumentScanner() {
                   (desktop fit mode, hung on the right edge) or sits under the buttons (narrow screens). */}
               <div
                 role="note"
-                className="scanner-note-wrap relative mt-1"
+                className="scanner-note-wrap relative mt-1 shrink-0"
               >
                 <div>
                   <div className="rounded-lg bg-[#FFF176] border-2 border-[#E6C200] shadow-[3px_8px_16px_rgba(90,74,50,0.32)] overflow-hidden">
