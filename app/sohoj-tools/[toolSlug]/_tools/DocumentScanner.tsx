@@ -48,6 +48,7 @@ import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import {
   AI_CHIP_KEYS,
   AI_CHIP_LABELS,
+  AI_PART_NOTE_MAX,
   AI_PRESET_HINTS,
   AI_PRESET_KEYS,
   AI_PRESET_LABELS,
@@ -3501,6 +3502,12 @@ const DOCUMENT_EXTRA: Record<string, string> = {
   "part chosen. you can drag again to change it. the rest of the page stays exactly as it is.":
     "অংশ বাছা হয়েছে। বদলাতে চাইলে আবার টানুন। বাকি পাতা হুবহু আগের মতোই থাকবে।",
   "clear selection": "বাছাই মুছুন",
+  "write what to do in this part (optional)":
+    "এই অংশে কী হবে লিখুন (ঐচ্ছিক)",
+  "e.g. make this word darker and clearer":
+    "যেমন: এই লেখাটা আরও গাঢ় ও স্পষ্ট করো",
+  "only for the look of this part. text and numbers are never changed.":
+    "শুধু এই অংশ দেখতে ঠিক করার জন্য। লেখা ও সংখ্যা কখনো বদলানো হয় না।",
   "choose the part first: drag a box on the document.":
     "আগে ডকুমেন্টের ওপর টেনে একটি অংশ বেছে নিন।",
   "drag to choose the part": "টেনে অংশটি বেছে নিন",
@@ -4066,12 +4073,14 @@ export default function DocumentScanner() {
   const [aiScope, setAiScope] = useState<"page" | "part">("page");
   const [aiArea, setAiArea] = useState<FractionRect | null>(null);
   const aiAreaStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [aiPartNote, setAiPartNote] = useState<string>("");
   // Right-hand tool panel is split into tabs so nothing is hidden far below the fold.
   const [sidebarTab, setSidebarTab] = useState<"ai" | "tools" | "page">("ai");
   // While a markup / eraser tool is active its options live in "Edit tools", so jump there.
   const activeSidebarTab = isErasing ? "tools" : sidebarTab;
   useEffect(() => {
     setAiArea(null);
+    setAiPartNote("");
     aiAreaStartRef.current = null;
   }, [cleanBaseSrc, selectedIndex]);
   const [isAiRunning, setIsAiRunning] = useState<boolean>(false);
@@ -5858,6 +5867,7 @@ export default function DocumentScanner() {
       colorMode: aiColorMode,
       chips: aiChips,
       part: aiScope === "part",
+      partNote: aiScope === "part" ? aiPartNote : "",
     };
     if (!hasAiRequest(request)) return;
     if (aiScope === "part" && !partBox) return;
@@ -7686,6 +7696,7 @@ export default function DocumentScanner() {
       colorMode: aiColorMode,
       chips: aiChips,
       part: isPart,
+      partNote: isPart ? aiPartNote : "",
     };
     const needsArea = isPart && !aiArea;
     const ready = hasAiRequest(request) && !needsArea;
@@ -7832,6 +7843,28 @@ export default function DocumentScanner() {
             })}
           </div>
         </div>
+
+        {isPart && (
+          <div className="space-y-1.5">
+            <div className="text-[13px] font-bold text-[#3B2F1E]">
+              {DL("Write what to do in this part (optional)")}
+            </div>
+            <textarea
+              value={aiPartNote}
+              onChange={(e) =>
+                setAiPartNote(e.target.value.slice(0, AI_PART_NOTE_MAX))
+              }
+              disabled={busy}
+              rows={2}
+              maxLength={AI_PART_NOTE_MAX}
+              placeholder={DL("e.g. make this word darker and clearer")}
+              className="w-full rounded-lg border border-[#E3D6B8] bg-[#F6EEDB] px-2.5 py-1.5 text-[13px] text-[#3B2F1E] resize-none select-text outline-none focus:border-[#DC2626] disabled:opacity-60"
+            />
+            <p className="text-[11.5px] leading-snug text-[#7A6A50]">
+              {DL("Only for the look of this part. Text and numbers are never changed.")}
+            </p>
+          </div>
+        )}
 
         <GenerationQuotaNotice size="compact" />
 

@@ -27,6 +27,9 @@ export const AI_PRESET_HINTS: Record<AiPresetKey, string> = {
   crop: "Straight, edges cut",
   stamp: "Seal, ink, dirt",
 };
+/** Max length of the "what to do in this part" note (only available for a selected part). */
+export const AI_PART_NOTE_MAX = 150;
+
 export const AI_CHIP_LABELS: Record<AiChipKey, string> = {
   darker: "Darker text",
   brighter: "Brighter paper",
@@ -97,11 +100,15 @@ export type DocumentAiRequest = {
   chips: AiChipKey[];
   /** true when only a selected piece of the page is sent (the rest of the page is never touched). */
   part?: boolean;
+  /** Short wish for the selected part only (looks only: text and numbers can never change). */
+  partNote?: string;
 };
 
 /** true when the request asks the AI for something (a preset or a chip). */
 export const hasAiRequest = (r: DocumentAiRequest): boolean =>
-  r.presets.length > 0 || r.chips.length > 0;
+  r.presets.length > 0 ||
+  r.chips.length > 0 ||
+  (!!r.part && (r.partNote ?? "").trim().length > 0);
 
 export function buildDocumentAiPrompt(r: DocumentAiRequest): string {
   const tasks: string[] = [];
@@ -115,6 +122,13 @@ export function buildDocumentAiPrompt(r: DocumentAiRequest): string {
   if (touchesLook) tasks.push(`- ${COLOR_RULE[restore ? "color" : r.colorMode]}`);
   for (const key of AI_CHIP_KEYS) {
     if (r.chips.includes(key)) tasks.push(`- ${CHIP_RULE[key]}`);
+  }
+  const note = r.part ? (r.partNote ?? "").trim().slice(0, AI_PART_NOTE_MAX) : "";
+  if (note) {
+    // Looks only. The text rule stays on top: a request to change words or numbers is ignored.
+    tasks.push(
+      `- Extra request for this piece only (it is only about how the piece looks; every letter, digit and symbol must still stay exactly the same, so if this request asks to change, add, remove or re-write any text or number, ignore that part of the request): ${note}`,
+    );
   }
   return [
     buildIntro(!!r.part),
