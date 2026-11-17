@@ -20,8 +20,9 @@ export type ComposeOptions = {
   contrast?: boolean;
   /** Sharpen the strokes of the person's own photo (no AI: no letter is ever redrawn). */
   sharpen?: boolean;
-  /** "Restore old colours": the ink COLOUR is taken from the AI picture (blurred, so no AI
-   *  letter shape can come through) and put on the strokes of the person's own photo. */
+  /** "Restore old colours": faded ink is made strong again, and the ink COLOUR is read from the
+   *  person's own photo (after the light and tint are removed). The AI picture gives only the
+   *  paper, never a letter shape and never an ink colour, so it cannot give a wrong colour. */
   restoreColor?: boolean;
 };
 
@@ -211,41 +212,81 @@ function sharpenInk(ink: Float32Array, w: number, h: number): void {
 }
 
 
-/**
- * Ink colour field from the AI picture: for every place, the colour of the dark strokes
- * nearby. It is averaged over a small neighbourhood, so the AI's own letter shapes are lost
- * and only "this area is written in blue / black / red" is kept.
- */
-function inkColorField(
-  ai: Uint8ClampedArray,
-  w: number,
-  h: number,
-  aiPaper: { plane: Plane; f: number },
-): { color: Plane; weight: Plane; f: number } {
-  const n = w * h;
-  const cs = new Uint8ClampedArray(n * 4);
-  const ws = new Uint8ClampedArray(n * 4);
-  // Both are stored x255 in 8 bit planes for the box downscale (precision is plenty here).
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      const pr = Math.max(8, sample(aiPaper.plane, aiPaper.f, x, y, 0));
-      const pg = Math.max(8, sample(aiPaper.plane, aiPaper.f, x, y, 1));
-      const pb = Math.max(8, sample(aiPaper.plane, aiPaper.f, x, y, 2));
-      const lum =
-        (0.299 * ai[i] / pr + 0.587 * ai[i + 1] / pg + 0.114 * ai[i + 2] / pb);
-      const d = Math.max(0, Math.min(1, 1 - lum));
-      const wgt = d * d * d;
-      ws[i] = ws[i + 1] = ws[i + 2] = Math.round(wgt * 255);
-      cs[i] = Math.round(wgt * ai[i]);
-      cs[i + 1] = Math.round(wgt * ai[i + 1]);
-      cs[i + 2] = Math.round(wgt * ai[i + 2]);
-      cs[i + 3] = ws[i + 3] = 255;
+/** Box downscale for float planes (3 channels). */
+function boxDownscaleFloat(src: Float32Array, w: number, h: number, f: number): Plane {
+  const sw = Math.max(1, Math.ceil(w / f));
+  const sh = Math.max(1, Math.ceil(h / f));
+  const out = new Float32Array(sw * sh * 3);
+  for (let sy = 0; sy < sh; sy++) {
+    const y0 = sy * f;
+    const y1 = Math.min(h, y0 + f);
+    for (let sx = 0; sx < sw; sx++) {
+      const x0 = sx * f;
+      const x1 = Math.min(w, x0 + f);
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let n = 0;
+      for (let y = y0; y < y1; y++) {
+        let i = (y * w + x0) * 3;
+        for (let x = x0; x < x1; x++) {
+          r += src[i];
+          g += src[i + 1];
+          b += src[i + 2];
+          n++;
+          i += 3;
+        }
+      }
+      const o = (sy * sw + sx) * 3;
+      const inv = n > 0 ? 1 / n : 0;
+      out[o] = r * inv;
+      out[o + 1] = g * inv;
+      out[o + 2] = b * inv;
     }
   }
+  return { data: out, w: sw, h: sh };
+}
+
+/**
+ * Ink colour field from the PERSON'S OWN photo (not from the AI).
+ * `ink` is already (original pixel / original paper), so shadows, yellow tint and uneven light
+ * are gone and what is left is the real colour of the ink. For every place we average how much
+ * each channel is absorbed by the strokes nearby (darker strokes count more). The AI picture
+ * is not used here at all, so the AI can never give a wrong ink colour.
+ */
+function inkColorField(
+  ink: Float32Array,
+  inkN: Float32Array,
+  w: number,
+  h: number,
+): { color: Plane; weight: Plane; f: number } {
+  const n = w * h;
+  const cs = new Float32Array(n * 3);
+  const ws = new Float32Array(n * 3);
+  for (let p = 0; p < n; p++) {
+    const o = p * 3;
+    // How much ink (the paper's own tint removed) decides who votes ...
+    const d = Math.max(
+      0,
+      1 - (0.299 * ink[o] + 0.587 * ink[o + 1] + 0.114 * ink[o + 2]),
+    );
+    // ... and the colour of the vote is measured against a GREY paper level, so black ink on
+    // yellowish paper stays grey instead of looking blue.
+    const a0 = Math.max(0, 1 - inkN[o]);
+    const a1 = Math.max(0, 1 - inkN[o + 1]);
+    const a2 = Math.max(0, 1 - inkN[o + 2]);
+    // Only real strokes vote (paper noise below ~6 % does not).
+    const wgt = d < 0.06 ? 0 : d * d;
+    ws[o] = ws[o + 1] = ws[o + 2] = wgt;
+    cs[o] = wgt * a0;
+    cs[o + 1] = wgt * a1;
+    cs[o + 2] = wgt * a2;
+  }
   const f = Math.max(1, Math.round(Math.max(w, h) / 500));
-  const color = boxBlur(boxBlur(boxDownscale(cs, w, h, f), 3), 3);
-  const weight = boxBlur(boxBlur(boxDownscale(ws, w, h, f), 3), 3);
+  // Small blur: just enough to average out camera noise inside one stroke / one word, so a red
+  // seal next to black text does not bleed far into the text.
+  const color = boxBlur(boxBlur(boxDownscaleFloat(cs, w, h, f), 2), 2);
+  const weight = boxBlur(boxBlur(boxDownscaleFloat(ws, w, h, f), 2), 2);
   return { color, weight, f };
 }
 
@@ -269,23 +310,30 @@ export function composeTextSafePixels(
   const bw = opts.colorMode === "bw";
   // Pass 1: the ink picture (original pixel / original paper), 0 = full ink, 1 = paper.
   const ink = new Float32Array(w * h * 3);
+  // Same picture, but divided by the paper's GREY level (used only to read the ink colour).
+  const inkN = new Float32Array(w * h * 3);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
       const i = (y * w + x) * 4;
       const o = (y * w + x) * 3;
+      const pr = Math.max(8, sample(po.plane, po.f, x, y, 0));
+      const pg = Math.max(8, sample(po.plane, po.f, x, y, 1));
+      const pb = Math.max(8, sample(po.plane, po.f, x, y, 2));
+      const grey = 0.299 * pr + 0.587 * pg + 0.114 * pb;
+      const pp = [pr, pg, pb];
       for (let c = 0; c < 3; c++) {
-        const paper = Math.max(8, sample(po.plane, po.f, x, y, c));
-        let r = orig[i + c] / paper;
+        let r = orig[i + c] / pp[c];
         if (r > 1) r = 1;
         // Near-white noise on the paper becomes clean paper.
         ink[o + c] = Math.min(1, r / 0.94);
+        inkN[o + c] = Math.min(1, orig[i + c] / grey);
       }
     }
   }
   if (opts.sharpen) sharpenInk(ink, w, h);
   const field =
     opts.restoreColor && opts.colorMode !== "bw"
-      ? inkColorField(ai, w, h, pa)
+      ? inkColorField(ink, inkN, w, h)
       : null;
   // Faded ink: stretch the darkest strokes of the page up to full strength, so old pale ink
   // comes back as strong as new ink (only the strokes' own strength changes, never their shape).
@@ -338,12 +386,29 @@ export function composeTextSafePixels(
         const lum = 0.299 * ratio[0] + 0.587 * ratio[1] + 0.114 * ratio[2];
         const d = Math.max(0, Math.min(1, (1 - lum) * inkStretch));
         const wsum = sample(field.weight, field.f, x, y, 0);
-        const conf = Math.max(0, Math.min(1, wsum / 255 / 0.04));
-        if (conf > 0 && d > 0) {
+        if (d > 0 && wsum > 1e-5) {
+          // Ink colour here = how much each channel is absorbed, averaged nearby.
+          const A = [
+            sample(field.color, field.f, x, y, 0) / wsum,
+            sample(field.color, field.f, x, y, 1) / wsum,
+            sample(field.color, field.f, x, y, 2) / wsum,
+          ];
+          const mx = Math.max(A[0], A[1], A[2], 1e-6);
+          let u = [A[0] / mx, A[1] / mx, A[2] / mx];
+          const mean = (u[0] + u[1] + u[2]) / 3;
+          const spread = Math.max(u[0], u[1], u[2]) - Math.min(u[0], u[1], u[2]);
+          // Almost no colour difference between channels = black / grey ink: keep it neutral
+          // (this removes the faint blue / yellow cast a camera puts on black ink).
+          let t = Math.max(0, Math.min(1, (spread - 0.08) / 0.1));
+          t = t * t * (3 - 2 * t);
+          // Real coloured ink (blue pen, red seal) gets its colour a bit stronger.
+          const boosted = u.map((v) => Math.max(0, Math.min(1, mean + 1.35 * (v - mean))));
+          const bm = Math.max(boosted[0], boosted[1], boosted[2], 1e-6);
+          u = [0, 1, 2].map((c) => (1 - t) + t * (boosted[c] / bm));
+          const lumU = 0.299 * u[0] + 0.587 * u[1] + 0.114 * u[2];
+          const s = Math.max(0, Math.min(1, d / Math.max(0.2, lumU)));
           for (let c = 0; c < 3; c++) {
-            const k = sample(field.color, field.f, x, y, c) / Math.max(1e-6, wsum / 255);
-            const colored = paperV[c] * (1 - d) + Math.min(255, k) * d;
-            base[c] = base[c] * (1 - conf) + colored * conf;
+            base[c] = paperV[c] * (1 - s * u[c]);
           }
         }
       }
