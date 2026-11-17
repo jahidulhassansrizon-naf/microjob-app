@@ -44,8 +44,11 @@ export const AI_CHIP_LABELS: Record<AiChipKey, string> = {
 //   but it is written once, in plain words, and every task repeats only its own short limit.
 // - No "redo until correct" loops and no alarming words (the bot cannot loop, and such words
 //   make a refusal more likely). The ending is always: one image, no text.
-const LETTER_RULE =
-  "Work word by word. Copy every word exactly as it looks in the photo, letter by letter, and never replace a letter with a similar-looking one (for example Bangla ফ must not become ধ, ব must not become র, ত must not become ভ, ন must not become ল, and a digit must not become another digit). Sharpen text only by making the strokes that are already there clearer, never by redrawing or re-typing the letters. Before you give me the image, check every line, word and number of your result against the photo one by one, and wherever a letter or digit is different from the photo, correct it so that it matches the photo exactly.";
+const LETTER_RULE = [
+  "Go through the page line by line, from the top line to the bottom line, and treat every line as a picture to be cleaned, not as text to be read or written. Every line must keep exactly the same words, in the same order, with the same letters, digits, punctuation, spacing and line breaks as in the photo, and the page must keep the same number of lines. This covers the printed text, the handwritten words, the words inside stamps and seals, the small print at the edges and the numbers in the corners: copy what is there, stroke by stroke. Handwriting must stay handwriting in the same hand, and printed text must stay in the same printed letters.",
+  "If a word is blurry, faint, handwritten or hard to read, do not guess it and do not replace it with a word that looks right: keep its own strokes as they are, only a little clearer. Never replace a letter with a similar-looking one (for example Bangla ফ must not become ধ, ব must not become র, ত must not become ভ, ন must not become ল, গ must not become শ, and a digit must not become another digit). Never add a word, a line, a footer or a caption that is not in the photo, and never remove one that is.",
+  "Last check: before you give me the image, go through your result line by line once more and compare each line with the photo: every word, letter, digit, date, name, address, number and punctuation mark. If any line differs in even one letter or digit, correct that line so that it matches the photo exactly. If you cannot make a line match, put that line back exactly as it looks in the photo rather than keeping a changed version.",
+].join("\n\n");
 
 const buildIntro = (part: boolean): string =>
   [
@@ -63,7 +66,7 @@ const buildIntro = (part: boolean): string =>
 
 const TASKS: Record<AiPresetKey, string> = {
   clean:
-    "Clean and sharpen: remove shadows, uneven light, creases, fingerprints, dust and paper noise, make the blank paper evenly white, and make blurry or faint text crisp and dark by clearing up the existing strokes, without changing any letter shape. Keep stamps, signatures, handwriting, photos and logos as they are.",
+    "Clean and sharpen: remove shadows, uneven light, creases, fingerprints, dust and paper noise, make the blank paper evenly white, and make the text cleaner and darker only by clearing up the strokes that are already there, without changing any letter shape (if a word is too blurry to be sure of, leave it as it is). Keep stamps, signatures, handwriting, photos and logos as they are.",
   restore:
     "Restore old colours: this paper is old, faded or yellowed. Bring back the original ink and print colours (faded blue, black and red ink, coloured borders, headings and logos) and remove the yellow-brown tint and age stains from the paper. Do not add colour to parts that were black and white, and do not change any letter.",
   crop:
