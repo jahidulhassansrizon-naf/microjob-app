@@ -40,6 +40,13 @@ export const FAMILY = {
 export const FOUNDER_IMAGE_PATH = "/adminpic/srizonFbPic.jpg";
 export const FOUNDER_IMAGE_URL = FOUNDER_IMAGE_PATH;
 
+// The founder's own profiles. Google uses these links to confirm that the person on this site
+// and the person on Facebook / YouTube are the same, which helps the name and photo show up in search.
+export const FOUNDER_SOCIAL_LINKS = [
+  "https://www.facebook.com/profile.php?id=61593666395329",
+  "https://www.youtube.com/@srizonbuilds",
+];
+
 export const ABOUT_URL = `${SITE_URL}/about`;
 export const PERSON_ID = `${ABOUT_URL}#founder`;
 export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
@@ -53,6 +60,7 @@ const personCore = {
   name: CREATOR.nameBn,
   alternateName: [CREATOR.nameEn, ...CREATOR.altNames],
   url: ABOUT_URL,
+  sameAs: FOUNDER_SOCIAL_LINKS,
 };
 
 const familyJsonLd = () =>

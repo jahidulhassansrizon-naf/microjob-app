@@ -8,6 +8,7 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import { getContactList } from "@/app/_components/contactSettings";
+import { CREATOR } from "@/app/_lib/creator";
 
 // Shown until the admin saves their own values in Admin → Site Settings → Footer.
 const DEFAULT_OFFICE = { address: "সাভার, ঢাকা", phone: "+8809697629108" };
@@ -340,7 +341,18 @@ export default function Footer() {
         {/* Bottom Bar: Copyright & Socials */}
         <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-xs text-slate-400 sm:flex-row">
           <p>
-            <>© {new Date().getFullYear()} {settings.branding.siteName}. {settings.footer.copyrightText}</>
+            <>
+              © {new Date().getFullYear()} Design &amp; Developed by{" "}
+              <Link
+                href="/about"
+                rel="author"
+                title="Jahidul Hassan Srizon"
+                className="font-semibold text-slate-200 underline-offset-4 transition-colors hover:text-white hover:underline"
+              >
+                {CREATOR.nameBn}
+              </Link>
+              . {settings.footer.copyrightText}
+            </>
           </p>
 
           <div className="flex items-center gap-2.5">
