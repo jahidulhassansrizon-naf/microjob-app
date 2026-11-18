@@ -1,5 +1,13 @@
 name: Gemini Playwright Bot
 
+# This one workflow runs BOTH the Gemini bot and the website (Next.js) on the same runner.
+# The website talks to the bot through http://127.0.0.1:4000 (same machine), so no bot URL has to be
+# published anywhere for the website running here. The old Vercel publish step is still kept so the
+# Vercel site (if still live) keeps working. Remove that step after the move.
+#   - No CF_TUNNEL_TOKEN secret -> PREVIEW MODE: random https://xxxx.trycloudflare.com link for the website.
+#   - CF_TUNNEL_TOKEN secret set -> LIVE MODE: your own domain through a permanent Cloudflare named tunnel.
+# Needed secret for the website: SITE_ENV_FILE (the whole production .env, as before).
+
 on:
   workflow_dispatch:
     inputs:
@@ -50,6 +58,10 @@ jobs:
 
     env:
       BOT_PORT: "4000"
+      SITE_PORT: "3000"
+      NEXT_TELEMETRY_DISABLED: "1"
+      SITE_ENV_FILE: ${{ secrets.SITE_ENV_FILE }}
+      CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
       SKIP_DESKTOP: "1"
       # ---- DUCK.AI TEST: /edit-image (AI Editor, Bulk Photo Edit) uses Duck.ai instead of Gemini. ----
       # To go back to Gemini: delete the next 3 lines (and set PREWARM / WARM_DEMAND back to "1").
@@ -266,6 +278,7 @@ jobs:
       # Writes the new URL into the Vercel Global Config store (key: botUrl).
       # The website reads it on every request, so no redeploy is needed.
       - name: Publish public URL to Vercel Global Config
+        continue-on-error: true # the website on this runner does not need it
         shell: bash
         env:
           # Optional. Only needed if the Vercel project lives under a Team.
@@ -306,6 +319,104 @@ jobs:
             sleep 5
           done
           echo "::error::Could not publish the public URL to Vercel."
+          exit 1
+
+      # ===================== WEBSITE ON THE SAME RUNNER =====================
+      # continue-on-error: if the website fails, the bot stays online as before.
+      - name: Build and start the website
+        continue-on-error: true
+        shell: bash
+        working-directory: .
+        run: |
+          if [ -z "${SITE_ENV_FILE:-}" ]; then
+            echo "::warning::Secret SITE_ENV_FILE is missing, the website is not started (the bot keeps running)."
+            exit 0
+          fi
+          # Remove Windows line endings, then force the bot address to this same machine.
+          # The last line of the same name wins, so this beats anything inside SITE_ENV_FILE.
+          printf '%s\n' "$SITE_ENV_FILE" | tr -d '\r' > .env.production
+          printf '\nGEMINI_RENDER_URL=http://127.0.0.1:%s\n' "$BOT_PORT" >> .env.production
+          chmod 600 .env.production
+          echo "Environment file written. GEMINI_RENDER_URL points to the bot on this runner."
+
+          for attempt in 1 2 3; do
+            if npm ci --no-audit --no-fund; then break; fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "npm ci failed 3 times, trying npm install."
+              npm install --no-audit --no-fund || { echo "::error::Website dependencies failed."; exit 1; }
+            else
+              echo "npm ci failed (attempt $attempt/3), trying again in 15 seconds..."
+              sleep 15
+            fi
+          done
+
+          NODE_OPTIONS=--max-old-space-size=6144 npm run build || { echo "::error::Website build failed."; exit 1; }
+
+          nohup npm start -- -p "${SITE_PORT}" > "$GITHUB_WORKSPACE/site.log" 2>&1 &
+          echo $! > "$GITHUB_WORKSPACE/site.pid"
+
+          for i in {1..60}; do
+            CODE="$(curl -sS -o /dev/null -m 10 -w '%{http_code}' "http://127.0.0.1:${SITE_PORT}/" || true)"
+            if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 400 ] 2>/dev/null; then
+              echo "Website answers (HTTP $CODE)."
+              echo "SITE_READY=1" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::The website did not answer."
+          tail -n 80 "$GITHUB_WORKSPACE/site.log" || true
+          exit 1
+
+      - name: Start website tunnel
+        if: env.SITE_READY == '1'
+        continue-on-error: true
+        shell: bash
+        run: |
+          if [ -n "${CF_TUNNEL_TOKEN:-}" ]; then
+            echo "::add-mask::$CF_TUNNEL_TOKEN"
+            nohup ./cloudflared tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN" > site-cloudflared.log 2>&1 &
+            echo $! > site-cloudflared.pid
+            echo "SITE_TUNNEL_MODE=named" >> "$GITHUB_ENV"
+            for i in {1..30}; do
+              if grep -q "Registered tunnel connection" site-cloudflared.log; then
+                echo "Website tunnel connected (live mode)."
+                echo "## Website is online through the Cloudflare tunnel" >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "::error::The website tunnel did not connect."
+            tail -n 40 site-cloudflared.log || true
+            exit 1
+          fi
+
+          # Preview mode: temporary random link, no domain needed.
+          echo "SITE_TUNNEL_MODE=quick" >> "$GITHUB_ENV"
+          nohup ./cloudflared tunnel --no-autoupdate --url "http://127.0.0.1:${SITE_PORT}" > site-cloudflared.log 2>&1 &
+          echo $! > site-cloudflared.pid
+          for i in {1..30}; do
+            PREVIEW_URL="$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' site-cloudflared.log | head -n 1 || true)"
+            if [ -n "$PREVIEW_URL" ]; then
+              for j in {1..45}; do
+                CODE="$(curl -sS -o /dev/null -m 10 -w '%{http_code}' "${PREVIEW_URL}/" 2>/dev/null || true)"
+                if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 400 ] 2>/dev/null; then break; fi
+                sleep 4
+              done
+              echo "=============================================="
+              echo "WEBSITE PREVIEW LINK: ${PREVIEW_URL}"
+              echo "=============================================="
+              {
+                echo "## Website preview link (works while this run is active)"
+                echo
+                echo "${PREVIEW_URL}"
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::No website preview link appeared."
+          tail -n 40 site-cloudflared.log || true
           exit 1
 
       - name: Keep bot online (watchdog)
@@ -435,7 +546,8 @@ jobs:
 
           restart_tunnel() {
             echo "[watchdog] $(date -u +%T) public tunnel is down, starting a new one."
-            pkill -f "cloudflared tunnel" 2>/dev/null || true
+            # Only the bot's own tunnel (the website has its own cloudflared process).
+            if [ -f cloudflared.pid ]; then kill "$(cat cloudflared.pid)" 2>/dev/null || true; fi
             sleep 2
             : > cloudflared.log
             nohup ./cloudflared tunnel --no-autoupdate \
@@ -498,6 +610,60 @@ jobs:
           }
           LAST_PUSH=$(date +%s)
 
+          # ---------- website (same runner) ----------
+          site_up() {
+            local CODE
+            CODE="$(curl -sS -o /dev/null -m 10 -w '%{http_code}' "http://127.0.0.1:${SITE_PORT}/" 2>/dev/null || true)"
+            [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 400 ] 2>/dev/null
+          }
+
+          restart_site() {
+            echo "[watchdog] $(date -u +%T) website is down, restarting it."
+            if [ -f "$GITHUB_WORKSPACE/site.pid" ]; then kill "$(cat "$GITHUB_WORKSPACE/site.pid")" 2>/dev/null || true; fi
+            pkill -f "next-server" 2>/dev/null || true
+            pkill -f "next start" 2>/dev/null || true
+            sleep 3
+            ( cd "$GITHUB_WORKSPACE" && nohup npm start -- -p "${SITE_PORT}" >> site.log 2>&1 & echo $! > site.pid )
+            local i
+            for i in {1..40}; do
+              if site_up; then echo "[watchdog] website is back."; return 0; fi
+              sleep 3
+            done
+            echo "[watchdog] website did not come back yet."
+            return 1
+          }
+
+          site_tunnel_up() {
+            [ -f site-cloudflared.pid ] && kill -0 "$(cat site-cloudflared.pid)" 2>/dev/null
+          }
+
+          restart_site_tunnel() {
+            echo "[watchdog] $(date -u +%T) website tunnel is down, starting it again."
+            if [ -f site-cloudflared.pid ]; then kill "$(cat site-cloudflared.pid)" 2>/dev/null || true; fi
+            sleep 2
+            : > site-cloudflared.log
+            if [ "$SITE_TUNNEL_MODE" = "named" ]; then
+              nohup ./cloudflared tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN" > site-cloudflared.log 2>&1 &
+            else
+              nohup ./cloudflared tunnel --no-autoupdate --url "http://127.0.0.1:${SITE_PORT}" > site-cloudflared.log 2>&1 &
+            fi
+            echo $! > site-cloudflared.pid
+            local i NEW_URL
+            for i in {1..30}; do
+              if [ "$SITE_TUNNEL_MODE" = "named" ]; then
+                if grep -q "Registered tunnel connection" site-cloudflared.log; then echo "[watchdog] website tunnel is back."; return 0; fi
+              else
+                NEW_URL="$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' site-cloudflared.log | head -n 1 || true)"
+                if [ -n "$NEW_URL" ]; then echo "[watchdog] NEW WEBSITE PREVIEW LINK: ${NEW_URL}"; return 0; fi
+              fi
+              sleep 2
+            done
+            echo "[watchdog] website tunnel did not connect yet."
+            return 1
+          }
+
+          SITE_FAILS=0
+
           LOCAL_FAILS=0
           PUBLIC_FAILS=0
 
@@ -545,6 +711,23 @@ jobs:
                 PUBLIC_FAILS=0
               fi
             fi
+
+            # 3) website (only if it was started) and its tunnel
+            if [ "${SITE_READY:-0}" = "1" ]; then
+              if site_up; then
+                SITE_FAILS=0
+              else
+                SITE_FAILS=$((SITE_FAILS + 1))
+                echo "[watchdog] website check failed (${SITE_FAILS}/3)"
+                if [ "$SITE_FAILS" -ge 3 ]; then
+                  restart_site || true
+                  SITE_FAILS=0
+                fi
+              fi
+              if ! site_tunnel_up; then
+                restart_site_tunnel || true
+              fi
+            fi
           done
 
           push_cookies || true
@@ -558,6 +741,10 @@ jobs:
           cat bot.log || true
           echo "----- cloudflared.log (URL hidden) -----"
           sed -E 's#https://[-a-z0-9]+\.trycloudflare\.com#https://[hidden].trycloudflare.com#g' cloudflared.log || true
+          echo "----- site.log (last 200 lines) -----"
+          tail -n 200 "$GITHUB_WORKSPACE/site.log" || true
+          echo "----- site-cloudflared.log (last 60 lines) -----"
+          tail -n 60 site-cloudflared.log || true
 
       - name: Cleanup
         if: always()
@@ -565,5 +752,10 @@ jobs:
         run: |
           if [ -f cloudflared.pid ]; then kill "$(cat cloudflared.pid)" 2>/dev/null || true; fi
           if [ -f bot.pid ]; then kill "$(cat bot.pid)" 2>/dev/null || true; fi
+          if [ -f site-cloudflared.pid ]; then kill "$(cat site-cloudflared.pid)" 2>/dev/null || true; fi
+          if [ -f "$GITHUB_WORKSPACE/site.pid" ]; then kill "$(cat "$GITHUB_WORKSPACE/site.pid")" 2>/dev/null || true; fi
           pkill -f "node server.js" 2>/dev/null || true
           pkill -f "cloudflared tunnel" 2>/dev/null || true
+          pkill -f "next-server" 2>/dev/null || true
+          pkill -f "next start" 2>/dev/null || true
+          rm -f "$GITHUB_WORKSPACE/.env.production"
