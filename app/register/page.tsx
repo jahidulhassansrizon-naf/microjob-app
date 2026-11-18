@@ -448,7 +448,7 @@ export default function RegisterPage() {
             </form>
           </div>
 
-          <p className="mt-5 text-center text-sm text-[#5A4A32]">{tx("Already have an account?", "আগেই অ্যাকাউন্ট আছে?")} <Link href="/login" className="ml-1 font-bold text-[#DC2626] hover:underline">{tx("Sign in", "লগইন করুন")}</Link></p>
+          <p className="mt-5 text-center text-sm text-[#5A4A32]">{tx("Already have an account?", "আগেই অ্যাকাউন্ট আছে?")} <Link href="/login" prefetch={false} className="ml-1 font-bold text-[#DC2626] hover:underline">{tx("Sign in", "লগইন করুন")}</Link></p>
         </section>
         <div className="h-2" />
       </main>

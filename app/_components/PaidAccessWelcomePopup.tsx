@@ -23,7 +23,7 @@ const CHECK_THROTTLE_MS = 60000;
  * signed-in token so a different account never reuses it.
  */
 const NONE_CACHE_KEY = "sebalagbe:paid-welcome-none";
-const NONE_CACHE_TTL_MS = 5 * 60 * 1000;
+const NONE_CACHE_TTL_MS = 30 * 60 * 1000;
 
 const digitsBn = (v: string | number) =>
   String(v).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[Number(d)]);

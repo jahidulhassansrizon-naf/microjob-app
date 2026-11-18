@@ -152,6 +152,10 @@ const SubscriptionSchema = new Schema(
   },
 );
 
+// Admin overview/insights group payments by date and filter by status + expiry.
+SubscriptionSchema.index({ createdAt: -1 });
+SubscriptionSchema.index({ paymentStatus: 1, accessStatus: 1, expiresAt: 1 });
+
 if (process.env.NODE_ENV === "development") {
   delete (models as any).Subscription;
 }

@@ -269,6 +269,9 @@ const UserSchema = new Schema(
   },
 );
 
+// Admin overview counts/groups users by signup date; without this every such query scans all users.
+UserSchema.index({ createdAt: 1 });
+
 UserSchema.index(
   { isPrimaryAdmin: 1 },
   {

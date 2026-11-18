@@ -24,6 +24,9 @@ const ChatMessageSchema = new Schema(
 );
 
 ChatMessageSchema.index({ conversationId: 1, createdAt: -1 });
+// Admin overview/unread counts filter by { senderRole, readByAdmin } and recent createdAt.
+ChatMessageSchema.index({ senderRole: 1, readByAdmin: 1 });
+ChatMessageSchema.index({ createdAt: 1 });
 
 const ChatMessage = models.ChatMessage || model("ChatMessage", ChatMessageSchema);
 

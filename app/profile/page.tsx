@@ -6,7 +6,7 @@ import { AlertCircle } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
 import ProfileHeader from "./components/ProfileHeader";
 import SubscriptionCard from "./components/SubscriptionCard";
-import { getClientSession } from "@/lib/clientAuth";
+import { getClientSession, invalidateAuthMe } from "@/lib/clientAuth";
 interface UserProfile {
     id?: string;
     _id?: string;
@@ -36,6 +36,7 @@ export default function ProfilePage() {
         setUser(updatedUser);
         setError("");
         localStorage.setItem("user", JSON.stringify(updatedUser));
+        invalidateAuthMe();
     }, []);
     useEffect(() => {
         const handleExternalUserUpdate = (event: Event) => {

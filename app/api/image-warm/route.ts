@@ -21,6 +21,13 @@ const JWT_SECRET = getJwtSecret();
 const lastPing = new Map<string, { at: number; strong: boolean }>();
 const MIN_GAP_MS = 20_000;
 
+// A visitor whose tool access was verified a moment ago does not need three MongoDB
+// lookups on every hint. This only affects the warm-up hint (a ban or an ended
+// subscription can lead to at most a few more harmless hints); /api/image-generate
+// still runs the full access check on every real generation.
+const accessOkUntil = new Map<string, number>();
+const ACCESS_OK_TTL_MS = 3 * 60_000;
+
 function getToken(request: Request): string | null {
   const authorization = request.headers.get("authorization");
   if (authorization?.startsWith("Bearer ")) {
@@ -36,9 +43,6 @@ function getToken(request: Request): string | null {
 // the AI editor page, so it can get one Gemini page ready for them.
 // Never fails loudly: the page works the same without this call.
 export async function POST(req: Request) {
-  const access = await requireToolAccess(req);
-  if (!access.ok) return access.response;
-
   const token = getToken(req);
   if (!token) {
     return NextResponse.json({ ok: false }, { status: 401 });
@@ -57,8 +61,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  if (!(await hasActiveToolAccess(userId))) {
-    return NextResponse.json({ ok: false }, { status: 403 });
+  if ((accessOkUntil.get(userId) || 0) <= Date.now()) {
+    const access = await requireToolAccess(req);
+    if (!access.ok) {
+      accessOkUntil.delete(userId);
+      return access.response;
+    }
+    if (!(await hasActiveToolAccess(userId))) {
+      accessOkUntil.delete(userId);
+      return NextResponse.json({ ok: false }, { status: 403 });
+    }
+    accessOkUntil.set(userId, Date.now() + ACCESS_OK_TTL_MS);
+    if (accessOkUntil.size > 5000) {
+      const nowMs = Date.now();
+      for (const [key, until] of accessOkUntil) {
+        if (until <= nowMs) accessOkUntil.delete(key);
+      }
+    }
   }
 
   let strong = false;

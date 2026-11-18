@@ -161,6 +161,7 @@ export default function ForgotPasswordPage() {
         <header className="flex w-full items-center justify-between">
           <Link
             href="/login"
+            prefetch={false}
             className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-[#5A4A32] transition-colors hover:bg-white hover:text-[#B91C1C]"
           >
             <ArrowLeft size={17} />
@@ -364,7 +365,7 @@ export default function ForgotPasswordPage() {
 
             <p className="mt-6 text-center text-sm text-[#5A4A32]">
               {tx("Remembered your password?", "পাসওয়ার্ড মনে পড়েছে?")}{" "}
-              <Link href="/login" className="font-bold text-[#DC2626] transition-colors hover:text-[#991B1B] hover:underline">
+              <Link href="/login" prefetch={false} className="font-bold text-[#DC2626] transition-colors hover:text-[#991B1B] hover:underline">
                 {tx("Sign in", "লগইন করুন")}
               </Link>
             </p>

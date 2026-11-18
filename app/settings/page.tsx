@@ -4,7 +4,7 @@ import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, CheckCircle2, LockKeyhole, MonitorSmartphone, RefreshCw, UserRound } from "lucide-react";
 import DashboardNavbar from "../dashboard/_components/DashboardNavbar";
-import { fetchAuthMe } from "@/lib/clientAuth";
+import { fetchAuthMe, invalidateAuthMe } from "@/lib/clientAuth";
 import PersonalInfoTab, { type ProfileFormData } from "./components/PersonalInfoTab";
 import ChangePasswordTab, { type PasswordFormData } from "./components/ChangePasswordTab";
 import DevicesLoginTab from "./components/DevicesLoginTab";
@@ -257,6 +257,7 @@ export default function SettingsPage() {
             if (!response.ok)
                 throw new Error(getApiError(data, "Unable to update your personal information."));
             syncUser({ ...(user || {}), ...profileForm, ...(data.user || {}) });
+            invalidateAuthMe();
             setIsEditOpen(false);
             showToast("success", data.message || "Personal information updated successfully.");
         }

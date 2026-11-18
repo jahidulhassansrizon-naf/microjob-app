@@ -593,7 +593,7 @@ export default function AdminDashboardClient() {
       }
     };
     void refreshUnreadCount();
-    const stopPolling = visibleInterval(() => void refreshUnreadCount(), 30_000);
+    const stopPolling = visibleInterval(() => void refreshUnreadCount(), 60_000);
     return () => {
       active = false;
       stopPolling();
@@ -1086,7 +1086,7 @@ export default function AdminDashboardClient() {
       if (tab === "users") {
         void loadUsers(userPagination.page, appliedUserSearch, userStatus, true);
       }
-    }, 60_000);
+    }, 180_000);
     return stopPolling;
   }, [
     appliedUserSearch,

@@ -46,9 +46,9 @@ export function getClientAuthHeaders(): Record<string, string> {
 // The cache is cleared on login, logout and impersonation changes (invalidateAuthMe).
 // ---------------------------------------------------------------------------
 const AUTH_ME_URL = "/api/auth/me";
-// 30s: the navbar, banner and chat re-check on every page change; the server still enforces
-// bans/auth on every API call, and login/logout/impersonation changes clear this cache.
-const AUTH_ME_TTL_MS = 30_000;
+// 2 min: the navbar, banner and chat re-check on every page change; the server still enforces
+// bans/auth on every API call, and login/logout/impersonation/profile changes clear this cache.
+const AUTH_ME_TTL_MS = 2 * 60_000;
 const AUTH_ME_TIMEOUT_MS = 8_000;
 
 type AuthMeSnapshot = { status: number; body: string };
@@ -69,6 +69,11 @@ export function invalidateAuthMe() {
   authMeGeneration += 1;
   authMeCached = null;
   authMeInflight = null;
+}
+
+// A profile photo / name change must show up everywhere at once, so it also drops the stored answer.
+if (typeof window !== "undefined") {
+  window.addEventListener("sohozkaj:user-updated", () => invalidateAuthMe());
 }
 
 /**

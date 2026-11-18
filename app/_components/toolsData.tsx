@@ -2,7 +2,6 @@
 import { T, useI18n } from "@/components/i18n/I18nProvider";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import PremiumLockIcon from "./PremiumLockIcon";
@@ -796,7 +795,6 @@ export function ToolTile({ tool, boxPercent, touchCompact = false, warm = false,
     warm?: boolean;
 }) {
     const compact = typeof boxPercent === "number";
-    const router = useRouter();
     const { locale, t } = useI18n();
     const IconComponent = tool.icon;
     const slug = getSlug(tool.name);
@@ -836,7 +834,7 @@ export function ToolTile({ tool, boxPercent, touchCompact = false, warm = false,
         : locale === "bn"
             ? `${displayName} খুলুন`
             : `Open ${tool.name}`;
-    return (<Link href={toolHref} prefetch onMouseEnter={() => router.prefetch(`/sohoj-tools/${slug}`)} onFocus={() => router.prefetch(`/sohoj-tools/${slug}`)} className="flex w-full flex-col items-center group cursor-pointer" aria-label={accessibleLabel}>
+    return (<Link href={toolHref} prefetch={false} className="flex w-full flex-col items-center group cursor-pointer" aria-label={accessibleLabel}>
       <div className={`relative aspect-square ${touchCompact ? "w-[88%] rounded-[22px] fit:w-full fit:rounded-[28px]" : compact ? "rounded-[22px]" : "w-full rounded-[28px]"} ${tool.bgColor} flex items-center justify-center transition-transform duration-200 group-hover:scale-105 shadow-xs overflow-hidden`} style={compact ? { width: `${boxPercent}%` } : undefined} data-tile-box={compact ? "" : undefined}>
         {tool.badge && (<span className={`absolute top-2.5 left-2.5 ${warm ? "text-[11px] font-bold px-2 py-0.5" : "text-[8px] font-black px-1.5 py-0.5"} uppercase text-white rounded-full shadow-xs ${tool.badge === "New" ? "bg-emerald-600" : "bg-red-500"}`}>
             {badgeLabel}
