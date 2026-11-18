@@ -84,6 +84,8 @@ jobs:
 
       - name: Write environment file
         shell: bash
+        env:
+          BOT_URL_SECRET: ${{ secrets.GEMINI_RENDER_URL }}
         run: |
           if [ -z "$SITE_ENV_FILE" ]; then
             echo "::error::Secret SITE_ENV_FILE is missing."
@@ -91,6 +93,15 @@ jobs:
           fi
           # Remove Windows line endings, if the .env was pasted from a Windows PC.
           printf '%s\n' "$SITE_ENV_FILE" | tr -d '\r' > .env.production
+          # If a separate GEMINI_RENDER_URL secret exists, it wins over any line inside SITE_ENV_FILE
+          # (the last line of the same name is the one the site uses).
+          BOT_URL_CLEAN="$(printf '%s' "$BOT_URL_SECRET" | tr -d '[:space:]' | sed 's#/*$##')"
+          if [ -n "$BOT_URL_CLEAN" ]; then
+            printf '\nGEMINI_RENDER_URL=%s\n' "$BOT_URL_CLEAN" >> .env.production
+            echo "GEMINI_RENDER_URL set from its own secret."
+          else
+            echo "::warning::GEMINI_RENDER_URL secret is empty; using whatever SITE_ENV_FILE has."
+          fi
           chmod 600 .env.production
           echo "Environment file written ($(wc -l < .env.production) lines)."
 
