@@ -1,0 +1,386 @@
+name: Site on Runner
+
+# Runs the Next.js website on a GitHub runner.
+#
+# TWO MODES (decided automatically):
+#   - No CF_TUNNEL_TOKEN secret  -> PREVIEW MODE: install, build, start, then a free temporary
+#                                   Cloudflare "quick tunnel" gives a random https://xxxx.trycloudflare.com
+#                                   link (no domain needed). The site stays online for keep_minutes.
+#   - CF_TUNNEL_TOKEN secret set -> LIVE MODE: a permanent Cloudflare named tunnel connects your own
+#                                   domain to the site, and a watchdog + automatic handoff keep it online.
+#
+# Secrets needed:
+#   SITE_ENV_FILE    the whole production .env content (every KEY=value line), pasted as ONE secret
+#   CF_TUNNEL_TOKEN  (later, live mode only) the token of the Cloudflare named tunnel
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep_minutes:
+        description: "Live mode: how long to keep the site online, 1 to 360 (360 = run forever, auto-handoff)"
+        required: false
+        default: "20"
+        type: string
+  # Safety net: OFF while testing. Remove the # signs below only after the live site works.
+  # schedule:
+  #   - cron: "*/30 * * * *"
+
+permissions:
+  contents: read
+  actions: write # lets the job start its own replacement run
+
+jobs:
+  # Skips scheduled runs when a site run is already active, so a safety-net run never doubles up.
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - name: Check for an active site run
+        id: check
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          OTHERS="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow site-on-runner.yml --limit 50 --json databaseId,status \
+            | jq --argjson me "$GITHUB_RUN_ID" '[.[] | select(.databaseId != $me and (.status == "in_progress" or .status == "queued" or .status == "waiting" or .status == "pending"))] | length')"
+          echo "Other active site runs: $OTHERS"
+          if [ "$OTHERS" -gt 0 ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  site:
+    needs: guard
+    if: needs.guard.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    env:
+      SITE_PORT: "3000"
+      NEXT_TELEMETRY_DISABLED: "1"
+      SITE_ENV_FILE: ${{ secrets.SITE_ENV_FILE }}
+      CF_TUNNEL_TOKEN: ${{ secrets.CF_TUNNEL_TOKEN }}
+
+    steps:
+      - name: Record job start time
+        shell: bash
+        run: |
+          echo "JOB_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Write environment file
+        shell: bash
+        run: |
+          if [ -z "$SITE_ENV_FILE" ]; then
+            echo "::error::Secret SITE_ENV_FILE is missing."
+            exit 1
+          fi
+          # Remove Windows line endings, if the .env was pasted from a Windows PC.
+          printf '%s\n' "$SITE_ENV_FILE" | tr -d '\r' > .env.production
+          chmod 600 .env.production
+          echo "Environment file written ($(wc -l < .env.production) lines)."
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci --no-audit --no-fund; then
+              exit 0
+            fi
+            echo "npm ci failed (attempt $attempt/3), trying again in 15 seconds..."
+            sleep 15
+          done
+          echo "npm ci failed 3 times, trying npm install instead."
+          npm install --no-audit --no-fund
+
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Build the site
+        shell: bash
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: npm run build
+
+      - name: Start the site
+        shell: bash
+        run: |
+          nohup npm start -- -p "${SITE_PORT}" > site.log 2>&1 &
+          echo $! > site.pid
+
+      - name: Wait until the site answers
+        shell: bash
+        run: |
+          for i in {1..60}; do
+            CODE="$(curl -sS -o /dev/null -m 10 -w '%{http_code}' "http://127.0.0.1:${SITE_PORT}/" || true)"
+            if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 400 ] 2>/dev/null; then
+              echo "Site answers (HTTP $CODE)."
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "::error::The site did not answer."
+          tail -n 80 site.log || true
+          exit 1
+
+      - name: Decide mode
+        shell: bash
+        run: |
+          if [ -n "$CF_TUNNEL_TOKEN" ]; then
+            echo "TUNNEL_MODE=named" >> "$GITHUB_ENV"
+            echo "Live mode: the permanent Cloudflare tunnel will be used."
+          else
+            echo "TUNNEL_MODE=quick" >> "$GITHUB_ENV"
+            echo "Preview mode: a temporary trycloudflare.com link will be created."
+          fi
+
+      - name: Download cloudflared
+        shell: bash
+        run: |
+          URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"
+          for attempt in 1 2 3 4 5 6; do
+            rm -f cloudflared
+            if curl -L --fail --silent --show-error \
+              --connect-timeout 20 --max-time 180 \
+              --retry 3 --retry-all-errors --retry-delay 5 \
+              -o cloudflared "$URL"; then
+              chmod +x cloudflared
+              if ./cloudflared --version > /dev/null 2>&1; then
+                echo "cloudflared downloaded (attempt $attempt)."
+                exit 0
+              fi
+            fi
+            echo "cloudflared download failed (attempt $attempt/6), trying again in 20 seconds..."
+            sleep 20
+          done
+          echo "::error::Could not download cloudflared."
+          exit 1
+
+      - name: Start Cloudflare tunnel
+        shell: bash
+        run: |
+          if [ "$TUNNEL_MODE" = "named" ]; then
+            echo "::add-mask::$CF_TUNNEL_TOKEN"
+            nohup ./cloudflared tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN" > cloudflared.log 2>&1 &
+            echo $! > cloudflared.pid
+            for i in {1..30}; do
+              if grep -q "Registered tunnel connection" cloudflared.log; then
+                echo "Tunnel connected."
+                echo "## Site is online through the Cloudflare tunnel" >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "::error::The tunnel did not connect."
+            tail -n 40 cloudflared.log || true
+            exit 1
+          fi
+
+          # Preview mode: temporary random link, no domain needed.
+          nohup ./cloudflared tunnel --no-autoupdate --url "http://127.0.0.1:${SITE_PORT}" > cloudflared.log 2>&1 &
+          echo $! > cloudflared.pid
+          for i in {1..30}; do
+            PREVIEW_URL="$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)"
+            if [ -n "$PREVIEW_URL" ]; then
+              # A fresh trycloudflare.com address can take a few seconds before it answers.
+              for j in {1..45}; do
+                CODE="$(curl -sS -o /dev/null -m 10 -w '%{http_code}' "${PREVIEW_URL}/" 2>/dev/null || true)"
+                if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 400 ] 2>/dev/null; then
+                  break
+                fi
+                sleep 4
+              done
+              echo "=============================================="
+              echo "PREVIEW LINK: ${PREVIEW_URL}"
+              echo "=============================================="
+              {
+                echo "## Preview link (works while this run is active)"
+                echo
+                echo "${PREVIEW_URL}"
+              } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::No preview link appeared."
+          tail -n 40 cloudflared.log || true
+          exit 1
+
+      - name: Keep site online (watchdog)
+        shell: bash
+        env:
+          KEEP_MINUTES: ${{ inputs.keep_minutes }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          MINUTES="${KEEP_MINUTES:-360}"
+          case "$MINUTES" in
+            ''|*[!0-9]*) echo "keep_minutes must be a whole number."; exit 1 ;;
+          esac
+          if [ "$MINUTES" -lt 1 ] || [ "$MINUTES" -gt 360 ]; then
+            echo "keep_minutes must be between 1 and 360."
+            exit 1
+          fi
+
+          # Reserve 5 minutes inside the 6-hour job limit for logs and cleanup.
+          JOB_START="${JOB_START_EPOCH:-$(date +%s)}"
+          JOB_DEADLINE=$((JOB_START + 355 * 60))
+          AVAILABLE_SECONDS=$((JOB_DEADLINE - $(date +%s)))
+          REQUESTED_SECONDS=$((MINUTES * 60))
+          if [ "$AVAILABLE_SECONDS" -lt 1 ]; then
+            echo "Not enough job time remains."
+            exit 1
+          fi
+          if [ "$REQUESTED_SECONDS" -gt "$AVAILABLE_SECONDS" ]; then
+            RUN_SECONDS="$AVAILABLE_SECONDS"
+          else
+            RUN_SECONDS="$REQUESTED_SECONDS"
+          fi
+          END_AT=$(($(date +%s) + RUN_SECONDS))
+          echo "Watchdog will run for approximately $((RUN_SECONDS / 60)) minutes."
+
+          # Full-length run: start the replacement run 35 minutes before this one ends.
+          # Both runners use the same tunnel token, so Cloudflare shares the traffic between
+          # them and the site never goes offline while the old runner stops.
+          HANDOFF_AT=0
+          if [ "$MINUTES" -eq 360 ] && [ "$TUNNEL_MODE" = "named" ]; then
+            CANDIDATE=$((JOB_START + 320 * 60))
+            if [ "$CANDIDATE" -lt "$END_AT" ]; then
+              HANDOFF_AT="$CANDIDATE"
+            fi
+          fi
+          HANDOFF_DONE=0
+
+          site_up() {
+            local CODE
+            CODE="$(curl -sS -o /dev/null -m 10 -w '%{http_code}' "http://127.0.0.1:${SITE_PORT}/" 2>/dev/null || true)"
+            [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 400 ] 2>/dev/null
+          }
+
+          restart_site() {
+            echo "[watchdog] $(date -u +%T) site is down, restarting it."
+            [ -f site.pid ] && kill "$(cat site.pid)" 2>/dev/null || true
+            pkill -f "next-server" 2>/dev/null || true
+            pkill -f "next start" 2>/dev/null || true
+            sleep 3
+            nohup npm start -- -p "${SITE_PORT}" >> site.log 2>&1 &
+            echo $! > site.pid
+            local i
+            for i in {1..40}; do
+              if site_up; then
+                echo "[watchdog] site is back."
+                return 0
+              fi
+              sleep 3
+            done
+            echo "[watchdog] site did not come back yet."
+            return 1
+          }
+
+          tunnel_up() {
+            pgrep -f "cloudflared tunnel" > /dev/null 2>&1
+          }
+
+          restart_tunnel() {
+            echo "[watchdog] $(date -u +%T) tunnel is down, starting it again."
+            pkill -f "cloudflared tunnel" 2>/dev/null || true
+            sleep 2
+            : > cloudflared.log
+            if [ "$TUNNEL_MODE" = "named" ]; then
+              nohup ./cloudflared tunnel --no-autoupdate run --token "$CF_TUNNEL_TOKEN" > cloudflared.log 2>&1 &
+            else
+              nohup ./cloudflared tunnel --no-autoupdate --url "http://127.0.0.1:${SITE_PORT}" > cloudflared.log 2>&1 &
+            fi
+            echo $! > cloudflared.pid
+            local i NEW_URL
+            for i in {1..30}; do
+              if [ "$TUNNEL_MODE" = "named" ]; then
+                if grep -q "Registered tunnel connection" cloudflared.log; then
+                  echo "[watchdog] tunnel is back."
+                  return 0
+                fi
+              else
+                NEW_URL="$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)"
+                if [ -n "$NEW_URL" ]; then
+                  echo "[watchdog] NEW PREVIEW LINK: ${NEW_URL}"
+                  return 0
+                fi
+              fi
+              sleep 2
+            done
+            echo "[watchdog] tunnel did not connect yet."
+            return 1
+          }
+
+          LOCAL_FAILS=0
+
+          while [ "$(date +%s)" -lt "$END_AT" ]; do
+            REMAINING=$((END_AT - $(date +%s)))
+            if [ "$REMAINING" -gt 30 ]; then sleep 30; else sleep "$REMAINING"; fi
+            [ "$(date +%s)" -ge "$END_AT" ] && break
+
+            if [ "$HANDOFF_AT" -gt 0 ] && [ "$HANDOFF_DONE" -eq 0 ] && [ "$(date +%s)" -ge "$HANDOFF_AT" ]; then
+              HANDOFF_DONE=1
+              echo "Starting the replacement run now."
+              gh workflow run site-on-runner.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f keep_minutes=360 \
+                || echo "::warning::Could not start the replacement run; the 30-minute schedule will start it."
+            fi
+
+            # 1) the site itself (3 failed checks in a row = about 90 seconds)
+            if site_up; then
+              LOCAL_FAILS=0
+            else
+              LOCAL_FAILS=$((LOCAL_FAILS + 1))
+              echo "[watchdog] site check failed (${LOCAL_FAILS}/3)"
+              if [ "$LOCAL_FAILS" -ge 3 ]; then
+                restart_site || true
+                LOCAL_FAILS=0
+              fi
+              continue
+            fi
+
+            # 2) the tunnel process
+            if ! tunnel_up; then
+              restart_tunnel || true
+            fi
+          done
+
+          echo "Watchdog finished."
+
+      - name: Show logs
+        if: always()
+        shell: bash
+        run: |
+          echo "----- site.log (last 200 lines) -----"
+          tail -n 200 site.log || true
+          echo "----- cloudflared.log (last 60 lines) -----"
+          tail -n 60 cloudflared.log || true
+
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: |
+          if [ -f cloudflared.pid ]; then kill "$(cat cloudflared.pid)" 2>/dev/null || true; fi
+          if [ -f site.pid ]; then kill "$(cat site.pid)" 2>/dev/null || true; fi
+          pkill -f "cloudflared tunnel" 2>/dev/null || true
+          pkill -f "next-server" 2>/dev/null || true
+          pkill -f "next start" 2>/dev/null || true
+          rm -f .env.production
