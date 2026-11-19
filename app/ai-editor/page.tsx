@@ -188,6 +188,7 @@ export default function PhotoEditorPage() {
     // Guided setup wizard (opens after a photo is uploaded + cropped)
     const WIZARD_DISABLED_KEY = "sebalagbe:ai-editor:setup-wizard-disabled";
     const [showSetupWizard, setShowSetupWizard] = useState(false);
+    const [showQrPopup, setShowQrPopup] = useState(false);
     const [wizardDisabled, setWizardDisabled] = useState(false);
     const [applyGuidesSignal, setApplyGuidesSignal] = useState<{ id: number; guides: string[] } | null>(null);
     const [autoGenerateToken, setAutoGenerateToken] = useState(0);
@@ -2114,7 +2115,7 @@ export default function PhotoEditorPage() {
         /* ONE place for the page-level sizes. Change a number here and every panel follows. */
         .ai-root {
           --ai-left-w-lg: clamp(320px, 34vw, 400px);   /* settings panel, 1024-1279px */
-          --ai-left-w: clamp(420px, 35vw, 600px);       /* settings panel, 1280px+ */
+          --ai-left-w: clamp(400px, 27vw, 480px);       /* settings panel, 1280px+ (sidebar width: change here) */
           --ai-right-w: clamp(210px, 15.5vw, 280px);    /* QR column + result-options column, 1280px+ */
         }
         .ai-editor-font.ai-editor-font, .ai-editor-font.ai-editor-font *:not(.font-mono):not(svg):not(svg *) {
@@ -2282,7 +2283,7 @@ export default function PhotoEditorPage() {
       <div className="ai-main flex-1 flex flex-col items-center p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-4 xl:min-h-0 xl:overflow-hidden xl:px-4 xl:py-3 min-w-0">
         {/* xl: 3-column grid. Left = full-height settings panel (no inner scrollbar, the page itself scrolls).
             Middle + QR = row 1 (fixed viewport-based height). "Recent photos" = row 2, aligned under the upload box + QR. */}
-        <div className="ai-row flex flex-col lg:flex-row lg:flex-wrap xl:grid xl:grid-cols-[var(--ai-left-w)_minmax(0,1fr)_var(--ai-right-w)] xl:grid-rows-[minmax(0,1fr)_auto] xl:flex-1 xl:min-h-0 w-full max-w-[1400px] xl:max-w-none gap-3 sm:gap-4 items-center lg:items-start xl:items-stretch min-w-0">
+        <div className="ai-row relative flex flex-col lg:flex-row lg:flex-wrap xl:grid xl:grid-cols-[var(--ai-left-w)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_auto] xl:flex-1 xl:min-h-0 w-full max-w-[1400px] xl:max-w-none gap-3 sm:gap-4 items-center lg:items-start xl:items-stretch min-w-0">
           <div className="w-full lg:w-[var(--ai-left-w-lg)] lg:shrink-0 xl:w-full xl:row-span-2 xl:min-h-0 xl:overflow-hidden flex flex-col [&>*]:flex-1 xl:[&>*]:min-h-0">
             <GenerationSettings photoSizes={photoSizes} selectedSize={selectedSize} handleSizeClick={handleSizeClick} showVisaPopup={showVisaPopup} setShowVisaPopup={setShowVisaPopup} visaSizesList={visaSizesList} showAdmissionPopup={showAdmissionPopup} setShowAdmissionPopup={setShowAdmissionPopup} selectedAdmissionLabel={selectedAdmissionLabel} setSelectedAdmissionLabel={setSelectedAdmissionLabel} selectedVisaSize={selectedVisaSize} setSelectedVisaSize={setSelectedVisaSize} setSelectedSize={setSelectedSize} isDualMode={isDualMode} exitDualMode={exitDualMode} backgroundColors={backgroundColors} selectedBg={selectedBg} setSelectedBg={setSelectedBg} setShowColorPicker={setShowColorPicker} showColorPicker={showColorPicker} customBgColor={customBgColor} setCustomBgColor={setCustomBgColor} selectedClothing={selectedClothing} setSelectedClothing={handleClothingSelectionChange} selectedClothingColor={selectedClothingColor} setSelectedClothingColor={setSelectedClothingColor} onEditingGuidesChange={handleEditingGuidesChange} applyGuidesSignal={applyGuidesSignal} onResetSettings={handleResetSettings} leftClothing={leftClothing} setLeftClothing={setLeftClothing} rightClothing={rightClothing} setRightClothing={setRightClothing} leftClothingColor={leftClothingColor} setLeftClothingColor={setLeftClothingColor} rightClothingColor={rightClothingColor} setRightClothingColor={setRightClothingColor} colorPickerRef={colorPickerRef} visaPopupRef={visaPopupRef} onGenerate={handleGeneratePhoto} onOpenSetupWizard={isDualMode ? undefined : openSetupWizardFromButton} isGenerating={isGenerating}/>
           </div>
@@ -2300,7 +2301,11 @@ export default function PhotoEditorPage() {
             </div>
           </div>
 
-          <div className="w-full flex flex-col items-center xl:items-stretch xl:w-full xl:min-w-0 [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0">
+          <button type="button" onClick={() => setShowQrPopup((v) => !v)} aria-expanded={showQrPopup} className="hidden xl:flex absolute right-3 top-3 z-40 cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-[#FBF6E8] px-3 py-2 text-[13px] font-semibold text-stone-800 shadow-[0_4px_14px_rgba(15,23,42,0.12)] transition hover:bg-[#F6EEDB]">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+            <AiT>Upload from phone</AiT>
+          </button>
+          <div className={`w-full flex flex-col items-center xl:items-stretch xl:absolute xl:right-3 xl:top-14 xl:z-40 xl:w-[280px] xl:h-[360px] xl:shadow-[0_16px_40px_rgba(15,23,42,0.25)] xl:rounded-2xl [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0${showQrPopup ? "" : " xl:hidden"}`}>
             <QrCodeSidebar
               uploadUrl={typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : ""}
               onPhotoReceived={handleQrPhotoReceived}
@@ -2308,7 +2313,7 @@ export default function PhotoEditorPage() {
           </div>
 
           {/* Recent photos: aligned with the upload box (starts at its left edge, spans upload box + QR column) */}
-          <div className="w-full min-w-0 lg:basis-full xl:col-start-2 xl:col-span-2 xl:self-start">
+          <div className="w-full min-w-0 lg:basis-full xl:col-start-2 xl:col-span-1 xl:self-start">
             <RecentGenerations generations={recentList} onImageClick={(img) => { setPreviewStartWithEdit(false); setPreviewModalImage(img); }} onBulkPrint={handleBulkPrint} isLoading={isFetching} savedSessions={savedSessions} onOpenSaved={handleOpenSavedSession} onDeleteSaved={handleDeleteSavedSession} onDeleteMany={performDeleteMany}/>
           </div>
         </div>
