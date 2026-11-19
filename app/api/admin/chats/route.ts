@@ -47,9 +47,8 @@ export async function GET(request: Request) {
 
   try {
     await connectDB();
-    // Photos older than 2 minutes are deleted (with their chat messages) before anything is returned.
+    // Cleanup is throttled inside these helpers, so fast polling does not repeat it every request.
     await purgeExpiredChatImages();
-    // Finished conversations (no message for 3 days, all read by admin) are deleted.
     await purgeExpiredChatConversations();
     const url = new URL(request.url);
     if (url.searchParams.get("summary") === "1") {
@@ -60,6 +59,42 @@ export async function GET(request: Request) {
     }
 
     const userId = (url.searchParams.get("userId") || "").trim();
+
+    // FAST PATH (used by the 1-2s live poll): only messages newer than the client's last one.
+    const afterRaw = url.searchParams.get("after");
+    if (userId && afterRaw && mongoose.isValidObjectId(userId)) {
+      const afterDate = new Date(afterRaw);
+      const conversationForPoll: any = await ChatConversation.findOne({ userId }).select("_id unreadForAdmin").lean();
+      if (!conversationForPoll) {
+        return NextResponse.json({ success: true, unreadCount: 0, messages: [], incremental: true }, { headers: { "Cache-Control": "no-store, max-age=0" } });
+      }
+      const fresh = await ChatMessage.find({
+        conversationId: conversationForPoll._id,
+        ...(Number.isNaN(afterDate.getTime()) ? {} : { createdAt: { $gte: afterDate } }),
+      })
+        .sort({ createdAt: 1, _id: 1 })
+        .limit(PAGE_SIZE)
+        .lean();
+      if (Number(conversationForPoll.unreadForAdmin || 0) > 0) {
+        await Promise.all([
+          ChatMessage.updateMany({ conversationId: conversationForPoll._id, senderRole: "user", readByAdmin: false }, { $set: { readByAdmin: true } }),
+          ChatConversation.updateOne({ _id: conversationForPoll._id }, { $set: { unreadForAdmin: 0 } }),
+        ]);
+      }
+      return NextResponse.json(
+        {
+          success: true,
+          unreadCount: 0,
+          incremental: true,
+          messages: await serializeChatMessages(
+            fresh,
+            (message: any) => (message.senderRole === "user" ? { ...message, readByAdmin: true } : message),
+          ),
+        },
+        { headers: { "Cache-Control": "no-store, max-age=0" } },
+      );
+    }
+
     if (userId) {
       const user = await getTargetUser(userId);
       if (!user || user.role === "admin") return NextResponse.json({ success: false, message: "That user could not be found." }, { status: 404 });

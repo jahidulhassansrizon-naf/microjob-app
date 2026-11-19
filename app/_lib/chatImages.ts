@@ -170,7 +170,13 @@ export async function refreshConversationSummary(userId: unknown) {
 }
 
 /** Deletes every picture older than 2 minutes together with the chat messages that show them. */
-export async function purgeExpiredChatImages() {
+let lastImagePurgeAt = 0;
+/** Fast chat polling hits the API every ~1.5s, so the cleanup query runs at most once per interval. */
+const IMAGE_PURGE_INTERVAL_MS = 20_000;
+export async function purgeExpiredChatImages(force = false) {
+  const startedAt = Date.now();
+  if (!force && startedAt - lastImagePurgeAt < IMAGE_PURGE_INTERVAL_MS) return 0;
+  lastImagePurgeAt = startedAt;
   try {
     const expired: any[] = await ChatImage.find({ expiresAt: { $lte: new Date() } })
       .select("_id userId")

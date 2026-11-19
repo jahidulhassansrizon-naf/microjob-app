@@ -22,7 +22,8 @@ import {
   X,
 } from "lucide-react";
 import { fetchAuthMe, getClientAuthHeaders } from "@/lib/clientAuth";
-import { CHAT_IDLE_CLOSE_MS, CHAT_OPEN_POLL_MS, CHAT_PRESENCE_REFRESH_MS } from "@/lib/presenceConstants";
+import { CHAT_CLOSED_POLL_MS, CHAT_FULL_SYNC_MS, CHAT_IDLE_CLOSE_MS, CHAT_OPEN_POLL_MS, CHAT_PRESENCE_REFRESH_MS } from "@/lib/presenceConstants";
+import { visibleInterval } from "@/app/_lib/visiblePolling";
 import { announceChatOpen } from "@/app/_lib/chatPresence";
 import AdminAvatarImage from "./AdminAvatarImage";
 import BrandName from "@/app/_components/BrandName";
@@ -785,13 +786,17 @@ export default function FloatingUserAdminChat() {
   }, [notifyIncoming]);
 
   const loadMessages = useCallback(
-    async (options?: { before?: string; silent?: boolean }) => {
+    async (options?: { before?: string; silent?: boolean; incremental?: boolean }) => {
       if (!options?.silent && !options?.before) setLoading(true);
       if (options?.before) setOlderLoading(true);
       try {
+        // Live poll: only ask for messages newer than the last one we already show.
+        const lastKnown = messagesRef.current[messagesRef.current.length - 1];
         const query = options?.before
           ? `?before=${encodeURIComponent(options.before)}`
-          : "";
+          : options?.incremental && lastKnown?.createdAt
+            ? `?after=${encodeURIComponent(lastKnown.createdAt)}`
+            : "";
         const response = await fetch(`/api/chat${query}`, {
           credentials: "include",
           cache: "no-store",
@@ -870,21 +875,28 @@ export default function FloatingUserAdminChat() {
     [notifyIncoming],
   );
 
-  // No background polling. While the chat is closed we check the unread badge once
-  // (when the page/chat becomes available). While it is open we make no requests
-  // unless CHAT_OPEN_POLL_MS is set above 0.
+  // LIVE CHAT. Closed: check the unread badge every few seconds (new-message popup + sound).
+  // Open: incremental poll every ~1.5s (only messages newer than the last one), plus a full
+  // sync every 20s. Both pause automatically while the browser tab is hidden.
   useEffect(() => {
     if (!eligible || isOpen) return;
     void loadSummary();
+    return visibleInterval(() => void loadSummary(), CHAT_CLOSED_POLL_MS);
   }, [eligible, isOpen, loadSummary]);
 
   useEffect(() => {
     if (!eligible || !isOpen || CHAT_OPEN_POLL_MS <= 0) return;
-    const messageTimer = window.setInterval(
-      () => void loadMessages({ silent: true }),
-      CHAT_OPEN_POLL_MS,
-    );
-    return () => window.clearInterval(messageTimer);
+    let inFlight = false;
+    let lastFullSync = Date.now();
+    return visibleInterval(() => {
+      if (inFlight) return;
+      inFlight = true;
+      const full = Date.now() - lastFullSync >= CHAT_FULL_SYNC_MS;
+      if (full) lastFullSync = Date.now();
+      void loadMessages({ silent: true, incremental: !full }).finally(() => {
+        inFlight = false;
+      });
+    }, CHAT_OPEN_POLL_MS);
   }, [eligible, isOpen, loadMessages]);
 
   // Opening / using the chat counts as activity (user shows online). Re-announce at most

@@ -65,6 +65,7 @@ import BotStatusPanel from "./_components/BotStatusPanel";
 import { useSiteSettings } from "@/app/_components/SiteSettingsProvider";
 import "./admin-theme.css";
 import { visibleInterval } from "@/app/_lib/visiblePolling";
+import { ADMIN_CHAT_BADGE_POLL_MS } from "@/lib/presenceConstants";
 
 type TabKey = "overview" | "users" | "subscriptions" | "chats" | "generations" | "settings" | "payment-gateway" | "smtp" | "subscription-plans" | "subscription-activity" | "bot-status";
 // useLayoutEffect in the browser (before paint), useEffect on the server (no SSR warning).
@@ -593,7 +594,7 @@ export default function AdminDashboardClient() {
       }
     };
     void refreshUnreadCount();
-    const stopPolling = visibleInterval(() => void refreshUnreadCount(), 60_000);
+    const stopPolling = visibleInterval(() => void refreshUnreadCount(), ADMIN_CHAT_BADGE_POLL_MS);
     return () => {
       active = false;
       stopPolling();

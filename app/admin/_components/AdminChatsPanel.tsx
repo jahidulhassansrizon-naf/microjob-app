@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
 import { visibleInterval } from "@/app/_lib/visiblePolling";
+import { ADMIN_CHAT_LIST_POLL_MS, ADMIN_CHAT_MESSAGES_POLL_MS, CHAT_FULL_SYNC_MS } from "@/lib/presenceConstants";
 import {
   ChatDropOverlay,
   ChatImageBubble,
@@ -136,12 +137,17 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
     }
   }, [appliedQuery]);
 
-  const loadMessages = useCallback(async (userId: string, options?: { before?: string; silent?: boolean }) => {
+  const loadMessages = useCallback(async (userId: string, options?: { before?: string; silent?: boolean; incremental?: boolean }) => {
     if (!options?.silent && !options?.before) setMessageLoading(true);
     if (options?.before) setOlderLoading(true);
     try {
       const params = new URLSearchParams({ userId });
       if (options?.before) params.set("before", options.before);
+      // Live poll: ask only for messages newer than the last one we already have (tiny + fast).
+      if (options?.incremental && !options?.before) {
+        const last = messagesRef.current[messagesRef.current.length - 1];
+        if (last?.createdAt) params.set("after", last.createdAt);
+      }
       const response = await fetch(`/api/admin/chats?${params.toString()}`, {
         credentials: "include",
         cache: "no-store",
@@ -162,7 +168,10 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
       if (data?.user) {
         setSelectedUser((current) => current?.id === userId ? { ...current, ...data.user, hasConversation: Boolean(data?.hasConversation) } : current);
       }
-      setUsers((current) => current.map((user) => user.id === userId ? { ...user, unreadCount: 0, hasConversation: Boolean(data?.hasConversation) } : user));
+      // The incremental poll has no hasConversation field; only update it when the server sent it.
+      setUsers((current) => current.map((user) => user.id === userId
+        ? { ...user, unreadCount: 0, ...(typeof data?.hasConversation === "boolean" ? { hasConversation: data.hasConversation } : incoming.length ? { hasConversation: true } : {}) }
+        : user));
       setMessageError("");
       if (!options?.before && (!options?.silent || (hasNewMessages && nearBottom))) shouldScrollRef.current = true;
     } catch (cause) {
@@ -184,14 +193,25 @@ export default function AdminChatsPanel({ refreshKey = 0 }: { refreshKey?: numbe
   }, [appliedQuery, refreshKey, pagination.page]);
 
   useEffect(() => {
-    return visibleInterval(() => void loadUsers(pagination.page, true), 10_000);
+    return visibleInterval(() => void loadUsers(pagination.page, true), ADMIN_CHAT_LIST_POLL_MS);
   }, [loadUsers, pagination.page]);
 
   useEffect(() => {
     if (!selectedUser) return;
     const userId = selectedUser.id;
     void loadMessages(userId);
-    const stop = visibleInterval(() => void loadMessages(userId, { silent: true }), 5_000);
+    // Fast live poll: incremental every ~1.5s, one full sync every 20s (online status, deletions).
+    let inFlight = false;
+    let lastFullSync = Date.now();
+    const stop = visibleInterval(() => {
+      if (inFlight) return;
+      inFlight = true;
+      const full = Date.now() - lastFullSync >= CHAT_FULL_SYNC_MS;
+      if (full) lastFullSync = Date.now();
+      void loadMessages(userId, { silent: true, incremental: !full }).finally(() => {
+        inFlight = false;
+      });
+    }, ADMIN_CHAT_MESSAGES_POLL_MS);
     return stop;
   }, [loadMessages, selectedUser?.id]);
 

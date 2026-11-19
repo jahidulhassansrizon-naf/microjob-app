@@ -10,7 +10,8 @@ import {
 } from "react";
 import { ChevronUp, LoaderCircle, MessageCircle, Send, Trash2 } from "lucide-react";
 import { getClientAuthHeaders } from "@/lib/clientAuth";
-import { CHAT_PRESENCE_REFRESH_MS } from "@/lib/presenceConstants";
+import { CHAT_FULL_SYNC_MS, CHAT_OPEN_POLL_MS, CHAT_PRESENCE_REFRESH_MS } from "@/lib/presenceConstants";
+import { visibleInterval } from "@/app/_lib/visiblePolling";
 import { announceChatOpen } from "@/app/_lib/chatPresence";
 import AdminAvatarImage from "@/app/_components/AdminAvatarImage";
 import {
@@ -424,6 +425,8 @@ export default function UserAdminChat() {
   // The conversation stays visible inside the dashboard banner; users do not need to
   // discover or open a separate modal before they can start typing.
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  messagesRef.current = messages;
   const knownMessageIdsRef = useRef<Set<string>>(new Set());
   const messageHistoryInitializedRef = useRef(false);
   const [draft, setDraft] = useState("");
@@ -473,13 +476,16 @@ export default function UserAdminChat() {
   }, []);
 
   const loadMessages = useCallback(
-    async (options?: { before?: string; silent?: boolean }) => {
+    async (options?: { before?: string; silent?: boolean; incremental?: boolean }) => {
       if (!options?.silent && !options?.before) setLoading(true);
       if (options?.before) setOlderLoading(true);
       try {
+        const lastKnown = messagesRef.current[messagesRef.current.length - 1];
         const query = options?.before
           ? `?before=${encodeURIComponent(options.before)}`
-          : "";
+          : options?.incremental && lastKnown?.createdAt
+            ? `?after=${encodeURIComponent(lastKnown.createdAt)}`
+            : "";
         const response = await fetch(`/api/chat${query}`, {
           credentials: "include",
           cache: "no-store",
@@ -527,7 +533,8 @@ export default function UserAdminChat() {
         if (!options?.silent) setHasMore(Boolean(data?.hasMore));
         setUnreadCount(Number(data?.unreadCount || 0));
         setError("");
-        if (!options?.before) shouldScrollRef.current = true;
+        // Background polls only scroll when a new message actually arrived (handled above).
+        if (!options?.before && !options?.silent) shouldScrollRef.current = true;
       } catch (cause) {
         if (!options?.silent) {
           setError(
@@ -558,6 +565,22 @@ export default function UserAdminChat() {
     void loadMessages();
     void loadSummary();
   }, [loadMessages, loadSummary]);
+
+  // Live chat: incremental poll every ~1.5s while the tab is visible, full sync every 20s.
+  useEffect(() => {
+    if (CHAT_OPEN_POLL_MS <= 0) return;
+    let inFlight = false;
+    let lastFullSync = Date.now();
+    return visibleInterval(() => {
+      if (inFlight) return;
+      inFlight = true;
+      const full = Date.now() - lastFullSync >= CHAT_FULL_SYNC_MS;
+      if (full) lastFullSync = Date.now();
+      void loadMessages({ silent: true, incremental: !full }).finally(() => {
+        inFlight = false;
+      });
+    }, CHAT_OPEN_POLL_MS);
+  }, [loadMessages]);
 
   useEffect(() => {
     if (!shouldScrollRef.current) return;
