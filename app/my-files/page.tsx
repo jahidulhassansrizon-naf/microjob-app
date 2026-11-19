@@ -39,6 +39,8 @@ import {
   refreshMyFilesData,
   removeCachedMyFilesItem,
 } from "./myFilesData";
+import { blockImageMenu } from "@/app/_lib/imageProtect";
+import ProtectedImage from "@/app/ai-editor/_components/ProtectedImage";
 
 /* ------------------------------------------------------------------ */
 /* Page-specific, context-aware English ↔ Bangla translations       */
@@ -509,7 +511,7 @@ function ToolFilePreviewModal({
         <div className="scroll flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#F3E9D2] p-3 sm:p-6">
           {kind === "image" && (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <ProtectedImage
               src={file.url}
               alt={file.name}
               className="max-h-[calc(92dvh-110px)] max-w-full object-contain"
@@ -1186,7 +1188,7 @@ export default function MyFilesPage() {
                           {isImage ? (
                             <>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
+                              <img {...blockImageMenu}
                                 src={getMyFilesThumbnailUrl(file.url || "")}
                                 alt={file.name}
                                 className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-[1.02]"
@@ -1604,7 +1606,7 @@ export default function MyFilesPage() {
 
             <div className="scroll flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#F3E9D2] p-3 sm:p-6">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <ProtectedImage
                 src={previewFile.url}
                 alt={previewFile.name}
                 className="max-h-[calc(92dvh-110px)] max-w-full object-contain"

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { X, RotateCw, Download, Printer, Trash2, Edit3, Share2, Eye, Loader2, Save, Info, ChevronDown, FileImage, Grid, } from "lucide-react";
 import { CLOTHING_NAMES } from "./clothingStyles";
 import AiPrintStudioModal from "./AiPrintStudioModal";
+import ProtectedImage from "./ProtectedImage";
 import ImageEditSidebar, { ASPECT_RATIOS, DEFAULT_FILTERS, FilterState, } from "./ImageEditSidebar";
 export interface PreviewImage {
     id?: string;
@@ -628,7 +629,7 @@ export default function ImagePreviewModal({
             transform: `scale(${previewZoom / 100}) rotate(${isComparing ? 0 : previewRotate}deg)`,
         }}>
             {isComparing && (<div className="absolute top-3 left-3 bg-[#10B981] text-white text-[12px] px-2.5 py-1 rounded-md z-10 uppercase tracking-wider font-bold border border-emerald-400 shadow-lg"><AiT>{"Original Photo\r\n              "}</AiT></div>)}
-            <img src={isComparing ? displayOriginalUrl : image.url} alt={t("Full Preview")} className="max-h-[55vh] sm:max-h-[75vh] max-w-[90vw] lg:max-w-[80vw] object-contain block transition-[filter] duration-150" style={{ filter: isComparing ? "none" : filterString(filters) }}/>
+            <ProtectedImage src={isComparing ? displayOriginalUrl : image.url} alt={t("Full Preview")} className="max-h-[55vh] sm:max-h-[75vh] max-w-[90vw] lg:max-w-[80vw] object-contain block transition-[filter] duration-150" style={{ filter: isComparing ? "none" : filterString(filters) }}/>
           </div>
         </div>
 

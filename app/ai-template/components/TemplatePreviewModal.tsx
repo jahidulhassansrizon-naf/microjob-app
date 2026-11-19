@@ -7,6 +7,7 @@ import GenerationQuotaNotice from "@/app/_components/GenerationQuotaNotice";
 import QrCodeSidebar from "@/app/ai-editor/_components/QrCodeSidebar";
 import { GateOverlay } from "../../_components/GateOverlay";
 import type { Template } from "./templateData";
+import { blockImageMenu } from "@/app/_lib/imageProtect";
 const TEMPLATE_GATE_STAGES = [
     "Measuring your photo",
     "Detecting face and landmarks",
@@ -74,7 +75,7 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
         <button type="button" className="modal-nav modal-next" onClick={() => onMove(1)} aria-label={t("Next template")}><ChevronRight size={20}/></button>
 
         <div ref={imageBoxRef} className={`modal-image ${generatedImage ? "has-generated-image" : ""}`}>
-          <img src={generatedImage || selectedTemplate.image} alt={generatedImage ? t(`Generated result for ${selectedTemplate.title}`) : t(selectedTemplate.title)} decoding="async" fetchPriority="high"/>
+          <img {...blockImageMenu} src={generatedImage || selectedTemplate.image} alt={generatedImage ? t(`Generated result for ${selectedTemplate.title}`) : t(selectedTemplate.title)} decoding="async" fetchPriority="high"/>
 
           {/* Same generating animation as the AI Editor. The user's own photo(s) fall in (couple: both photos side by side), the new result rises out. */}
           <GateOverlay active={isGenerating} image={generatedImage || (isGenerating ? (userPhotoPreview || selectedTemplate.image) : selectedTemplate.image)} splitImages={isCouple && !generatedImage && (userPhotoPreview || userPhotoPreview2) ? [userPhotoPreview, userPhotoPreview2] : null} background="#E3D6B8" t={t} stages={TEMPLATE_GATE_STAGES}/>

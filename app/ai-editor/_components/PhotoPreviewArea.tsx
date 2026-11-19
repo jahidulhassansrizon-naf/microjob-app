@@ -1,6 +1,7 @@
 import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useEffect, useRef, useState } from "react";
 import { Upload, X, ArrowLeftRight, ImageIcon, RefreshCw } from "lucide-react";
+import ProtectedImage from "./ProtectedImage";
 export interface BoxInfo {
     text: string;
     /** True when no photo size is selected: preview uses the photo's own ratio. */
@@ -605,7 +606,7 @@ export default function PhotoPreviewArea({
                     ? "border-2 border-transparent"
                     : "border-2 border-dashed border-[#DC2626]/40"}`}>
               {uploadedImage ? (<div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
-                  <img src={uploadedImage} alt="Uploaded or generated preview" className="h-full w-full object-contain" style={resultFilter ? { filter: resultFilter } : undefined}/>
+                  <ProtectedImage src={uploadedImage} alt="Uploaded or generated preview" className="h-full w-full object-contain" style={resultFilter ? { filter: resultFilter } : undefined}/>
 
                   <button type="button" onClick={handleRemoveSingle} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-[#3B2F1E]/80 p-1.5 text-white opacity-0 transition hover:bg-red-600 group-hover:opacity-100" aria-label={t("Remove current photo")}>
                     <X size={14}/>
@@ -629,7 +630,7 @@ export default function PhotoPreviewArea({
           {/* ONE wide frame and ONE gate: both photos fall in together, one group photo comes out. */}
           <FitFrame info={{ text: "90×55 mm", style: { width: "540px", height: "330px" } }} imageSrc={dualResultImage || leftImage} className="overflow-hidden rounded-2xl border-2 border-[#E3D6B8] shadow-xl">
             <div className="group relative h-full w-full" style={getBackgroundStyle(currentBgColorValue)}>
-              {dualResultImage ? (<img src={dualResultImage} alt={t("Dual photo")} className="h-full w-full object-contain" style={resultFilter ? { filter: resultFilter } : undefined}/>) : (<div className="flex h-full w-full">
+              {dualResultImage ? (<ProtectedImage src={dualResultImage} alt={t("Dual photo")} className="h-full w-full object-contain" style={resultFilter ? { filter: resultFilter } : undefined}/>) : (<div className="flex h-full w-full">
                   <div className="h-full w-1/2" style={getBackgroundStyle(currentBgColorValue)}>
                     {leftImage && (<img src={leftImage} alt="Left person" className="h-full w-full object-contain"/>)}
                   </div>

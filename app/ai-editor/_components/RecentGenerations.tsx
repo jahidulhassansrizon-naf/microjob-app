@@ -20,6 +20,7 @@ import type { PrintSessionMeta } from "./printSessionStore";
 import { getAiEditorThumbnailUrl } from "./aiEditorData";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import RetentionNotice from "@/app/_components/RetentionNotice";
+import { blockImageMenu } from "@/app/_lib/imageProtect";
 
 export interface GenerationItem {
     id?: string | number;
@@ -195,7 +196,7 @@ export default function RecentGenerations({
                 className={`${compact ? `group relative ${item.side === "dual" ? "col-span-2 aspect-[90/55]" : "aspect-[4/5]"} ` : `group relative flex h-36 ${item.side === "dual" ? "w-56 xl:w-[calc(clamp(72px,10.5vh,112px)*1.56)]" : "w-28 xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)]"} xl:h-[clamp(72px,10.5vh,112px)] shrink-0 flex-col `}overflow-hidden rounded-xl border bg-[#F2E8D2] text-left transition ${isSelecting && selected ? "border-[#DC2626] ring-2 ring-[#DC2626]" : "border-[#E3D6B8] hover:border-[#DC2626]"} cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#DC2626]`}
                 style={item.bgColor === "transparent" ? TRANSPARENT_THUMBNAIL_STYLE : undefined}
             >
-                <img src={getAiEditorThumbnailUrl(item.url)} alt={t("Generated photo")} loading={!compact && index < 8 ? "eager" : "lazy"} decoding="async" ref={(el) => { if (el && el.complete) el.style.opacity = "1"; }} onLoad={(e) => { e.currentTarget.style.opacity = "1"; }} onError={(e) => { e.currentTarget.style.opacity = "1"; }} style={{ opacity: 0, transition: "opacity 450ms ease" }} className={`h-full w-full ${item.side === "dual" ? "object-contain" : "object-cover"}`} />
+                <img {...blockImageMenu} src={getAiEditorThumbnailUrl(item.url)} alt={t("Generated photo")} loading={!compact && index < 8 ? "eager" : "lazy"} decoding="async" ref={(el) => { if (el && el.complete) el.style.opacity = "1"; }} onLoad={(e) => { e.currentTarget.style.opacity = "1"; }} onError={(e) => { e.currentTarget.style.opacity = "1"; }} style={{ opacity: 0, transition: "opacity 450ms ease" }} className={`h-full w-full ${item.side === "dual" ? "object-contain" : "object-cover"}`} />
                 {!isSelecting && onDeleteMany && (
                     <button type="button" onClick={(event) => { event.stopPropagation(); setPendingDelete([item]); }} aria-label="ছবি মুছুন" title="ছবি মুছুন" className="absolute right-1 top-1 z-10 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/90 text-[#DC2626] opacity-100 shadow transition hover:bg-[#DC2626] hover:text-white sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"><Trash2 size={13}/></button>
                 )}
@@ -228,7 +229,7 @@ export default function RecentGenerations({
                 <button type="button" onClick={() => { void openSaved(session.id); }} disabled={!!openingId} aria-label={`সংরক্ষিত প্রিন্ট খুলুন: ${session.photoCount}টি ছবি`} className="relative flex-1 min-h-0 cursor-pointer overflow-hidden disabled:cursor-wait">
                   <span className="grid h-full w-full grid-cols-2 gap-px bg-[#E3D6B8]">
                     {(session.thumbs.length ? session.thumbs.slice(0, 4) : [""]).map((thumb, index) => thumb
-                        ? <img key={index} src={thumb} alt="" draggable={false} className="h-full w-full object-cover"/>
+                        ? <img {...blockImageMenu} key={index} src={thumb} alt="" draggable={false} className="h-full w-full object-cover"/>
                         : <span key={index} className="h-full w-full bg-[#F2E8D2]"/>)}
                   </span>
                   <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-sm font-semibold text-white opacity-0 transition group-hover:opacity-100">

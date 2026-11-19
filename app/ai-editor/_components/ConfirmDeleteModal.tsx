@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Trash2, X } from "lucide-react";
 import { AiT } from "./aiEditorI18n";
 import { getAiEditorThumbnailUrl } from "./aiEditorData";
+import { blockImageMenu } from "@/app/_lib/imageProtect";
 
 type ConfirmDeleteModalProps = {
   open: boolean;
@@ -60,7 +61,7 @@ export default function ConfirmDeleteModal({
         <div className="px-6 pb-6 pt-7 text-center">
           <div className="relative mx-auto mb-5 w-fit">
             {imageUrl ? (
-              <img
+              <img {...blockImageMenu}
                 src={getAiEditorThumbnailUrl(imageUrl)}
                 alt=""
                 className="h-24 w-[76px] rounded-2xl object-cover shadow-lg ring-4 ring-white"

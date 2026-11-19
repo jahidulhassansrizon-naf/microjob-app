@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { CheckCircle2, Download, Eye, Image as ImageIcon, Printer, Trash2, X, } from "lucide-react";
 import { useManualEditor, type GeneratedPhoto } from "./EditorProvider";
 import RetentionNotice from "@/app/_components/RetentionNotice";
+import { blockImageMenu } from "@/app/_lib/imageProtect";
 function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, onUseInEditor, }: {
     photo: GeneratedPhoto;
     onClose: () => void;
@@ -63,7 +64,7 @@ function GeneratedPhotoPreview({ photo, onClose, onDownload, onPrint, onDelete, 
         <div className="min-h-full w-full flex flex-col items-center justify-center gap-4 sm:gap-5">
           <div className="w-full max-w-5xl rounded-3xl border border-white/20 bg-white/10 p-2 sm:p-4 shadow-xl">
             <div className="relative w-full min-h-[320px] sm:min-h-[460px] lg:min-h-[560px] rounded-2xl bg-[#F2E8D2] border border-[#E3D6B8] overflow-hidden flex items-center justify-center [background-image:radial-gradient(#B0A080_1px,transparent_1px)] [background-size:16px_16px]">
-              {!imageError && (<img src={photo.url} alt={t("Saved generated result")} draggable={false} onLoad={() => {
+              {!imageError && (<img {...blockImageMenu} src={photo.url} alt={t("Saved generated result")} draggable={false} onLoad={() => {
                 setImageLoading(false);
                 setImageError(false);
             }} onError={() => {
@@ -145,7 +146,7 @@ export default function GeneratedPhotosPanel() {
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 lg:flex lg:gap-3 lg:overflow-x-auto lg:overflow-y-hidden lg:pb-1">
         {generatedPhotos.length
             ? generatedPhotos.map((photo, idx) => (<button type="button" key={`${photo.id || photo.url.slice(0, 18)}-${idx}`} onClick={() => setPreviewPhoto(photo)} className="aspect-[3/4] lg:h-[clamp(64px,11vh,120px)] lg:shrink-0 bg-[#F3E9D2] border border-[#E3D6B8] rounded-xl overflow-hidden relative shadow-sm hover:border-[#DC2626] hover:ring-2 hover:ring-[#DC2626]/20 transition-all cursor-pointer group" title={t("Click to preview")}>
-                <img src={photo.url} alt={t("Saved result")} className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"/>
+                <img {...blockImageMenu} src={photo.url} alt={t("Saved result")} className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.02]"/>
 
                 <span className="absolute inset-x-2 bottom-2 rounded-lg bg-[#3B2F1E]/85 text-white px-2 py-1.5 text-[11px] font-bold flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Eye size={11}/><T>{"Preview\r\n                "}</T></span>

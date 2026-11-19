@@ -3,6 +3,7 @@ import { BulkT, useBulkPhotoText } from "./bulkPhotoI18n";
 import { AlertCircle, CheckCircle2, Download, Eye, ImagePlus, MousePointerClick, RotateCcw, Upload, } from "lucide-react";
 import type { PhotoItem } from "./types";
 import { GateOverlay } from "../../_components/GateOverlay";
+import { blockImageMenu } from "@/app/_lib/imageProtect";
 
 interface BulkPhotoStageProps {
     photos: PhotoItem[];
@@ -124,7 +125,7 @@ export default function BulkPhotoStage({ photos, onAddPhotos, onDownloadResult, 
             const displayUrl = isResult && !viewingOriginal ? (photo.resultUrl as string) : photo.preview;
             return (<article key={photo.id} className="overflow-hidden rounded-2xl border border-[#E3D6B8] bg-[#FBF6E8] shadow-sm transition duration-200 hover:shadow-md">
                 <div className="relative aspect-[4/4.4] overflow-hidden bg-[#E3D6B8]">
-                  <img src={displayUrl} alt={t(isResult ? `AI edited photo ${index + 1}` : `Bulk preview ${index + 1}`)} className="h-full w-full object-cover"/>
+                  <img {...blockImageMenu} src={displayUrl} alt={t(isResult ? `AI edited photo ${index + 1}` : `Bulk preview ${index + 1}`)} className="h-full w-full object-cover"/>
 
                   <div className="absolute inset-x-2 top-2 flex items-center justify-between gap-2">
                     <span className="rounded-full bg-[#3B2F1E]/80 px-2.5 py-1 text-[12px] font-bold text-white"><BulkT>{`Photo ${index + 1}`}</BulkT>

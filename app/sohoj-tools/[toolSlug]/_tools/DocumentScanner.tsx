@@ -62,6 +62,7 @@ import {
   type AiPresetKey,
 } from "./documentAi";
 import { composeTextSafe } from "./documentComposite";
+import { blockImageMenu } from "@/app/_lib/imageProtect";
 declare global {
   interface Window {
     cv: any;
@@ -10460,7 +10461,7 @@ export default function DocumentScanner() {
 
             <div className="flex-1 min-h-0 p-3 sm:p-5 flex items-center justify-center overflow-auto scroll bg-[#F3E9D2]/70">
               <div className="max-w-full max-h-full bg-white rounded-xl shadow-xl border border-[#D8C9A6] p-2 sm:p-3 flex items-center justify-center">
-                <img
+                <img {...blockImageMenu}
                   src={previewSavedDocument.src}
                   alt={previewSavedDocument.name}
                   className="block max-w-full max-h-[calc(92vh-190px)] object-contain"
@@ -10653,7 +10654,7 @@ export default function DocumentScanner() {
                     tabIndex={0}
                     aria-label={`${DL("Preview")} ${savedDocument.name}`}
                   >
-                    <img
+                    <img {...blockImageMenu}
                       src={savedDocument.src}
                       alt={savedDocument.name}
                       className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-[1.01]"
