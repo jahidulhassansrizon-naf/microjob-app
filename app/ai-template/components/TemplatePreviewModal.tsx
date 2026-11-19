@@ -76,8 +76,8 @@ export function TemplatePreviewModal({ selectedTemplate, generatedImage, isGener
         <div ref={imageBoxRef} className={`modal-image ${generatedImage ? "has-generated-image" : ""}`}>
           <img src={generatedImage || selectedTemplate.image} alt={generatedImage ? t(`Generated result for ${selectedTemplate.title}`) : t(selectedTemplate.title)} decoding="async" fetchPriority="high"/>
 
-          {/* Same generating animation as the AI Editor. The photo on screen falls in, the new result rises out. */}
-          <GateOverlay active={isGenerating} image={generatedImage || selectedTemplate.image} background="#E3D6B8" t={t} stages={TEMPLATE_GATE_STAGES}/>
+          {/* Same generating animation as the AI Editor. The user's own photo(s) fall in (couple: both photos side by side), the new result rises out. */}
+          <GateOverlay active={isGenerating} image={generatedImage || (isGenerating ? (userPhotoPreview || selectedTemplate.image) : selectedTemplate.image)} splitImages={isCouple && !generatedImage && (userPhotoPreview || userPhotoPreview2) ? [userPhotoPreview, userPhotoPreview2] : null} background="#E3D6B8" t={t} stages={TEMPLATE_GATE_STAGES}/>
 
           {generatedImage && (<div className="generated-image-overlay">
               <span className="generated-image-badge">{t("Generated")}</span>
