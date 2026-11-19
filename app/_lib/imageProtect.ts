@@ -1,4 +1,4 @@
-import type React from "react";
+import type { SyntheticEvent } from "react";
 
 /**
  * Spread on a plain <img> to switch off the right-click menu and dragging on that picture,
@@ -6,6 +6,6 @@ import type React from "react";
  */
 export const blockImageMenu = {
   draggable: false,
-  onContextMenu: (event: React.SyntheticEvent) => event.preventDefault(),
-  onDragStart: (event: React.SyntheticEvent) => event.preventDefault(),
+  onContextMenu: (event: SyntheticEvent) => event.preventDefault(),
+  onDragStart: (event: SyntheticEvent) => event.preventDefault(),
 } as const;

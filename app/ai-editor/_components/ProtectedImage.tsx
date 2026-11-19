@@ -9,7 +9,7 @@ import React, { useEffect, useState } from "react";
  * If the download fails for any reason, the normal image URL is used so the photo never breaks.
  * Local images (blob:/data:) are shown as they are.
  */
-type ProtectedImageProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> & { src: string };
+type ProtectedImageProps = Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> & { src?: string | null };
 
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
@@ -17,7 +17,8 @@ function isLocal(src: string) {
   return !src || src.startsWith("blob:") || src.startsWith("data:");
 }
 
-export default function ProtectedImage({ src, onContextMenu, onDragStart, draggable, ...rest }: ProtectedImageProps) {
+export default function ProtectedImage({ src: rawSrc, onContextMenu, onDragStart, ...rest }: ProtectedImageProps) {
+  const src = rawSrc || "";
   const [resolved, setResolved] = useState<string>(() => (isLocal(src) ? src : BLANK));
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export default function ProtectedImage({ src, onContextMenu, onDragStart, dragga
     // eslint-disable-next-line @next/next/no-img-element
     <img
       {...rest}
-      src={resolved}
+      src={resolved || undefined}
       draggable={false}
       onContextMenu={(event) => { event.preventDefault(); onContextMenu?.(event); }}
       onDragStart={(event) => { event.preventDefault(); onDragStart?.(event); }}
