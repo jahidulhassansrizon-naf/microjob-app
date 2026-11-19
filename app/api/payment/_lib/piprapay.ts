@@ -427,7 +427,9 @@ export async function verifyAndActivateSubscription(
     };
   }
 
-  if (subscription.paymentStatus !== "PENDING" || subscription.accessStatus !== "PENDING") {
+  // A verified payment must unlock access even if the order was auto-cancelled earlier
+  // (customer pressed the back arrow before the payment finished).
+  if (!["PENDING", "CANCELLED"].includes(String(subscription.paymentStatus)) || !["PENDING", "CANCELLED"].includes(String(subscription.accessStatus))) {
     return { ok: false, httpStatus: 409, message: "This subscription payment is no longer pending.", payment };
   }
 
@@ -459,8 +461,8 @@ export async function verifyAndActivateSubscription(
     {
       _id: subscription._id,
       paymentProvider: "PipraPay",
-      paymentStatus: "PENDING",
-      accessStatus: "PENDING",
+      paymentStatus: { $in: ["PENDING", "CANCELLED"] },
+      accessStatus: { $in: ["PENDING", "CANCELLED"] },
     },
     {
       $set: {

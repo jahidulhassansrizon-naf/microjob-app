@@ -65,6 +65,11 @@ export default function PaymentSuccessClient({ ppId, invoiceId, subscriptionId, 
     }
   }, [ppId, invoiceId, subscriptionId, provider, providerName, cancelled]);
 
+  // The gateway redirected back (paid or cancelled), so the "left without paying" check must not run.
+  useEffect(() => {
+    try { window.sessionStorage.removeItem("uddokta_pending_checkout"); } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     let timeout: ReturnType<typeof setTimeout> | undefined;

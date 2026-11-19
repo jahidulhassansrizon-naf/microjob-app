@@ -168,6 +168,7 @@ type ManualInfo = {
 };
 type PayMode = "auto" | "manual" | null;
 type GatewayKey = "uddokta" | "pipra";
+const UDDOKTA_PENDING_KEY = "uddokta_pending_checkout";
 
 /* ------------------------------------------------------------------ */
 /* Left side: premium features                                         */
@@ -415,6 +416,42 @@ export default function SubscriptionPage() {
     return () => controller.abort();
   }, [loadCurrentSubscription]);
 
+  // Customer pressed the browser back arrow on the gateway page: the gateway sends no
+  // callback then, so mark the unpaid order as cancelled instead of leaving it "Pending".
+  useEffect(() => {
+    const settleAbandonedCheckout = async () => {
+      let id = "";
+      try {
+        id = window.sessionStorage.getItem(UDDOKTA_PENDING_KEY) || "";
+        if (id) window.sessionStorage.removeItem(UDDOKTA_PENDING_KEY);
+      } catch {
+        return;
+      }
+      if (!id) return;
+      try {
+        await fetch("/api/uddoktapay/abandon", {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscription_id: id }),
+        });
+      } catch {
+        /* Best effort. */
+      }
+      void loadCurrentSubscription();
+    };
+    void settleAbandonedCheckout();
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      // Restored from back/forward cache: the "redirecting" state would be stuck.
+      setGatewayBusy(null);
+      void settleAbandonedCheckout();
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [loadCurrentSubscription]);
+
   const autoAvailable = isUddoktaPayEnabled || isPipraPayEnabled;
 
   // If online payment turns out to be off, fall back to manual automatically.
@@ -543,6 +580,16 @@ export default function SubscriptionPage() {
         throw new Error(
           `${cfg.name} returned an unsafe checkout URL. Please contact support.`,
         );
+      if (typeof data?.subscription_id === "string") {
+        try {
+          window.sessionStorage.setItem(
+            UDDOKTA_PENDING_KEY,
+            data.subscription_id,
+          );
+        } catch {
+          /* Storage can be blocked; the cancel button still works. */
+        }
+      }
       window.location.assign(checkoutUrl.toString());
     } catch (error) {
       setPaymentError(
