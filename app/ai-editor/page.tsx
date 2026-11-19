@@ -2301,11 +2301,11 @@ export default function PhotoEditorPage() {
             </div>
           </div>
 
-          <button type="button" onClick={() => setShowQrPopup((v) => !v)} aria-expanded={showQrPopup} className="hidden xl:flex absolute right-3 top-3 z-40 cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-[#FBF6E8] px-3 py-2 text-[13px] font-semibold text-stone-800 shadow-[0_4px_14px_rgba(15,23,42,0.12)] transition hover:bg-[#F6EEDB]">
+          <button type="button" onClick={() => setShowQrPopup((v) => !v)} aria-expanded={showQrPopup} className="hidden xl:flex absolute xl:left-[calc(var(--ai-left-w)+1.75rem)] top-3 z-40 cursor-pointer items-center gap-2 rounded-xl border border-stone-200 bg-[#FBF6E8] px-3 py-2 text-[13px] font-semibold text-stone-800 shadow-[0_4px_14px_rgba(15,23,42,0.12)] transition hover:bg-[#F6EEDB]">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
             <AiT>Upload from phone</AiT>
           </button>
-          <div className={`w-full flex flex-col items-center xl:items-stretch xl:absolute xl:right-3 xl:top-14 xl:z-40 xl:w-[280px] xl:h-[360px] xl:shadow-[0_16px_40px_rgba(15,23,42,0.25)] xl:rounded-2xl [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0${showQrPopup ? "" : " xl:hidden"}`}>
+          <div className={`w-full flex flex-col items-center xl:items-stretch xl:absolute xl:left-[calc(var(--ai-left-w)+1.75rem)] xl:top-14 xl:z-40 xl:w-[280px] xl:h-[360px] xl:shadow-[0_16px_40px_rgba(15,23,42,0.25)] xl:rounded-2xl [&>*]:flex-1 xl:min-h-0 xl:[&>*]:min-h-0${showQrPopup ? "" : " xl:hidden"}`}>
             <QrCodeSidebar
               uploadUrl={typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : ""}
               onPhotoReceived={handleQrPhotoReceived}
