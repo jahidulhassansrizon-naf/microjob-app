@@ -222,6 +222,50 @@ function asSubscription(subscription: any) {
   };
 }
 
+
+/**
+ * When UddoktaPay still reports PENDING (e.g. the merchant phone had no internet so the
+ * SMS could not be matched) the customer may already have submitted a TrxID. Save it on
+ * the order (still PENDING, no access granted) so an admin can see it and approve manually.
+ */
+async function savePendingUddoktaPayDetails(payment: ProviderRecord, invoiceId: string, expectedUserId?: string) {
+  try {
+    const metadata = parseMetadata(payment.metadata);
+    const subscriptionId = String(metadata.subscription_id || metadata.subscriptionId || "").trim();
+    const metadataUserId = String(metadata.user_id || metadata.userId || "").trim();
+    if (!mongoose.isValidObjectId(subscriptionId)) return;
+    if (expectedUserId && metadataUserId && metadataUserId !== expectedUserId) return;
+
+    const transactionId = String(payment.transaction_id || payment.transactionId || "").trim().slice(0, 64);
+    const senderNumber = String(payment.sender_number || "").trim().slice(0, 32);
+    const paymentMethod = String(payment.payment_method || "").trim().slice(0, 64);
+
+    const set: Record<string, any> = {};
+    if (invoiceId) set.invoiceId = invoiceId;
+    if (transactionId) {
+      set.transactionId = transactionId;
+      set.submittedAt = new Date();
+    }
+    if (senderNumber) set.senderNumber = senderNumber;
+    if (paymentMethod) set.paymentMethod = paymentMethod;
+    if (!Object.keys(set).length) return;
+
+    await connectDB();
+    await Subscription.updateOne(
+      {
+        _id: subscriptionId,
+        paymentProvider: "UddoktaPay",
+        paymentStatus: "PENDING",
+        accessStatus: "PENDING",
+        $or: [{ invoiceId: "" }, { invoiceId }, { invoiceId: { $exists: false } }],
+      },
+      { $set: set },
+    );
+  } catch (error) {
+    console.error("[UddoktaPay] Could not save pending payment details:", error instanceof Error ? error.message : "Unknown error");
+  }
+}
+
 /** Only a successful server-side verify response may activate a UddoktaPay subscription. */
 export async function verifyAndActivateUddoktaPaySubscription(
   invoiceId: string,
@@ -239,6 +283,7 @@ export async function verifyAndActivateUddoktaPaySubscription(
   const payment = provider.payment;
   const status = String(payment.status || "").trim().toUpperCase();
   if (status !== "COMPLETED") {
+    if (status === "PENDING") await savePendingUddoktaPayDetails(payment, normalizedInvoiceId, String(options?.expectedUserId || "").trim() || undefined);
     return {
       ok: false,
       httpStatus: 200,

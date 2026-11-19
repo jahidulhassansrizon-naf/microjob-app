@@ -977,7 +977,7 @@ export default function AdminDashboardClient() {
   }, [authHeaders, loadOverview, loadSubscriptions, loadUsers, reviewingSubscriptionId, subscriptionActionBusyId, subscriptionDeleteBusyId, subscriptionPagination.page, subscriptions.length, userPagination.page]);
 
   const subscriptionReviewActions = (item: SubscriptionRow) => {
-    const canReview = item.paymentStatus === "PENDING" && Boolean(item.transactionId) && ["Nagad", "bKash"].includes(item.paymentMethod) && (!item.paymentProvider || item.paymentProvider === "Manual");
+    const canReview = item.paymentStatus === "PENDING" && item.accessStatus === "PENDING" && Boolean(item.transactionId);
     const active = subscriptionTones(item).active;
     const reviewBusy = reviewingSubscriptionId === item.id;
     const deactivateBusy = subscriptionActionBusyId === item.id;

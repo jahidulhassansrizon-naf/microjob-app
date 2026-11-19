@@ -34,11 +34,12 @@ export async function POST(request: Request, context: RouteContext) {
     if (subscription.paymentStatus !== "PENDING" || subscription.accessStatus !== "PENDING") {
       return NextResponse.json({ success: false, message: "This payment has already been reviewed." }, { status: 409 });
     }
-    const isManualWalletPayment = ["Nagad", "bKash"].includes(String(subscription.paymentMethod || ""));
-    const paymentProvider = String(subscription.paymentProvider || "").trim();
-    if (!isManualWalletPayment || !["", "Manual"].includes(paymentProvider) || !String(subscription.transactionId || "").trim()) {
+    // Any still-pending payment that carries a customer-submitted TrxID can be reviewed:
+    // manual bKash/Nagad submissions and gateway (UddoktaPay/PipraPay) payments that could
+    // not be auto-verified (for example the merchant phone had no internet).
+    if (!String(subscription.transactionId || "").trim()) {
       return NextResponse.json(
-        { success: false, message: "Only pending manual bKash/Nagad payments with a TrxID can be reviewed here." },
+        { success: false, message: "Only pending payments that have a customer-submitted TrxID can be reviewed here." },
         { status: 409 },
       );
     }
