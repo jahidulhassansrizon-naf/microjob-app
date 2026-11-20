@@ -5,6 +5,7 @@ import ActivityTracker from "@/app/_components/ActivityTracker";
 import LoginSuccessOverlay from "./_components/LoginSuccessOverlay";
 import ConditionalSiteChrome from "./_components/ConditionalSiteChrome";
 import ConditionalSiteNavbar from "./_components/ConditionalSiteNavbar";
+import DevToolsGuard from "./_components/DevToolsGuard";
 import FloatingSupportGroup from "./_components/FloatingSupportGroup";
 import FloatingUserAdminChat from "./_components/FloatingUserAdminChat";
 import ImpersonationBanner from "./_components/ImpersonationBanner";
@@ -108,6 +109,7 @@ export default async function RootLayout({
       >
         <SiteSettingsProvider initialSettings={initialSiteSettings}>
         <I18nProvider initialLocale={initialLocale}>
+          <DevToolsGuard />
           <ActivityTracker />
           <ImpersonationBanner />
           <ConditionalSiteChrome>
