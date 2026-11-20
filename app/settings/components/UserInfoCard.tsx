@@ -1,5 +1,5 @@
 import { T, useSettingsText } from "./settingsI18n";
-import { Edit, Loader2, Mail, User } from "lucide-react";
+import { Edit, User } from "lucide-react";
 type UserInfo = {
     fullName?: string;
     phoneNumber?: string;
@@ -76,15 +76,7 @@ export default function UserInfoCard({ user, isEmailVerified, verifyingEmail, on
             </span>
           </div>
 
-          {!isEmailVerified && user?.email && (<div className="flex items-center justify-between gap-2 pt-1.5 mt-1.5 border-t border-[#FBB6B6]/60">
-              <span className="text-[12px] text-red-500 font-medium"><T>{"Verify your email to earn the bonus\n              "}</T></span>
-
-              <button type="button" onClick={onSendVerification} disabled={verifyingEmail} className="bg-[#FBF6E8] border border-[#E3D6B8] hover:bg-[#F6EEDB] disabled:opacity-60 disabled:cursor-not-allowed text-[#5A4A32] text-[12px] font-bold px-2 py-1 rounded flex items-center gap-1 shrink-0">
-                {verifyingEmail ? (<Loader2 size={10} className="animate-spin"/>) : (<Mail size={10}/>)}
-
-                <span>{verifyingEmail ? <T>{"Sending..."}</T> : <T>{"Verify"}</T>}</span>
-              </button>
-            </div>)}
+          
         </div>
 
         {renderField("Profession / Designation", user?.profession, t, "bg-[#E3D6B8]/40 border-[#E3D6B8]/50")}

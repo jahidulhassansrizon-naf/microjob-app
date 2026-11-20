@@ -32,6 +32,7 @@ interface DeviceSession {
     browser?: string;
     ipAddress?: string;
     location?: string;
+    loginAt?: string;
     lastActive?: string;
     current?: boolean;
 }
