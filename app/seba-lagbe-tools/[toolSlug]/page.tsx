@@ -139,17 +139,10 @@ export default async function DynamicToolPage({
     );
   }
 
-  // Tools already restyled with the "Warm Sand + Red" system get the sand page background.
-  const isWarmSand = toolSlug === "nid-joiner";
-
+  // Every tool page uses the "Warm Sand + Red" page background, the same colours as the
+  // loading screen, so nothing white flashes between the loading state and the tool.
   return (
-    <div
-      className={`min-h-screen flex flex-col font-sans ${
-        isWarmSand
-          ? "bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]"
-          : "bg-[#F8FAFC] text-[#0F172A]"
-      }`}
-    >
+    <div className="min-h-screen flex flex-col font-sans bg-gradient-to-b from-[#E9DDC3] to-[#EFE5CE] text-[#3B2F1E]">
       <DashboardNavbar />
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6">
         <PaidToolGate slug={toolSlug} locked={paidLocked}>

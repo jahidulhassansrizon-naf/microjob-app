@@ -11,6 +11,7 @@ export default function PageBackgroundInitializer() {
       "/pricing": "#FEF4ED",
       "/reviews": "#F5ECE5",
       "/dorkar-link": "#FCF9F9",
+      "/seba-lagbe-tools": "#EFE5CE",
     };
 
     let backgroundColor = "#FAF7FD";
