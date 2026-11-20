@@ -40,6 +40,7 @@ import {
   removeCachedMyFilesItem,
 } from "./myFilesData";
 import { blockImageMenu } from "@/app/_lib/imageProtect";
+import { downloadFile } from "@/app/_lib/downloadFile";
 import ProtectedImage from "@/app/ai-editor/_components/ProtectedImage";
 
 /* ------------------------------------------------------------------ */
@@ -489,6 +490,10 @@ function ToolFilePreviewModal({
           <a
             href={file.url}
             download={file.name}
+            onClick={(e) => {
+              e.preventDefault();
+              void downloadFile(file.url, file.name);
+            }}
             className={`${secondaryBtn} shrink-0 !px-2.5 sm:!px-4`}
           >
             <Download size={15} />
@@ -1254,6 +1259,10 @@ export default function MyFilesPage() {
                             <a
                               href={file.url}
                               download={file.name}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                void downloadFile(file.url, file.name);
+                              }}
                               aria-label={translatePageText(
                                 `Download ${file.name}`,
                                 locale,
@@ -1481,7 +1490,11 @@ export default function MyFilesPage() {
                                 locale,
                               )}
                               title={translatePageText("Download", locale)}
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                void downloadFile(file.url, file.name);
+                              }}
                               className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl sm:h-8 sm:w-8 text-[#7A6A50] hover:bg-[#EFE3C8] hover:text-[#DC2626]"
                             >
                               <Download size={16} />
@@ -1569,6 +1582,10 @@ export default function MyFilesPage() {
               <a
                 href={previewFile.url}
                 download={previewFile.name}
+                onClick={(e) => {
+                  e.preventDefault();
+                  void downloadFile(previewFile.url, previewFile.name);
+                }}
                 className={`${secondaryBtn} shrink-0 !px-2.5 sm:!px-4`}
               >
                 <Download size={15} />
