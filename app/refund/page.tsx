@@ -238,7 +238,7 @@ export default function RefundPolicyPage() {
             <h1 className="refund-title"><T>{"Refund Policy"}</T></h1>
 
             <div className="refund-intro">
-              <p><T>{"Sahaj Kaaj provides digital services and templates on a\r\n                pay-as-you-go credit model\u2014you buy a credit package and each AI\r\n                task (image, document, print, template) costs credits. To ensure\r\n                clarity for users, we follow the Refund Policy below.\r\n              "}</T></p>
+              <p><T>{"Seba Lagbe provides digital services and templates on a\r\n                pay-as-you-go credit model\u2014you buy a credit package and each AI\r\n                task (image, document, print, template) costs credits. To ensure\r\n                clarity for users, we follow the Refund Policy below.\r\n              "}</T></p>
             </div>
 
             <RefundSection number="1" title="Refund Policy for Digital Products / Services">

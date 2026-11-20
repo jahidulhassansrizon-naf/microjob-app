@@ -176,7 +176,7 @@ export default function Hero() {
               />
             </Link>
             <Link
-              href="/login?redirect=/sohoj-tools"
+              href="/login?redirect=/seba-lagbe-tools"
               className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 bg-white h-12 px-7 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 sm:w-auto"
             >
               <T>{"View all tools"}</T>

@@ -111,7 +111,7 @@ export default async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*", "/profile/:path*", "/admin/:path*", "/settings/:path*", "/my-files/:path*",
-    "/subscription/:path*", "/sohoj-tools/:path*", "/dorkar-link/:path*", "/dorkari-document/:path*",
+    "/subscription/:path*", "/sohoj-tools/:path*", "/seba-lagbe-tools/:path*", "/dorkar-link/:path*", "/dorkari-document/:path*",
     "/customers-invoices/:path*", "/income-expenses/:path*", "/questions-create/:path*", "/ai-editor/:path*",
     "/ai-photo/:path*", "/ai-template/:path*", "/bulk-photo-edit/:path*", "/manual-editor/:path*",
     "/print-media/:path*", "/tools/:path*", "/login-success/:path*",

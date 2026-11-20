@@ -102,7 +102,7 @@ export default function Footer() {
       href: "/login?redirect=/questions-create/create",
     },
     { title: "Job Circular", href: "/login?redirect=/jobs" },
-    { title: "Seba Lagbe Tools", href: "/login?redirect=/sohoj-tools" },
+    { title: "Seba Lagbe Tools", href: "/login?redirect=/seba-lagbe-tools" },
   ];
 
   const pagesLinks: Array<{ title: string; href?: string; target?: string; comingSoon?: boolean }> = [

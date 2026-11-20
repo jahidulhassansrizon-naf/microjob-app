@@ -72,12 +72,12 @@ const sebaLagbeToolsCategories = [
     icon: FileText,
     accent: "bg-rose-50 text-rose-600",
     tools: [
-      { name: "Compress PDF", href: "/login?redirect=/sohoj-tools" },
-      { name: "Merge PDFs", href: "/login?redirect=/sohoj-tools" },
-      { name: "Create PDF", href: "/login?redirect=/sohoj-tools" },
-      { name: "Split PDF", href: "/login?redirect=/sohoj-tools" },
-      { name: "PDF to Image", href: "/login?redirect=/sohoj-tools" },
-      { name: "Lock / Unlock PDF", href: "/login?redirect=/sohoj-tools" },
+      { name: "Compress PDF", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Merge PDFs", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Create PDF", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Split PDF", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "PDF to Image", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Lock / Unlock PDF", href: "/login?redirect=/seba-lagbe-tools" },
     ],
     moreText: "+9 more",
   },
@@ -87,15 +87,15 @@ const sebaLagbeToolsCategories = [
     icon: ImageIcon,
     accent: "bg-emerald-50 text-emerald-600",
     tools: [
-      { name: "Image Size Reducer", href: "/login?redirect=/sohoj-tools" },
-      { name: "NID to PDF", href: "/login?redirect=/sohoj-tools" },
-      { name: "Remove Background", href: "/login?redirect=/sohoj-tools" },
+      { name: "Image Size Reducer", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "NID to PDF", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Remove Background", href: "/login?redirect=/seba-lagbe-tools" },
       {
         name: "Govt Job Photo & Sign Resizer",
-        href: "/login?redirect=/sohoj-tools",
+        href: "/login?redirect=/seba-lagbe-tools",
       },
-      { name: "Passport to PDF", href: "/login?redirect=/sohoj-tools" },
-      { name: "Image Convert", href: "/login?redirect=/sohoj-tools" },
+      { name: "Passport to PDF", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Image Convert", href: "/login?redirect=/seba-lagbe-tools" },
     ],
     moreText: "+12 more",
   },
@@ -105,12 +105,12 @@ const sebaLagbeToolsCategories = [
     icon: Type,
     accent: "bg-amber-50 text-amber-600",
     tools: [
-      { name: "Bijoy ↔ Unicode", href: "/login?redirect=/sohoj-tools" },
-      { name: "Banglish Typing", href: "/login?redirect=/sohoj-tools" },
-      { name: "Number to Words", href: "/login?redirect=/sohoj-tools" },
-      { name: "Image to Text", href: "/login?redirect=/sohoj-tools" },
-      { name: "Text Analyzer", href: "/login?redirect=/sohoj-tools" },
-      { name: "Date Format Converter", href: "/login?redirect=/sohoj-tools" },
+      { name: "Bijoy ↔ Unicode", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Banglish Typing", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Number to Words", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Image to Text", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Text Analyzer", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Date Format Converter", href: "/login?redirect=/seba-lagbe-tools" },
     ],
   },
   {
@@ -119,12 +119,12 @@ const sebaLagbeToolsCategories = [
     icon: Video,
     accent: "bg-violet-50 text-violet-600",
     tools: [
-      { name: "Compress Video", href: "/login?redirect=/sohoj-tools" },
-      { name: "Trim/Cut Video", href: "/login?redirect=/sohoj-tools" },
-      { name: "Merge Videos", href: "/login?redirect=/sohoj-tools" },
-      { name: "Video to Audio", href: "/login?redirect=/sohoj-tools" },
-      { name: "Add Watermark", href: "/login?redirect=/sohoj-tools" },
-      { name: "Audio Volume Booster", href: "/login?redirect=/sohoj-tools" },
+      { name: "Compress Video", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Trim/Cut Video", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Merge Videos", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Video to Audio", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Add Watermark", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Audio Volume Booster", href: "/login?redirect=/seba-lagbe-tools" },
     ],
     moreText: "+4 more",
   },
@@ -134,11 +134,11 @@ const sebaLagbeToolsCategories = [
     icon: Wrench,
     accent: "bg-sky-50 text-sky-600",
     tools: [
-      { name: "Family Card Form", href: "/login?redirect=/sohoj-tools" },
-      { name: "Fuel Card Form", href: "/login?redirect=/sohoj-tools" },
-      { name: "ATS Friendly CV Maker", href: "/login?redirect=/sohoj-tools" },
-      { name: "Age Calculator", href: "/login?redirect=/sohoj-tools" },
-      { name: "EMI Calculator", href: "/login?redirect=/sohoj-tools" },
+      { name: "Family Card Form", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Fuel Card Form", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "ATS Friendly CV Maker", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "Age Calculator", href: "/login?redirect=/seba-lagbe-tools" },
+      { name: "EMI Calculator", href: "/login?redirect=/seba-lagbe-tools" },
     ],
   },
 ];
@@ -198,6 +198,7 @@ const hiddenPrefixes = [
   "/questions-create",
   "/jobs",
   "/print-media",
+  "/seba-lagbe-tools",
   "/sohoj-tools",
   "/profile",
   "/tutorial-video",
@@ -564,7 +565,7 @@ export default function Navbar() {
                                 ))}
                                 {cat.moreText && (
                                   <Link
-                                    href="/login?redirect=/sohoj-tools"
+                                    href="/login?redirect=/seba-lagbe-tools"
                                     onClick={close}
                                     className="px-2 py-1.5 text-[12px] font-bold text-indigo-600 hover:text-violet-700"
                                   >
@@ -588,7 +589,7 @@ export default function Navbar() {
                           <T>{"30+ smart tools, one simple place."}</T>
                         </p>
                         <Link
-                          href="/login?redirect=/sohoj-tools"
+                          href="/login?redirect=/seba-lagbe-tools"
                           onClick={close}
                           className="relative inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-slate-900 transition hover:bg-indigo-50"
                         >

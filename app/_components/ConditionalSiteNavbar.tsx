@@ -16,6 +16,10 @@ export default function ConditionalSiteNavbar({ children }: { children: ReactNod
     pathname === "/register" ||
     pathname === "/forgot-password";
   const isDashboardSubscription = pathname === "/subscription";
+  // The tools page and every tool page render their own DashboardNavbar,
+  // so the global marketing navbar must not stack on top of it.
+  const isSebaLagbeTools =
+    pathname === "/seba-lagbe-tools" || pathname.startsWith("/seba-lagbe-tools/");
   // The global components/Navbar.tsx should stay hidden on the manual payment page.
   const isManualPaymentPage = pathname === "/payment/manual";
   // The payment result page renders the dashboard navbar itself.
@@ -26,6 +30,7 @@ export default function ConditionalSiteNavbar({ children }: { children: ReactNod
     isAdminWorkspace ||
     isAuthPage ||
     isDashboardSubscription ||
+    isSebaLagbeTools ||
     isManualPaymentPage ||
     isPaymentResultPage
   ) {

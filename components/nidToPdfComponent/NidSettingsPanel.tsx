@@ -1,5 +1,5 @@
 "use client";
-import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/seba-lagbe-tools/_i18n";
 import React from "react";
 import {
   RotateCw,

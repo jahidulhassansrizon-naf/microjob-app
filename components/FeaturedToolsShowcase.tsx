@@ -111,7 +111,7 @@ const FEATURED_TOOLS: FeaturedTool[] = [
     category: "Document cleanup",
     description:
       "Scan documents, clean stains and shadows, sharpen text and make pages look neat.",
-    href: "/login?callbackUrl=%2Fsohoj-tools%2Fdocument-scanner",
+    href: "/login?callbackUrl=%2Fseba-lagbe-tools%2Fdocument-scanner",
     imageSrc: "/Herothumbnail/documentScan.jpg",
     accent: "from-lime-100 via-emerald-50 to-green-100",
     videoSrc: null,
@@ -123,7 +123,7 @@ const FEATURED_TOOLS: FeaturedTool[] = [
     category: "Job applications",
     description:
       "Prepare applicant photos and signatures in the dimensions and file size required for applications.",
-    href: "/login?callbackUrl=%2Fsohoj-tools%2Fgovt-job-photo-sign-resizer",
+    href: "/login?callbackUrl=%2Fseba-lagbe-tools%2Fgovt-job-photo-sign-resizer",
     imageSrc: "/Herothumbnail/governmentJob.jpg",
     accent: "from-rose-100 via-red-50 to-orange-100",
     videoSrc: null,
@@ -135,7 +135,7 @@ const FEATURED_TOOLS: FeaturedTool[] = [
     category: "NID preparation",
     description:
       "Combine both sides of an NID into one neat, print-ready page.",
-    href: "/login?callbackUrl=%2Fsohoj-tools%2Fnid-joiner",
+    href: "/login?callbackUrl=%2Fseba-lagbe-tools%2Fnid-joiner",
     imageSrc: "/Herothumbnail/nidJoiner.jpg",
     accent: "from-cyan-100 via-sky-50 to-blue-100",
     videoSrc: null,
