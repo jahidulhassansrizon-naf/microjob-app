@@ -931,6 +931,22 @@ export default function PhotoEditorPage() {
         setActiveTarget(target);
         openImageForCrop(file);
     };
+    // Drag and drop from "Recent generations": the dragged photo is loaded and then follows the same crop flow as a picked file.
+    const handleDropRecent = async (target: "single" | "left" | "right", url: string) => {
+        try {
+            const response = await fetch(url);
+            if (!response.ok)
+                throw new Error("Could not load this photo.");
+            const blob = await response.blob();
+            const type = blob.type.startsWith("image/") ? blob.type : "image/png";
+            const extension = type === "image/jpeg" ? "jpg" : type.split("/")[1] || "png";
+            handleDropFile(target, new File([blob], `recent-${Date.now()}.${extension}`, { type }));
+        }
+        catch (error) {
+            console.error("Could not use the recent photo:", error);
+            setErrorMessage("Could not load this photo. Please try again.");
+        }
+    };
     const enableDualMode = () => {
         setIsDualMode(true);
         setSelectedSize("Dual");
@@ -2292,7 +2308,7 @@ export default function PhotoEditorPage() {
             <div className="flex flex-col xl:flex-row gap-3 xl:min-h-0 min-w-0">
               {/* Photo preview (kept mounted, hidden while the print section is open) */}
               <div className="flex flex-col flex-1 min-w-0 xl:min-h-0 [&>*]:flex-1 xl:[&>*]:min-h-0">
-                <PhotoPreviewArea onDropFile={handleDropFile} isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage} resultFilter={liveResultFilter} resultInfo={resultInfo}/>
+                <PhotoPreviewArea onDropFile={handleDropFile} onDropRecent={handleDropRecent} isDualMode={isDualMode} uploadedImage={uploadedImage} setUploadedImage={setUploadedImage} leftImage={leftImage} setLeftImage={setLeftImage} rightImage={rightImage} setRightImage={setRightImage} triggerUpload={triggerUpload} enableDualMode={enableDualMode} exitDualMode={exitDualMode} activeBoxInfo={getCurrentBoxDimensions()} currentBgColorValue={getSelectedBgColorValue()} isGenerating={isGenerating} isDeleting={isDeleting} originalImageForDual={originalImageForDual} setOriginalImageForDual={setOriginalImageForDual} isDualPreviewActive={isDualPreviewActive} setIsDualPreviewActive={setIsDualPreviewActive} dualResultImage={dualResultImage} setDualResultImage={setDualResultImage} resultFilter={liveResultFilter} resultInfo={resultInfo}/>
               </div>
               {/* Options appear right beside the generated photo */}
               {resultItem && !printSession && !bulkPrintSources && (<div className="flex justify-center xl:block xl:shrink-0">

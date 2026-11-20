@@ -73,6 +73,9 @@ function getAuthIdentity(): string {
   return "cookie-session";
 }
 
+/** Drag-and-drop type used when a recent photo is dragged onto an empty upload box. */
+export const RECENT_PHOTO_DRAG_TYPE = "application/x-sebalagbe-recent-photo";
+
 /** Small Cloudinary rendition for small previews. Originals stay untouched for full preview/download. */
 export function getAiEditorThumbnailUrl(url: string): string {
   if (!url) return url;

@@ -2,6 +2,7 @@ import { AiT, useAiEditorText } from "./aiEditorI18n";
 import React, { useEffect, useRef, useState } from "react";
 import { Upload, X, ArrowLeftRight, ImageIcon, RefreshCw } from "lucide-react";
 import ProtectedImage from "./ProtectedImage";
+import { RECENT_PHOTO_DRAG_TYPE } from "./aiEditorData";
 export interface BoxInfo {
     text: string;
     /** True when no photo size is selected: preview uses the photo's own ratio. */
@@ -22,6 +23,8 @@ interface PhotoPreviewAreaProps {
     triggerUpload: (target: "single" | "left" | "right") => void;
     /** A photo file was dropped onto an empty upload box (drag and drop). */
     onDropFile?: (target: "single" | "left" | "right", file: File) => void;
+    /** A photo from "Recent generations" was dragged onto an empty upload box. */
+    onDropRecent?: (target: "single" | "left" | "right", url: string) => void;
     enableDualMode: () => void;
     exitDualMode: () => void;
     activeBoxInfo: BoxInfo;
@@ -454,19 +457,21 @@ function FitFrame({ info, imageSrc, className = "", style, children, }: {
       </div>
     </div>);
 }
-function EmptyUploadBox({ title, subtitle, onUpload, onFile, }: {
+function EmptyUploadBox({ title, subtitle, onUpload, onFile, onRecent, }: {
     title: string;
     subtitle?: string;
     onUpload: () => void;
     /** When given, a photo file can be dragged and dropped onto the box. */
     onFile?: (file: File) => void;
+    /** When given, a photo dragged from "Recent generations" can be dropped onto the box. */
+    onRecent?: (url: string) => void;
 }) {
     const { t } = useAiEditorText();
     const [dragging, setDragging] = React.useState(false);
     // dragenter/dragleave also fire for every child element, so count them to know when the file really left the box.
     const depth = React.useRef(0);
-    const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
-    const dragProps = onFile
+    const hasFiles = (e: React.DragEvent) => { const types = Array.from(e.dataTransfer?.types ?? []); return (!!onFile && types.includes("Files")) || (!!onRecent && types.includes(RECENT_PHOTO_DRAG_TYPE)); };
+    const dragProps = (onFile || onRecent)
         ? {
             onDragEnter: (e: React.DragEvent) => {
                 if (!hasFiles(e)) return;
@@ -490,6 +495,16 @@ function EmptyUploadBox({ title, subtitle, onUpload, onFile, }: {
                 e.preventDefault();
                 depth.current = 0;
                 setDragging(false);
+                const recent = e.dataTransfer.getData(RECENT_PHOTO_DRAG_TYPE);
+                if (recent) {
+                    try {
+                        const { url } = JSON.parse(recent) as { url?: string };
+                        if (url && onRecent) onRecent(url);
+                    }
+                    catch { /* ignore a malformed drag payload */ }
+                    return;
+                }
+                if (!onFile) return;
                 const files: File[] = Array.from(e.dataTransfer.files ?? []) as File[];
                 // Take the first real photo; if there is none, still pass the first file so the normal "not an image" message shows.
                 const file = files.find((f) => f.type.startsWith("image/")) ?? files[0];
@@ -569,7 +584,7 @@ function ResultInfoChips({ info }: { info: { size: string; bgColor: string; clot
     </div>);
 }
 export default function PhotoPreviewArea({
-    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, onDropFile, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive, dualResultImage = null, setDualResultImage, resultFilter, resultInfo = null,
+    isDualMode, uploadedImage, setUploadedImage, leftImage, setLeftImage, rightImage, setRightImage, triggerUpload, onDropFile, onDropRecent, enableDualMode, exitDualMode, activeBoxInfo, currentBgColorValue, isGenerating, isDeleting, originalImageForDual, setOriginalImageForDual, isDualPreviewActive, setIsDualPreviewActive, dualResultImage = null, setDualResultImage, resultFilter, resultInfo = null,
 }: PhotoPreviewAreaProps) {
     const { t } = useAiEditorText();
     const handleRemoveSingle = () => {
@@ -615,7 +630,7 @@ export default function PhotoPreviewArea({
                   <div className="pointer-events-none absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#3B2F1E]/70 px-2 py-0.5 text-[11px] text-white backdrop-blur-sm">
                     {activeBoxInfo.text}
                   </div>
-                </div>) : (<EmptyUploadBox title="Upload a Photo" subtitle={`Click or scan QR code to upload (${activeBoxInfo.text})`} onUpload={() => triggerUpload("single")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("single", file) : undefined}/>)}
+                </div>) : (<EmptyUploadBox title="Upload a Photo" subtitle={`Click or scan QR code to upload (${activeBoxInfo.text})`} onUpload={() => triggerUpload("single")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("single", file) : undefined} onRecent={onDropRecent && !isGenerating ? (url) => onDropRecent("single", url) : undefined}/>)}
 
               <GateOverlay active={isGenerating} image={uploadedImage} background={currentBgColorValue}/>
             </FitFrame>)}
@@ -673,7 +688,7 @@ export default function PhotoPreviewArea({
                     <button type="button" onClick={() => setLeftImage(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Remove left photo")}>
                       <X size={14}/>
                     </button>
-                  </div>) : (<EmptyUploadBox title="Upload left photo" onUpload={() => triggerUpload("left")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("left", file) : undefined}/>)}
+                  </div>) : (<EmptyUploadBox title="Upload left photo" onUpload={() => triggerUpload("left")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("left", file) : undefined} onRecent={onDropRecent && !isGenerating ? (url) => onDropRecent("left", url) : undefined}/>)}
 
                 <GateOverlay active={isGenerating && !!leftImage} image={leftImage} background={currentBgColorValue}/>
               </FitFrame>
@@ -689,7 +704,7 @@ export default function PhotoPreviewArea({
                     <button type="button" onClick={() => setRightImage(null)} className="absolute right-2 top-2 z-10 cursor-pointer rounded-full bg-red-600 p-1.5 text-white opacity-0 transition group-hover:opacity-100" aria-label={t("Remove right photo")}>
                       <X size={14}/>
                     </button>
-                  </div>) : (<EmptyUploadBox title="Upload right photo" onUpload={() => triggerUpload("right")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("right", file) : undefined}/>)}
+                  </div>) : (<EmptyUploadBox title="Upload right photo" onUpload={() => triggerUpload("right")} onFile={onDropFile && !isGenerating ? (file) => onDropFile("right", file) : undefined} onRecent={onDropRecent && !isGenerating ? (url) => onDropRecent("right", url) : undefined}/>)}
 
                 <GateOverlay active={isGenerating && !!rightImage} image={rightImage} background={currentBgColorValue}/>
               </FitFrame>

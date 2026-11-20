@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { downloadPhotosArchive, downloadPhotosPdf } from "./photoExport";
 import type { PrintSessionMeta } from "./printSessionStore";
-import { getAiEditorThumbnailUrl } from "./aiEditorData";
+import { getAiEditorThumbnailUrl, RECENT_PHOTO_DRAG_TYPE } from "./aiEditorData";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import RetentionNotice from "@/app/_components/RetentionNotice";
 import { blockImageMenu } from "@/app/_lib/imageProtect";
@@ -191,6 +191,15 @@ export default function RecentGenerations({
                 tabIndex={0}
                 key={imageKey(item, index)}
                 aria-pressed={isSelecting ? selected : undefined}
+                draggable={!compact && !isSelecting}
+                onDragStart={(event) => {
+                    if (compact || isSelecting) { event.preventDefault(); return; }
+                    // Only our own type is set (no file / url), so the photo can only be dropped on the upload boxes.
+                    event.dataTransfer.setData(RECENT_PHOTO_DRAG_TYPE, JSON.stringify({ url: item.url }));
+                    event.dataTransfer.effectAllowed = "copy";
+                    const thumb = event.currentTarget.querySelector("img");
+                    if (thumb) event.dataTransfer.setDragImage(thumb, thumb.clientWidth / 2, thumb.clientHeight / 2);
+                }}
                 onClick={() => isSelecting ? toggleSelected(item, index) : onImageClick(item)}
                 onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); if (isSelecting) toggleSelected(item, index); else onImageClick(item); } }}
                 className={`${compact ? `group relative ${item.side === "dual" ? "col-span-2 aspect-[90/55]" : "aspect-[4/5]"} ` : `group relative flex h-36 ${item.side === "dual" ? "w-56 xl:w-[calc(clamp(72px,10.5vh,112px)*1.56)]" : "w-28 xl:w-[calc(clamp(72px,10.5vh,112px)*0.78)]"} xl:h-[clamp(72px,10.5vh,112px)] shrink-0 flex-col `}overflow-hidden rounded-xl border bg-[#F2E8D2] text-left transition ${isSelecting && selected ? "border-[#DC2626] ring-2 ring-[#DC2626]" : "border-[#E3D6B8] hover:border-[#DC2626]"} cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#DC2626]`}
