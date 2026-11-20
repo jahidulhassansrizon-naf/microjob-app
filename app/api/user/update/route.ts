@@ -117,7 +117,15 @@ async function updateProfile(req: Request) {
     }
 
     // 7. Update user
-    const dbUpdateData: Partial<Record<AllowedField | "fullNameNormalized", string>> = { ...updateData };
+    const dbUpdateData: Record<string, unknown> = { ...updateData };
+    if (updateData.email !== undefined) {
+      const current = await User.findById(session.userId).select("email").lean() as { email?: string } | null;
+      if (String(current?.email || "").trim().toLowerCase() !== updateData.email) {
+        // New address = not proven yet. Re-sending the same e-mail keeps the existing status.
+        dbUpdateData.isEmailVerified = false;
+        dbUpdateData.emailVerifiedAt = null;
+      }
+    }
     if (updateData.fullName !== undefined) {
       dbUpdateData.fullNameNormalized = normalizeFullName(updateData.fullName);
     }

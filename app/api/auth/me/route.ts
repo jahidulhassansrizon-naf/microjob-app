@@ -68,6 +68,7 @@ export async function GET(req: Request) {
       id: String(user._id),
       role: user.role === "admin" ? "admin" : "user",
       isBanned: user.isBanned === true,
+      isEmailVerified: (user as any).isEmailVerified === true,
       isRootAdmin: false,
       isPrimaryAdmin: false,
       // Lets the UI show "You are viewing this account as an administrator"

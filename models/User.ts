@@ -259,6 +259,18 @@ const UserSchema = new Schema(
       min: 0,
     },
 
+    // True only after the user proved ownership of the e-mail (registration OTP or
+    // the verification link). Legacy documents simply lack the field = not verified.
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+
     password: {
       type: String,
       required: [true, "Password is required"],

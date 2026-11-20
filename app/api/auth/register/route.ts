@@ -138,6 +138,9 @@ export async function POST(req: Request) {
         district,
         // Never trust a client-provided role; public registration always creates a regular user.
         role: "user",
+        // The e-mail OTP was validated above, so this address is already proven.
+        isEmailVerified: true,
+        emailVerifiedAt: new Date(),
         password: hashedPassword,
       });
     } catch (error) {

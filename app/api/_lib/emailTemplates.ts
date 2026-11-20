@@ -136,3 +136,25 @@ export function renderTestEmail() {
     </td></tr>`;
   return shell("SMTP test from SebaLagbe.com admin panel.", inner);
 }
+
+export function renderVerifyLinkEmail(input: { name?: string; link: string; expiresMinutes?: number }) {
+  const name = escapeHtml((input.name || "").trim().slice(0, 100));
+  const link = escapeHtml(input.link);
+  const minutes = input.expiresMinutes ?? 30;
+  const inner = `<tr><td style="padding:32px 32px 30px;">
+      <div style="display:inline-block;margin-bottom:16px;padding:6px 12px;border:1px solid #FBD5D5;border-radius:999px;background:#FDECEC;color:#B91C1C;font-size:11px;font-weight:700;letter-spacing:1.2px;font-family:Arial,Helvetica,sans-serif;">EMAIL VERIFICATION</div>
+      <h1 style="margin:0;font-size:26px;line-height:1.25;color:#3B2F1E;font-weight:800;">Verify your email</h1>
+      <div style="margin:4px 0 20px;font-size:15px;line-height:1.6;color:#7A6A50;">আপনার ইমেইল যাচাই করুন</div>
+      <p style="margin:0 0 8px;font-size:14px;line-height:1.75;color:#4A3C27;font-weight:600;">${name ? `Hello ${name}, &nbsp;/&nbsp; হ্যালো ${name},` : "Hello, &nbsp;/&nbsp; হ্যালো,"}</p>
+      <p style="margin:0;font-size:14px;line-height:1.75;color:#5A4A32;">Tap the button below to confirm this email address for your Seba Lagbe account.</p>
+      <p style="margin:2px 0 0;font-size:14px;line-height:1.75;color:#7A6A50;">আপনার সেবা লাগবে অ্যাকাউন্টের এই ইমেইল নিশ্চিত করতে নিচের বাটনে ক্লিক করুন।</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0;"><tr>
+        <td align="center" bgcolor="#DC2626" style="border-radius:12px;background:#DC2626;">
+          <a href="${link}" target="_blank" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#FFFFFF;text-decoration:none;font-family:Arial,Helvetica,sans-serif;">Verify email &middot; ইমেইল যাচাই করুন</a>
+        </td>
+      </tr></table>
+      <p style="margin:0;font-size:12px;line-height:1.7;color:#7A6A50;">This link is valid for <strong style="color:#3B2F1E;">${minutes} minutes</strong> &middot; লিংকটি ${minutes} মিনিট বৈধ।</p>
+      <p style="margin:22px 0 0;font-size:12px;line-height:1.7;color:#9A8A6E;">If you did not request this, you can safely ignore this email.<br>আপনি অনুরোধ না করে থাকলে এই ইমেইলটি উপেক্ষা করুন।</p>
+    </td></tr>`;
+  return shell("Confirm your email address for Seba Lagbe.", inner);
+}
