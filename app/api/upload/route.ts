@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { requireActiveSubscription } from "../_lib/requireActiveSubscription";
+import {
+  UserFacingError,
+  assertFileSizeOk,
+  assertRequestSizeOk,
+  isTrustedImageUrl,
+  MAX_UPLOAD_BYTES,
+} from "@/lib/safeRemoteImage";
 
 export const runtime = "nodejs";
 
@@ -59,6 +66,9 @@ export async function POST(req: Request) {
   if (!access.ok) return access.response;
 
   try {
+    // Reject obviously oversized uploads before reading them into memory.
+    assertRequestSizeOk(req);
+
     getCloudinaryConfig();
 
     const userFolder = `sohozkaj-ai-photos/${access.userId}`;
@@ -76,10 +86,25 @@ export async function POST(req: Request) {
         );
       }
 
+      // A base64 string is about 1.37x bigger than the file it holds.
+      if (image.length > MAX_UPLOAD_BYTES * 1.4) {
+        assertFileSizeOk(MAX_UPLOAD_BYTES + 1);
+      }
+
       if (image.startsWith("data:")) {
         buffer = getBase64Buffer(image);
       } else if (/^https?:\/\//i.test(image)) {
-        const uploadResult = await cloudinary.uploader.upload(image, {
+        // Cloudinary downloads this link itself and keeps a copy in our account, so only
+        // images that already live on this site or on Cloudinary are accepted.
+        const trustedUrl = isTrustedImageUrl(image, req.url);
+        if (!trustedUrl) {
+          return NextResponse.json(
+            { success: false, error: "Only images from this site can be uploaded by link." },
+            { status: 400 },
+          );
+        }
+
+        const uploadResult = await cloudinary.uploader.upload(trustedUrl.toString(), {
           folder: userFolder,
           resource_type: "image",
         });
@@ -114,6 +139,8 @@ export async function POST(req: Request) {
         );
       }
 
+      assertFileSizeOk(file.size);
+
       const arrayBuffer = await file.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
     } else {
@@ -130,6 +157,8 @@ export async function POST(req: Request) {
       );
     }
 
+    assertFileSizeOk(buffer.length);
+
     const uploadResult = await uploadBuffer(buffer, userFolder);
     const imageUrl = uploadResult?.secure_url;
 
@@ -144,12 +173,18 @@ export async function POST(req: Request) {
       publicId: uploadResult.public_id || null,
     });
   } catch (error: unknown) {
+    // The real error stays in the server log; the user only gets a safe message.
     console.error("Cloudinary upload error:", error);
+
+    if (error instanceof UserFacingError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: error.status },
+      );
+    }
+
     return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Image upload failed.",
-      },
+      { success: false, error: "Image upload failed. Please try again." },
       { status: 500 },
     );
   }

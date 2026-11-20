@@ -7,6 +7,7 @@ import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { getBotUrl } from "@/app/api/_lib/botUrl";
 import { acquireGenerationLock, generationBusyResponse } from "@/app/api/_lib/generationLock";
 import { enforceGenerationLimit, markGenerationResult } from "@/app/api/_lib/generationGuard";
+import { assertFileSizeOk, safeFetchImage } from "@/lib/safeRemoteImage";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,8 @@ async function getUserImage(
       throw new Error("Uploaded user photo is empty.");
     }
 
+    assertFileSizeOk(file.size);
+
     return {
       blob: file,
       filename: file.name || "user-photo.jpg",
@@ -58,7 +61,10 @@ async function getUserImage(
   throw new Error("No user photo was provided.");
 }
 
-async function getTemplateImage(formData: FormData): Promise<{
+async function getTemplateImage(
+  formData: FormData,
+  requestUrl: string,
+): Promise<{
   blob: Blob;
   filename: string;
 }> {
@@ -74,38 +80,13 @@ async function getTemplateImage(formData: FormData): Promise<{
     throw new Error("Template image URL is empty.");
   }
 
-  let parsedUrl: URL;
-
-  try {
-    parsedUrl = new URL(templateImageUrl);
-  } catch {
-    throw new Error("The provided template image URL is invalid.");
-  }
-
-  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
-    throw new Error("The template image URL must use HTTP or HTTPS.");
-  }
-
-  const response = await fetch(parsedUrl.toString(), {
-    cache: "no-store",
-    redirect: "follow",
+  // Only this site's own template images (and Cloudinary) are allowed. Private/internal
+  // addresses are blocked and redirects are re-checked, so this cannot be used to make
+  // the server call internal services (SSRF).
+  const { blob, contentType } = await safeFetchImage(templateImageUrl, {
+    requestUrl,
+    maxBytes: 15 * 1024 * 1024,
   });
-
-  if (!response.ok) {
-    throw new Error(`Could not fetch template image (${response.status}).`);
-  }
-
-  const contentType = response.headers.get("content-type") || "image/jpeg";
-
-  if (!contentType.toLowerCase().startsWith("image/")) {
-    throw new Error("The template URL does not point to an image.");
-  }
-
-  const blob = await response.blob();
-
-  if (!blob.size) {
-    throw new Error("Fetched template image is empty.");
-  }
 
   const extension = contentType.includes("png")
     ? ".png"
@@ -114,7 +95,7 @@ async function getTemplateImage(formData: FormData): Promise<{
       : ".jpg";
 
   return {
-    blob: new Blob([blob], { type: contentType }),
+    blob,
     filename: `template${extension}`,
   };
 }
@@ -279,7 +260,7 @@ export async function POST(req: Request) {
     }
 
     const userImage = await getUserImage(formData);
-    const templateImage = await getTemplateImage(formData);
+    const templateImage = await getTemplateImage(formData, req.url);
     const secondUserImage = formData.has("image2")
       ? await getUserImage(formData, "image2")
       : null;

@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { v2 as cloudinary } from "cloudinary";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
+import { UserFacingError, assertFileSizeOk, assertRequestSizeOk } from "@/lib/safeRemoteImage";
 
 cloudinary.config({
   cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -87,12 +88,16 @@ export async function POST(req: Request) {
   const userId = subscriptionGuard;
 
   try {
+    assertRequestSizeOk(req);
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
     if (!file) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
+
+    assertFileSizeOk(file.size);
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -117,9 +122,15 @@ export async function POST(req: Request) {
       imageUrl: uploadResult.secure_url,
     });
   } catch (error: any) {
+    // The real error stays in the server log; the user only gets a safe message.
     console.error("Cloudinary Error:", error);
+
+    if (error instanceof UserFacingError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: "Image upload failed. Please try again." },
       { status: 500 },
     );
   }
