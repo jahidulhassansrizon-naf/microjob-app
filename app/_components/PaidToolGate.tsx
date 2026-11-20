@@ -5,10 +5,10 @@ import Link from "next/link";
 import { X, ArrowRight } from "lucide-react";
 import PremiumLockIcon from "./PremiumLockIcon";
 import OfferVideoFrame from "./OfferVideoFrame";
-import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/seba-lagbe-tools/_i18n";
 
 /**
- * Wraps a /sohoj-tools/[slug] page.
+ * Wraps a /seba-lagbe-tools/[slug] page.
  *
  * `locked` is decided by the SERVER page (verified session + live subscription lookup), never by
  * a client-side fetch, so the locked state is correct on the very first paint and cannot be

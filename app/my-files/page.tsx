@@ -1527,7 +1527,7 @@ export default function MyFilesPage() {
                       </button>
                     ) : (
                       <Link
-                        href="/sohoj-tools"
+                        href="/seba-lagbe-tools"
                         className={`${primaryBtn} mt-4`}
                       >
                         <T>{"Browse Seba Lagbe Tools\n                        "}</T>

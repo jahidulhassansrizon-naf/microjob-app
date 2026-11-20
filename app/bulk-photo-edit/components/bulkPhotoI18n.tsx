@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type ReactNode } from "react";
-import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/seba-lagbe-tools/_i18n";
 
 /**
  * Page-local, hydration-safe English ↔ Bangla translations for Bulk Photo Edit.

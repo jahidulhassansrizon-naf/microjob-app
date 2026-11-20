@@ -157,7 +157,7 @@ export default function PaymentSuccessClient({ ppId, invoiceId, subscriptionId, 
             <div className="mt-7 flex flex-col-reverse items-stretch justify-center gap-3 sm:flex-row sm:items-center">
               {isCancelled ? (
                 <>
-                  <Link href="/sohoj-tools" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D8C9A6] bg-white/60 px-5 py-3 font-bold text-[#5A4A32] transition hover:bg-[#F2E8D2]">টুলসে ফিরে যান</Link>
+                  <Link href="/seba-lagbe-tools" className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#D8C9A6] bg-white/60 px-5 py-3 font-bold text-[#5A4A32] transition hover:bg-[#F2E8D2]">টুলসে ফিরে যান</Link>
                   <Link href="/subscription" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#E02B2B] to-[#C01818] px-6 py-3 font-bold text-white shadow-[0_10px_22px_-10px_rgba(212,32,32,0.7)] transition hover:from-[#D42020] hover:to-[#AE1717]">
                     আবার পেমেন্ট করুন <ArrowRight size={17} />
                   </Link>
@@ -167,7 +167,7 @@ export default function PaymentSuccessClient({ ppId, invoiceId, subscriptionId, 
                   {phase !== "success" ? (
                     <button type="button" onClick={() => { setPhase("loading"); setRetryKey((value) => value + 1); }} className="inline-flex items-center justify-center rounded-xl border border-[#D8C9A6] bg-white/60 px-5 py-3 font-bold text-[#5A4A32] transition hover:bg-[#F2E8D2]">আবার যাচাই করুন</button>
                   ) : null}
-                  <Link href={phase === "success" ? "/sohoj-tools" : "/subscription"} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#E02B2B] to-[#C01818] px-6 py-3 font-bold text-white shadow-[0_10px_22px_-10px_rgba(212,32,32,0.7)] transition hover:from-[#D42020] hover:to-[#AE1717]">
+                  <Link href={phase === "success" ? "/seba-lagbe-tools" : "/subscription"} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#E02B2B] to-[#C01818] px-6 py-3 font-bold text-white shadow-[0_10px_22px_-10px_rgba(212,32,32,0.7)] transition hover:from-[#D42020] hover:to-[#AE1717]">
                     {phase === "success" ? "টুলস ব্যবহার শুরু করুন" : "সাবস্ক্রিপশন দেখুন"} <ArrowRight size={17} />
                   </Link>
                   {phase === "success" ? <Link href="/subscription" className="inline-flex items-center justify-center rounded-xl border border-[#D8C9A6] bg-white/60 px-5 py-3 font-bold text-[#5A4A32] transition hover:bg-[#F2E8D2]">সাবস্ক্রিপশন দেখুন</Link> : null}

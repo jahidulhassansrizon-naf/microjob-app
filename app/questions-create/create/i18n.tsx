@@ -1,6 +1,6 @@
 "use client";
 
-import { T as BaseT, useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
+import { T as BaseT, useSebaLagbeToolsI18n } from "@/app/seba-lagbe-tools/_i18n";
 import { useCallback, type ReactNode } from "react";
 
 /**

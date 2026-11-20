@@ -1,6 +1,6 @@
 "use client";
 
-import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/seba-lagbe-tools/_i18n";
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -705,7 +705,7 @@ export default function PricingPage() {
           </section>
 
           <div className="flex justify-center pt-1">
-            <Link href="/sohoj-tools" className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-bold text-[#2563EB] shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:underline">
+            <Link href="/seba-lagbe-tools" className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-bold text-[#2563EB] shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50 hover:underline">
               <T>{"See all tools"}</T><ArrowRight size={14} />
             </Link>
           </div>
@@ -773,7 +773,7 @@ export default function PricingPage() {
             {toolsData.map((tool) => {
               const IconComponent = tool.icon;
               const isPaid = tool.access === "paid";
-              const toolHref = `/sohoj-tools/${getSlug(tool.name)}`;
+              const toolHref = `/seba-lagbe-tools/${getSlug(tool.name)}`;
               return (
                 <Link
                   key={`tool-${tool.id}`}

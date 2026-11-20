@@ -162,7 +162,7 @@ export default function ManualPaymentPage() {
           <Link href="/subscription" className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-lg font-extrabold text-[#DC2626] transition hover:text-[#B91C1C]">
             <ArrowLeft size={16} /> সাবস্ক্রিপশনে ফিরে যান
           </Link>
-          <Link href="/sohoj-tools" className="inline-flex items-center gap-2 px-1 py-1 text-lg font-extrabold text-[#DC2626] hover:underline">টুলসে ফিরে যান <ArrowRight size={15} /></Link>
+          <Link href="/seba-lagbe-tools" className="inline-flex items-center gap-2 px-1 py-1 text-lg font-extrabold text-[#DC2626] hover:underline">টুলসে ফিরে যান <ArrowRight size={15} /></Link>
         </div>
 
         <div className="mt-2 grid gap-4 lg:grid-cols-2 lg:items-start">

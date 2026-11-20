@@ -1,5 +1,5 @@
 /**
- * Server-safe list of paid /sohoj-tools slugs.
+ * Server-safe list of paid /seba-lagbe-tools slugs.
  *
  * Keep this list in sync with the tools marked `access: "paid"` in the client-side
  * toolsData.tsx registry. The server uses it to render a locked subscription screen

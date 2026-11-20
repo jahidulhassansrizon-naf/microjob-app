@@ -1,6 +1,6 @@
 "use client";
 
-import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/seba-lagbe-tools/_i18n";
 import {
   useCallback,
   useEffect,
@@ -652,7 +652,7 @@ export default function SubscriptionPage() {
               </p>
             </div>
             <Link
-              href="/sohoj-tools"
+              href="/seba-lagbe-tools"
               className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#E8DFCC] bg-white px-3.5 py-2 text-sm font-semibold text-[#5A4A32] shadow-sm transition hover:border-[#DC2626]/40 hover:text-[#DC2626]"
             >
               <ArrowLeft size={15} />

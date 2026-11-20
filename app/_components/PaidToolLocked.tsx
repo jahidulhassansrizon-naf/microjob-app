@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ShieldOff, ArrowRight } from "lucide-react";
 import OfferVideoFrame from "./OfferVideoFrame";
-import { useSebaLagbeToolsI18n } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n } from "@/app/seba-lagbe-tools/_i18n";
 
 /**
  * Server-selected paid-tool screen.

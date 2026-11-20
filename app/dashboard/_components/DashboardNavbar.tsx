@@ -619,11 +619,11 @@ const NAV_ITEMS: NavConfig[] = [
   },
   {
     id: "sohoj-tools",
-    href: "/sohoj-tools",
+    href: "/seba-lagbe-tools",
     label: "Seba Lagbe Tools",
     icon: AllToolsIcon,
     tone: "orange",
-    match: "/sohoj-tools",
+    match: "/seba-lagbe-tools",
   },
 ];
 const NAV_SIDE_GAP = 12;
@@ -1616,7 +1616,7 @@ export default function DashboardNavbar({
                       return (
                         <Link
                           key={tool.id}
-                          href={`/sohoj-tools/${getSlug(tool.name)}`}
+                          href={`/seba-lagbe-tools/${getSlug(tool.name)}`}
                           onClick={() => {
                             setIsSearchOpen(false);
                             setSearchQuery("");

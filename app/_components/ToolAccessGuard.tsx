@@ -36,7 +36,7 @@ let lastVerifiedAt = 0;
 const isRecentlyVerified = () => Date.now() - lastVerifiedAt < VERIFIED_FRESH_MS;
 
 function isToolPath(pathname: string) {
-  if (pathname.startsWith("/sohoj-tools/")) return true;
+  if (pathname.startsWith("/seba-lagbe-tools/")) return true;
   return TOOL_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 

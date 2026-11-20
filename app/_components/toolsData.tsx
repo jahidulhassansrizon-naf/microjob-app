@@ -7,7 +7,7 @@ import { Check } from "lucide-react";
 import PremiumLockIcon from "./PremiumLockIcon";
 // ====================================================================
 //  Shared tools data — এই একটা ফাইল বদলালেই Home (/dashboard) এবং
-//  /sohoj-tools দুই পেজেই টুল, আইকন, নাম, রঙ ও ব্যাজ বদলে যাবে।
+//  /seba-lagbe-tools দুই পেজেই টুল, আইকন, নাম, রঙ ও ব্যাজ বদলে যাবে।
 // ====================================================================
 /* ------------------------------------------------------------------ */
 /* Semantic mini-illustrations: each icon depicts the tool's action.   */
@@ -823,7 +823,7 @@ export function ToolTile({ tool, boxPercent, touchCompact = false, warm = false,
     // This lets the App Router prefetch/navigate immediately; the server-side paid
     // guard remains authoritative if access is actually unavailable.
     // Paid tools can always be opened; PaidToolGate locks their actual usage until a subscription is active.
-    const toolHref = `/sohoj-tools/${slug}`;
+    const toolHref = `/seba-lagbe-tools/${slug}`;
     // The PRO seal is always shown on paid tools. It tells the user's state at a glance:
     // lock chip = needs a subscription, green check = unlocked by an active subscription.
     const proState = hasActiveSubscription === null ? "unknown" : hasActiveSubscription ? "unlocked" : "locked";

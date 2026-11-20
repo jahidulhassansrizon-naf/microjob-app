@@ -109,7 +109,7 @@ const NAV_SECTIONS: NavSection[] = [
             },
             {
                 label: "Seba Lagbe Tools",
-                href: "/sohoj-tools",
+                href: "/seba-lagbe-tools",
                 icon: Wrench,
                 tone: "emerald",
                 badge: "Free",

@@ -8,8 +8,8 @@ import { Search, FileText, Image as ImageIcon, Type, Video, LayoutGrid, } from "
 // টুলসের নাম অনুযায়ী ডাইনামিক রিডাইরেক্ট লিংক তৈরি করার ফাংশন
 const getLoginRedirectUrl = (toolTitle?: string) => {
     const targetPath = toolTitle
-        ? `/sohoj-tools?search=${encodeURIComponent(toolTitle)}`
-        : "/sohoj-tools";
+        ? `/seba-lagbe-tools?search=${encodeURIComponent(toolTitle)}`
+        : "/seba-lagbe-tools";
     return `/login?redirect=${encodeURIComponent(targetPath)}`;
 };
 const categoriesData = [

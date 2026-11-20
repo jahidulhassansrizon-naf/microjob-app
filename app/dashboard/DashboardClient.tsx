@@ -85,7 +85,7 @@ function PopularToolsSection() {
         </div>
 
         <Link
-          href="/sohoj-tools"
+          href="/seba-lagbe-tools"
           style={HEADING_FONT}
           className="group inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-[#E3D6B8] bg-[#FBF6E8] py-1 pl-3 pr-1 text-[14.5px] font-medium text-[#5A4A32] shadow-sm outline-none transition-all hover:border-[#DC2626] hover:text-[#DC2626] hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#FBB6B6]"
         >
@@ -431,7 +431,7 @@ function WelcomeBanner({ userName }: { userName: string | null }) {
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <Link
-              href="/sohoj-tools"
+              href="/seba-lagbe-tools"
               className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-[#DC2626] px-5 py-2.5 text-base font-semibold text-white outline-none transition-all duration-150 hover:bg-[#B91C1C] active:scale-[0.98] active:bg-[#991B1B] focus-visible:ring-2 focus-visible:ring-[#DC2626]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3B2F1E]"
             >
               {L(BANNER_COPY.explore)}

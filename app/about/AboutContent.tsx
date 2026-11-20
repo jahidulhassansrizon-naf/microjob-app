@@ -197,7 +197,7 @@ export default function AboutContent() {
                 <ArrowUpRight size={17} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </a>
               <Link
-                href="/sohoj-tools"
+                href="/seba-lagbe-tools"
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-white/80 px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
               >
                 {t.secondaryCta}
@@ -329,7 +329,7 @@ export default function AboutContent() {
               >
                 {t.primaryCta}<ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </a>
-              <Link href="/sohoj-tools" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-2.5 text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/[0.07]">
+              <Link href="/seba-lagbe-tools" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-2.5 text-sm font-bold text-white transition hover:border-white/40 hover:bg-white/[0.07]">
                 {t.secondaryCta}<ArrowRight size={15} />
               </Link>
             </div>

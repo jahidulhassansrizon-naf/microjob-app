@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type ReactNode } from "react";
-import { useSebaLagbeToolsI18n, translateSohozText } from "@/app/sohoj-tools/_i18n";
+import { useSebaLagbeToolsI18n, translateSohozText } from "@/app/seba-lagbe-tools/_i18n";
 
 const UI_BN: Record<string, string> = {
   "Watch video": "ভিডিও দেখুন",
