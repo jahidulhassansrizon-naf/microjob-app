@@ -189,17 +189,18 @@ export default function PhotoEditorPage() {
     const WIZARD_DISABLED_KEY = "sebalagbe:ai-editor:setup-wizard-disabled";
     const [showSetupWizard, setShowSetupWizard] = useState(false);
     const [showQrPopup, setShowQrPopup] = useState(false);
-    const [wizardDisabled, setWizardDisabled] = useState(false);
     const [applyGuidesSignal, setApplyGuidesSignal] = useState<{ id: number; guides: string[] } | null>(null);
     const [autoGenerateToken, setAutoGenerateToken] = useState(0);
     const generatePhotoRef = useRef<() => void>(() => { });
     const wizardAfterUploadRef = useRef(false);
+    // The guide opens after EVERY photo upload now. Old "don't show again" flags that visitors
+    // saved earlier are removed so the guide comes back for them too.
     useEffect(() => {
         try {
-            setWizardDisabled(window.localStorage.getItem(WIZARD_DISABLED_KEY) === "1");
+            window.localStorage.removeItem(WIZARD_DISABLED_KEY);
         }
         catch {
-            /* storage can be blocked; the wizard simply stays enabled */
+            /* storage can be blocked; nothing to clean up then */
         }
     }, []);
     const imgRef = useRef<HTMLImageElement | null>(null);
@@ -908,9 +909,8 @@ export default function PhotoEditorPage() {
             setShowCropModal(false);
             setTempImageForCrop(null);
             // First-time friendly flow: guide the user through size, clothing and edits.
-            const wizardRequested = wizardAfterUploadRef.current;
             wizardAfterUploadRef.current = false;
-            if (activeTarget !== "left" && activeTarget !== "right" && !isDualMode && (wizardRequested || !wizardDisabled)) {
+            if (activeTarget !== "left" && activeTarget !== "right" && !isDualMode) {
                 setShowSetupWizard(true);
             }
         }
@@ -1916,17 +1916,8 @@ export default function PhotoEditorPage() {
             setIsDeleting(false);
         }
     };
-    const closeSetupWizard = (dontShowAgain: boolean) => {
+    const closeSetupWizard = () => {
         setShowSetupWizard(false);
-        if (dontShowAgain) {
-            setWizardDisabled(true);
-            try {
-                window.localStorage.setItem(WIZARD_DISABLED_KEY, "1");
-            }
-            catch {
-                /* ignore blocked storage */
-            }
-        }
     };
     const applySetupWizard = (result: WizardResult, options: { generate: boolean }) => {
         setShowSetupWizard(false);

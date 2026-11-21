@@ -48,7 +48,7 @@ interface PhotoSetupWizardProps {
   backgroundColors: WizardBg[];
   /** generate=true: apply and start generating. generate=false: only apply the settings. */
   onApply: (result: WizardResult, options: { generate: boolean }) => void;
-  onClose: (dontShowAgain: boolean) => void;
+  onClose: () => void;
 }
 
 /** Optional tutorial video for the "নিজে বেছে নিতে চাই" path. Leave empty to hide the video button. */
@@ -351,7 +351,6 @@ export default function PhotoSetupWizard({
   const { t } = useAiEditorText();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<WizardResult>(initial);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
   const [mounted, setMounted] = useState(false);
   // First screen: "fix everything for me" or "let me choose".
   const [intro, setIntro] = useState(true);
@@ -379,14 +378,14 @@ export default function PhotoSetupWizard({
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose(dontShowAgain);
+      if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       document.removeEventListener("keydown", onKey);
     };
-  }, [open, onClose, dontShowAgain]);
+  }, [open, onClose]);
 
   const guideStart = BASE_STEPS.length;
   const hiddenLabels = useMemo(() => getHiddenLabels(draft), [draft]);
@@ -1259,7 +1258,7 @@ export default function PhotoSetupWizard({
       aria-modal="true"
       aria-label="ছবি সেটআপ গাইড"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose(dontShowAgain);
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className={`flex h-[100dvh] w-full max-w-[1000px] flex-col overflow-hidden rounded-t-2xl bg-[#FBF6E8] shadow-2xl ai-editor-font select-none sm:h-auto sm:max-h-[96dvh] sm:rounded-2xl`}>
@@ -1300,7 +1299,7 @@ export default function PhotoSetupWizard({
               )}
               <button
                 type="button"
-                onClick={() => onClose(dontShowAgain)}
+                onClick={() => onClose()}
                 className="rounded-lg p-2 text-stone-500 hover:bg-[#EFE3C8] cursor-pointer"
                 aria-label="বন্ধ করুন"
               >
@@ -1462,17 +1461,7 @@ export default function PhotoSetupWizard({
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 flex flex-col gap-2 border-t border-[#E3D6B8] bg-[#F7EFD9] px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-3">
-          <label className="flex items-center gap-2 text-[11px] leading-tight sm:text-xs text-stone-600 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={dontShowAgain}
-              onChange={(e) => setDontShowAgain(e.target.checked)}
-              className="h-4 w-4 accent-[#DC2626]"
-            />
-            এই গাইড আর দেখাবেন না (আমি নিজে সিলেক্ট করব)
-          </label>
-
+        <div className="shrink-0 flex flex-col gap-2 border-t border-[#E3D6B8] bg-[#F7EFD9] px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:justify-end sm:px-6 sm:py-3">
           <div className={`flex flex-wrap items-center justify-end gap-2 ${intro ? "hidden" : ""}`}>
             {step === 0 && (
               <button
