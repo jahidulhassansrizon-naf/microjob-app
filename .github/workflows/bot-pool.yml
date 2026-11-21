@@ -42,8 +42,9 @@ jobs:
       # ---- Duck.ai mode (default). The bot is started with xvfb-run below, so Chrome has a (virtual) screen:
       # do NOT set DUCKAI_HEADLESS (headless failed on GitHub, headed worked).
       DUCKAI_TEST: "${{ (vars.AI_PROVIDER || 'duckai') != 'gemini' && '1' || '0' }}"
-      # Gemini mode only: if Gemini fails for a picture, the same job is tried once on Duck.ai ("0" = off).
-      DUCKAI_FALLBACK: "1"
+      # OFF by default: the AI is chosen ONLY by AI_PROVIDER. To also let Gemini fall back to Duck.ai when it fails,
+      # add the repository variable DUCKAI_FALLBACK = 1 (Gemini mode only).
+      DUCKAI_FALLBACK: "${{ vars.DUCKAI_FALLBACK || '0' }}"
       DUCKAI_MAX_CHARS: "4300"
       DUCKAI_WAIT_MS: "150000"
       # A Duck.ai window is opened in advance when a visitor has chosen a photo in the AI editor
