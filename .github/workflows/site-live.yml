@@ -181,6 +181,16 @@ jobs:
           HANDOFF_AT=$((JOB_START + 300 * 60))
           HANDOFF_DONE=0
 
+          # Show how long this website run lives (UTC and Bangladesh time).
+          fmt() { date -u -d "@$1" '+%H:%M UTC'; echo -n " / "; TZ=Asia/Dhaka date -d "@$1" '+%H:%M (Bangladesh)'; }
+          {
+            echo "## This website run"
+            echo "- Started: $(fmt "$JOB_START" | tr -d '\n')"
+            echo "- A replacement website starts at: $(fmt "$HANDOFF_AT" | tr -d '\n') (after about 300 minutes)"
+            echo "- This run stops at: $(fmt "$END_AT" | tr -d '\n') (after about 355 minutes)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Website run: replacement starts at $(fmt "$HANDOFF_AT" | tr -d '\n'), this run stops at $(fmt "$END_AT" | tr -d '\n')."
+
           site_up() {
             local CODE
             CODE="$(curl -sS -o /dev/null -m 10 -w '%{http_code}' "http://127.0.0.1:${SITE_PORT}/" 2>/dev/null || true)"
