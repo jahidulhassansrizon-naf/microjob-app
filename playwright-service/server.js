@@ -2032,6 +2032,10 @@ async function runGeminiWithSession({
 
     let menuOpened = false;
 
+    // Gemini sometimes builds the menu item but Playwright sees it as "hidden"
+    // (animation / overlay / zero size), so waiting for "visible" times out even though the
+    // item is in the page. So the wait is only for the item to be ATTACHED to the page;
+    // the click itself is done with the element's own .click() (works on hidden items too).
     for (let attempt = 1; attempt <= 3 && !menuOpened; attempt += 1) {
       const uploadToolsButton = await findUploadToolsButton(page);
 
@@ -2039,15 +2043,21 @@ async function runGeminiWithSession({
       step(attempt === 1 ? "upload menu opened" : `upload menu clicked again (try ${attempt})`);
 
       try {
-        await uploaderButton.waitFor({
-          state: "visible",
-          timeout: attempt === 3 ? 15000 : 7000,
+        await uploaderButton.first().waitFor({
+          state: "attached",
+          timeout: attempt === 3 ? 12000 : 6000,
         });
         menuOpened = true;
       } catch (menuError) {
         throwIfAborted(signal);
 
         if (attempt === 3) {
+          // Last chance: a file input may already exist without the menu.
+          const anyInput = await page.locator('input[type="file"]').count().catch(() => 0);
+          if (anyInput > 0) {
+            step("upload menu not found, but a file input exists - using it");
+            break;
+          }
           throw menuError;
         }
 
@@ -2057,25 +2067,43 @@ async function runGeminiWithSession({
       }
     }
 
-    // 4. Click the local uploader and attach the image(s).
-    //    With two images the order is kept: first file, then second file.
+    // 4. Attach the image(s). With two images the order is kept: first file, then second file.
 
     const filesToUpload = imagePaths.length === 1 ? imagePaths[0] : imagePaths;
 
-    const chooserPromise = page
-      .waitForEvent("filechooser", {
-        timeout: 5000,
-      })
-      .catch(() => null);
+    let attached = false;
 
-    await uploaderButton.click();
+    if (menuOpened) {
+      const chooserPromise = page
+        .waitForEvent("filechooser", {
+          timeout: 6000,
+        })
+        .catch(() => null);
 
-    const fileChooser = await chooserPromise;
+      const isVisible = await uploaderButton.first().isVisible().catch(() => false);
 
-    if (fileChooser) {
-      await fileChooser.setFiles(filesToUpload);
-    } else {
-      const fileInput = page.locator('input[name="Filedata"]');
+      if (isVisible) {
+        await uploaderButton.first().click({ timeout: 5000 }).catch(async () => {
+          await uploaderButton.first().evaluate((el) => el.click()).catch(() => {});
+        });
+      } else {
+        step("upload item is hidden, clicking it directly");
+        await uploaderButton.first().evaluate((el) => el.click()).catch(() => {});
+      }
+
+      const fileChooser = await chooserPromise;
+
+      if (fileChooser) {
+        await fileChooser.setFiles(filesToUpload);
+        attached = true;
+      }
+    }
+
+    if (!attached) {
+      // No file chooser opened: put the files straight into Gemini's file input.
+      const fileInput = page
+        .locator('input[name="Filedata"], input[type="file"]')
+        .first();
 
       await fileInput.waitFor({
         state: "attached",
@@ -2549,8 +2577,10 @@ async function runGeminiGenerationInner(options) {
 
       // The upload step timed out BEFORE the message was sent, so no Gemini
       // quota was used. Try the whole job one more time (once per job).
+      // (Skipped when Duck.ai is the backup: it is faster to hand the job over right away.)
       if (
         !transientRetried &&
+        !(DUCKAI_FALLBACK && !DUCKAI_TEST) &&
         /local-images-files-uploader-button|input\[name="Filedata"\]/.test(failMessage)
       ) {
         transientRetried = true;
@@ -3233,6 +3263,55 @@ async function generateWithDuckAi(imagePath, prompt, outputDir, signal, extraIma
 }
 
 // --------------------------------------------------
+// Gemini first, Duck.ai as the backup
+//
+// If Gemini fails (upload problem, timeout, refused, out of limit, no session ...), the same
+// job is run once on Duck.ai, so the visitor still gets a picture. Duck.ai needs no login.
+// Switch off with DUCKAI_FALLBACK=0. Not used when the whole bot already runs in Duck.ai mode.
+// --------------------------------------------------
+
+const DUCKAI_FALLBACK = process.env.DUCKAI_FALLBACK !== "0";
+const DUCKAI_FALLBACK_MIN_MS = readIntEnv("DUCKAI_FALLBACK_MIN_MS", 90_000, 0, 600_000);
+
+async function geminiWithDuckBackup(geminiWork, duckWork, signal) {
+  try {
+    return await geminiWork();
+  } catch (error) {
+    if (!DUCKAI_FALLBACK || DUCKAI_TEST) throw error;
+
+    // Visitor left / job cancelled: nothing to back up.
+    if ((signal && signal.aborted) || (error && error.statusCode === 499)) throw error;
+
+    // Not enough job time left for a Duck.ai try.
+    const deadlineAt = signal && signal.deadlineAt;
+    const remainingMs = deadlineAt ? deadlineAt - Date.now() : Infinity;
+
+    if (remainingMs < DUCKAI_FALLBACK_MIN_MS) {
+      console.log(
+        `[fallback] Gemini failed and only ${Math.round(remainingMs / 1000)}s are left, not trying Duck.ai.`,
+      );
+      throw error;
+    }
+
+    console.log(
+      `[fallback] Gemini failed (${String((error && error.message) || error).replace(/\s+/g, " ").slice(0, 160)}). Trying Duck.ai instead ...`,
+    );
+
+    try {
+      const result = await trackDuckAiJob(duckWork);
+      console.log("[fallback] Duck.ai made the picture.");
+      return result;
+    } catch (duckError) {
+      console.log(
+        `[fallback] Duck.ai failed too (${String((duckError && duckError.message) || duckError).replace(/\s+/g, " ").slice(0, 160)}).`,
+      );
+      // Show the visitor the Gemini error (the main provider), not the backup's.
+      throw error;
+    }
+  }
+}
+
+// --------------------------------------------------
 // Existing AI Editor Gemini generation (one image)
 // --------------------------------------------------
 
@@ -3242,15 +3321,20 @@ function generateWithGemini(imagePath, prompt, outputDir, signal, forceSlot = 0)
     return trackDuckAiJob(() => generateWithDuckAi(imagePath, prompt, outputDir, signal));
   }
 
-  return runGeminiGeneration({
-    forceSlot,
-    imagePaths: [imagePath],
-    prompt,
-    outputDir,
-    settleMs: 3000,
-    defaultFilename: "gemini-generated-image.png",
+  return geminiWithDuckBackup(
+    () =>
+      runGeminiGeneration({
+        forceSlot,
+        imagePaths: [imagePath],
+        prompt,
+        outputDir,
+        settleMs: 3000,
+        defaultFilename: "gemini-generated-image.png",
+        signal,
+      }),
+    () => generateWithDuckAi(imagePath, prompt, outputDir, signal),
     signal,
-  });
+  );
 }
 
 // --------------------------------------------------
@@ -3278,14 +3362,19 @@ function generateTemplateWithGemini(
     );
   }
 
-  return runGeminiGeneration({
-    imagePaths,
-    prompt,
-    outputDir,
-    settleMs: secondUserImagePath ? 6000 : 4000,
-    defaultFilename: "gemini-template-generated-image.png",
+  return geminiWithDuckBackup(
+    () =>
+      runGeminiGeneration({
+        imagePaths,
+        prompt,
+        outputDir,
+        settleMs: secondUserImagePath ? 6000 : 4000,
+        defaultFilename: "gemini-template-generated-image.png",
+        signal,
+      }),
+    () => generateWithDuckAi(imagePaths[0], prompt, outputDir, signal, imagePaths.slice(1)),
     signal,
-  });
+  );
 }
 
 // --------------------------------------------------
