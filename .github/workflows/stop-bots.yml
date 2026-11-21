@@ -1,0 +1,44 @@
+name: Stop all bots
+
+# One click: cancels EVERY running or waiting "Bot Pool" run (all the Bot slots).
+# It does NOT touch the website ("Site Live").
+# Use it before switching AI_PROVIDER, then start "Bot Pool Launcher" again.
+# Note: "Bot Pool Launcher" also runs every 30 minutes by itself and restarts missing bots.
+run-name: "Stop all bots"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write # needed to cancel runs
+
+jobs:
+  stop:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel all Bot Pool runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          IDS="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow bot-pool.yml --limit 200 \
+            --json databaseId,status \
+            | jq -r '.[] | select(.status == "in_progress" or .status == "queued" or .status == "waiting" or .status == "pending" or .status == "requested") | .databaseId')"
+
+          if [ -z "$IDS" ]; then
+            echo "No running Bot Pool runs found."
+            echo "## No running bots found" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          COUNT=0
+          for ID in $IDS; do
+            if gh run cancel "$ID" --repo "$GITHUB_REPOSITORY"; then
+              COUNT=$((COUNT + 1))
+            else
+              echo "::warning::Could not cancel run $ID."
+            fi
+          done
+          echo "Cancelled $COUNT bot run(s)."
+          echo "## Cancelled $COUNT bot run(s)" >> "$GITHUB_STEP_SUMMARY"

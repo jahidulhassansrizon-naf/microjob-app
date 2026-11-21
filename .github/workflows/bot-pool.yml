@@ -5,6 +5,13 @@ name: Bot Pool
 # BOT_ALERT_KEY). The website keeps the live list in MongoDB and hands the work to the bots in turn,
 # so all bots share the load. The address stays hidden in the logs (this repository is public).
 # Start/refill the pool with the workflow "Bot Pool Launcher".
+#
+# ONE SWITCH: repository variable AI_PROVIDER (Settings -> Secrets and variables -> Actions -> Variables).
+#   not set, or "duckai"  -> Duck.ai (no login/session needed).
+#   "gemini"              -> Gemini: every bot takes exactly ONE Gemini session on its own
+#                            (slot 1 -> session 1, slot 2 -> session 2 ... then it wraps around), warm pages ON.
+# After changing the variable: Cancel the running "Bot slot" runs and start "Bot Pool Launcher" again
+# (a running bot keeps the mode it started with).
 run-name: "Bot slot ${{ inputs.slot }}"
 
 on:
@@ -30,11 +37,11 @@ jobs:
       BOT_SLOT: ${{ inputs.slot }}
       SITE_BASE_URL: ${{ vars.SITE_URL || 'https://sebalagbe.com' }}
       SKIP_DESKTOP: "1"
-      # ---- DUCK.AI TEST: /edit-image (AI Editor, Bulk Photo Edit) uses Duck.ai instead of Gemini. ----
-      # To go back to Gemini: delete the next 3 lines (and set PREWARM / WARM_DEMAND back to "1").
-      # The bot is started with xvfb-run below, so Chrome has a (virtual) screen: do NOT set DUCKAI_HEADLESS
-      # (headless failed on GitHub, headed worked).
-      DUCKAI_TEST: "1"
+      # Which AI the bot uses. Set the repository variable AI_PROVIDER to "gemini" to switch (see top of file).
+      AI_PROVIDER: ${{ vars.AI_PROVIDER || 'duckai' }}
+      # ---- Duck.ai mode (default). The bot is started with xvfb-run below, so Chrome has a (virtual) screen:
+      # do NOT set DUCKAI_HEADLESS (headless failed on GitHub, headed worked).
+      DUCKAI_TEST: "${{ (vars.AI_PROVIDER || 'duckai') != 'gemini' && '1' || '0' }}"
       DUCKAI_MAX_CHARS: "4300"
       DUCKAI_WAIT_MS: "150000"
       # A Duck.ai window is opened in advance when a visitor has chosen a photo in the AI editor
@@ -49,7 +56,7 @@ jobs:
       # Warm pages: at the start of every run the bot opens Gemini pages for all sessions,
       # one session after the other, and keeps them open. Set PREWARM to "0" to go back
       # to the old way (a fresh page for every image).
-      PREWARM: "0" # was "1" (Gemini warm pages are not needed while Duck.ai is tested)
+      PREWARM: "${{ (vars.AI_PROVIDER || 'duckai') == 'gemini' && '1' || '0' }}" # Gemini warm pages only in gemini mode
       # "1" = session 1 works (and keeps its ready pages) until its job limit; only then session 2, 3, 4.
       # Accounts that are not needed are never opened. WARM_PER_SESSION_MAX is not used in this mode.
       STICKY_SESSIONS: "1"
@@ -57,7 +64,7 @@ jobs:
       # Demand mode: no page is opened at start. Pages open one by one when visitors
       # arrive on the AI editor page (the website calls POST /warm-hint).
       # To go back to the old "fresh page for every image" way, set PREWARM to "0".
-      WARM_DEMAND: "0" # was "1"
+      WARM_DEMAND: "${{ (vars.AI_PROVIDER || 'duckai') == 'gemini' && '1' || '0' }}" # only in gemini mode
       WARM_MAX_PAGES: "8"
       WARM_PER_SESSION_MAX: "2"
       WARM_OPEN_STAGGER_MS: "5000"
@@ -129,21 +136,38 @@ jobs:
       - name: Restore Gemini sessions
         shell: bash
         run: |
-          # Secrets GEMINI_SESSION_JSON_1 ... GEMINI_SESSION_JSON_10.
-          # At least one slot is required; the others are used only if their secret exists.
+          # Secrets GEMINI_SESSION_JSON_1 ... GEMINI_SESSION_JSON_10 (only the ones that exist are used).
+          PROV="$(printf '%s' "$AI_PROVIDER" | tr '[:upper:]' '[:lower:]')"
+          AVAILABLE=()
           for N in 1 2 3 4 5 6 7 8 9 10; do
             VAR="GEMINI_SESSION_JSON_${N}"
             VALUE="${!VAR}"
-            if [ -n "$VALUE" ]; then
-              printf '%s' "$VALUE" > "gemini-session-${N}.json"
-              chmod 600 "gemini-session-${N}.json"
-            fi
+            if [ -n "$VALUE" ]; then AVAILABLE+=("$N"); fi
           done
-          ls gemini-session-*.json >/dev/null 2>&1 || {
-            echo "No GEMINI_SESSION_JSON_N secret found (need at least one)."
-            exit 1
-          }
-          ls gemini-session-*.json
+          COUNT=${#AVAILABLE[@]}
+
+          if [ "$PROV" = "gemini" ]; then
+            [ "$COUNT" -ge 1 ] || { echo "::error::No GEMINI_SESSION_JSON_N secret found (need at least one)."; exit 1; }
+            # ONE bot = ONE Google account: slot 1 -> first session, slot 2 -> second ... (wraps around).
+            IDX=$(( (BOT_SLOT - 1) % COUNT ))
+            MINE="${AVAILABLE[$IDX]}"
+            VAR="GEMINI_SESSION_JSON_${MINE}"
+            printf '%s' "${!VAR}" > "gemini-session-${MINE}.json"
+            chmod 600 "gemini-session-${MINE}.json"
+            echo "SESSION_COUNT=${COUNT}" >> "$GITHUB_ENV"
+            echo "Gemini mode: bot slot ${BOT_SLOT} uses session ${MINE} (${COUNT} sessions exist)."
+            echo "- Gemini mode: slot ${BOT_SLOT} uses session ${MINE} (of ${COUNT})" >> "$GITHUB_STEP_SUMMARY"
+          else
+            # Duck.ai mode: no login needed. Sessions are restored like before if they exist.
+            for N in "${AVAILABLE[@]}"; do
+              VAR="GEMINI_SESSION_JSON_${N}"
+              printf '%s' "${!VAR}" > "gemini-session-${N}.json"
+              chmod 600 "gemini-session-${N}.json"
+            done
+            echo "SESSION_COUNT=0" >> "$GITHUB_ENV"
+            echo "Duck.ai mode: no Gemini session needed (${COUNT} found)."
+            echo "- Duck.ai mode" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Create notify token
         shell: bash
@@ -355,9 +379,10 @@ jobs:
             return 1
           }
 
-          # Only slot 1 saves renewed Google cookies back into the secrets (avoids many bots writing the same secret).
+          # Saves renewed Google cookies back into the secrets (Gemini mode only).
           push_cookies() {
-            [ "$BOT_SLOT" = "1" ] || return 0
+            # Only the first SESSION_COUNT slots save cookies (slot N owns session N), so two bots never write the same secret.
+            { [ "${SESSION_COUNT:-0}" -ge 1 ] && [ "$BOT_SLOT" -le "${SESSION_COUNT:-0}" ]; } || return 0
             [ -n "$SESSION_WRITE_TOKEN" ] || return 0
             [ -d fresh-sessions ] || return 0
             local f N
