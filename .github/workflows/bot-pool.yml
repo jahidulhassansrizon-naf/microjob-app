@@ -1,0 +1,460 @@
+name: Bot Pool
+
+# ONE bot per run ("slot"). Many slots run at the same time. Every bot opens its own free
+# trycloudflare.com address and REGISTERS it with the website (POST /api/bot-alert, protected by
+# BOT_ALERT_KEY). The website keeps the live list in MongoDB and hands the work to the bots in turn,
+# so all bots share the load. The address stays hidden in the logs (this repository is public).
+# Start/refill the pool with the workflow "Bot Pool Launcher".
+run-name: "Bot slot ${{ inputs.slot }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "Bot number (1, 2, 3 ...)"
+        required: true
+        default: "1"
+        type: string
+
+permissions:
+  contents: read
+  actions: write # lets the job start its own replacement run
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    env:
+      BOT_PORT: "4000"
+      BOT_SLOT: ${{ inputs.slot }}
+      SITE_BASE_URL: ${{ vars.SITE_URL || 'https://sebalagbe.com' }}
+      SKIP_DESKTOP: "1"
+      # ---- DUCK.AI TEST: /edit-image (AI Editor, Bulk Photo Edit) uses Duck.ai instead of Gemini. ----
+      # To go back to Gemini: delete the next 3 lines (and set PREWARM / WARM_DEMAND back to "1").
+      # The bot is started with xvfb-run below, so Chrome has a (virtual) screen: do NOT set DUCKAI_HEADLESS
+      # (headless failed on GitHub, headed worked).
+      DUCKAI_TEST: "1"
+      DUCKAI_MAX_CHARS: "4300"
+      DUCKAI_WAIT_MS: "150000"
+      # A Duck.ai window is opened in advance when a visitor has chosen a photo in the AI editor
+      # (the website's "strong" hint). 0 = off.
+      DUCKAI_WARM_MAX: "3"
+      DUCKAI_WARM_TTL_MS: "300000"
+      # Machine limit: about 20 headless Chromium pages fit on the 4 vCPU / 16 GB
+      # public runner. The jobs per Google account are worked out by the bot from
+      # the number of session files (4 sessions = 5 each, 10 sessions = 2 each).
+      MAX_CONCURRENT_GENERATIONS: "3"
+      MAX_JOB_RETRIES: "2"
+      # Warm pages: at the start of every run the bot opens Gemini pages for all sessions,
+      # one session after the other, and keeps them open. Set PREWARM to "0" to go back
+      # to the old way (a fresh page for every image).
+      PREWARM: "0" # was "1" (Gemini warm pages are not needed while Duck.ai is tested)
+      # "1" = session 1 works (and keeps its ready pages) until its job limit; only then session 2, 3, 4.
+      # Accounts that are not needed are never opened. WARM_PER_SESSION_MAX is not used in this mode.
+      STICKY_SESSIONS: "1"
+      WARM_PAGES_PER_SESSION: "3"
+      # Demand mode: no page is opened at start. Pages open one by one when visitors
+      # arrive on the AI editor page (the website calls POST /warm-hint).
+      # To go back to the old "fresh page for every image" way, set PREWARM to "0".
+      WARM_DEMAND: "0" # was "1"
+      WARM_MAX_PAGES: "8"
+      WARM_PER_SESSION_MAX: "2"
+      WARM_OPEN_STAGGER_MS: "5000"
+      # One steady browser identity for every session.
+      BROWSER_LOCALE: "en-US"
+      FRESH_SESSION_DIR: "fresh-sessions"
+      ASK_KEY: ${{ secrets.ASK_KEY }}
+      GEMINI_SESSION_JSON_1: ${{ secrets.GEMINI_SESSION_JSON_1 }}
+      GEMINI_SESSION_JSON_2: ${{ secrets.GEMINI_SESSION_JSON_2 }}
+      GEMINI_SESSION_JSON_3: ${{ secrets.GEMINI_SESSION_JSON_3 }}
+      GEMINI_SESSION_JSON_4: ${{ secrets.GEMINI_SESSION_JSON_4 }}
+      GEMINI_SESSION_JSON_5: ${{ secrets.GEMINI_SESSION_JSON_5 }}
+      GEMINI_SESSION_JSON_6: ${{ secrets.GEMINI_SESSION_JSON_6 }}
+      GEMINI_SESSION_JSON_7: ${{ secrets.GEMINI_SESSION_JSON_7 }}
+      GEMINI_SESSION_JSON_8: ${{ secrets.GEMINI_SESSION_JSON_8 }}
+      GEMINI_SESSION_JSON_9: ${{ secrets.GEMINI_SESSION_JSON_9 }}
+      GEMINI_SESSION_JSON_10: ${{ secrets.GEMINI_SESSION_JSON_10 }}
+      # Email alerts are OFF (ALERT_WEBHOOK_URL is not set on purpose). The admin panel (Bot Status)
+      # reads everything from the bot on demand. BOT_ALERT_KEY is still needed for that detailed report.
+      BOT_ALERT_KEY: ${{ secrets.BOT_ALERT_KEY }}
+
+    defaults:
+      run:
+        working-directory: playwright-service
+
+    steps:
+      - name: Record job start time
+        shell: bash
+        working-directory: .
+        run: |
+          echo "JOB_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
+          case "${BOT_SLOT:-}" in ''|*[!0-9]*) echo "::error::slot must be a number."; exit 1 ;; esac
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Install bot dependencies
+        shell: bash
+        run: |
+          # Downloads can fail for a moment (network or registry hiccup): try up to 4 times.
+          for attempt in 1 2 3 4; do
+            if npm install; then
+              exit 0
+            fi
+            echo "npm install failed (attempt $attempt/4), trying again in 20 seconds..."
+            sleep 20
+          done
+          echo "::error::npm install failed 4 times."
+          exit 1
+
+      - name: Install Chromium for Playwright
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4; do
+            if node ./node_modules/playwright/cli.js install --with-deps chromium; then
+              exit 0
+            fi
+            echo "Chromium install failed (attempt $attempt/4), trying again in 20 seconds..."
+            sleep 20
+          done
+          echo "::error::Chromium install failed 4 times."
+          exit 1
+
+      - name: Restore Gemini sessions
+        shell: bash
+        run: |
+          # Secrets GEMINI_SESSION_JSON_1 ... GEMINI_SESSION_JSON_10.
+          # At least one slot is required; the others are used only if their secret exists.
+          for N in 1 2 3 4 5 6 7 8 9 10; do
+            VAR="GEMINI_SESSION_JSON_${N}"
+            VALUE="${!VAR}"
+            if [ -n "$VALUE" ]; then
+              printf '%s' "$VALUE" > "gemini-session-${N}.json"
+              chmod 600 "gemini-session-${N}.json"
+            fi
+          done
+          ls gemini-session-*.json >/dev/null 2>&1 || {
+            echo "No GEMINI_SESSION_JSON_N secret found (need at least one)."
+            exit 1
+          }
+          ls gemini-session-*.json
+
+      - name: Create notify token
+        shell: bash
+        run: |
+          NOTIFY_TOKEN="$(openssl rand -hex 16)"
+          echo "::add-mask::$NOTIFY_TOKEN"
+          echo "NOTIFY_TOKEN=$NOTIFY_TOKEN" >> "$GITHUB_ENV"
+
+      - name: Start bot server
+        shell: bash
+        run: |
+          nohup xvfb-run -a npm start > bot.log 2>&1 &
+          echo $! > bot.pid
+
+      - name: Wait for bot health
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if curl -fsS "http://127.0.0.1:${BOT_PORT}/health" > /tmp/health.json; then
+              cat /tmp/health.json
+              exit 0
+            fi
+            sleep 2
+          done
+          cat bot.log || true
+          exit 1
+
+      - name: Download cloudflared
+        shell: bash
+        run: |
+          # github.com sometimes answers 502/503/504 for a moment: try again, up to 8 times.
+          URL="https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64"
+          for attempt in 1 2 3 4 5 6 7 8; do
+            rm -f cloudflared
+            if curl -L --fail --silent --show-error \
+              --connect-timeout 20 --max-time 180 \
+              --retry 3 --retry-all-errors --retry-delay 5 \
+              -o cloudflared "$URL"; then
+              chmod +x cloudflared
+              if ./cloudflared --version > /dev/null 2>&1; then
+                echo "cloudflared downloaded (attempt $attempt)."
+                exit 0
+              fi
+              echo "The downloaded file does not run."
+            fi
+            echo "cloudflared download failed (attempt $attempt/8), trying again in 20 seconds..."
+            sleep 20
+          done
+          echo "::error::Could not download cloudflared after 8 attempts."
+          exit 1
+
+      - name: Start temporary public tunnel
+        shell: bash
+        run: |
+          nohup ./cloudflared tunnel --no-autoupdate \
+            --url "http://127.0.0.1:${BOT_PORT}" \
+            > cloudflared.log 2>&1 &
+          echo $! > cloudflared.pid
+
+      - name: Wait for public URL
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            PUBLIC_URL="$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)"
+            if [ -n "$PUBLIC_URL" ]; then
+              # This repo is public: hide the URL in every log line from now on.
+              echo "::add-mask::$PUBLIC_URL"
+              printf '%s\n' "$PUBLIC_URL" > public-url.txt
+              echo "Public URL found (hidden)."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::No public URL appeared in cloudflared.log."
+          sed -E 's#https://[-a-z0-9]+\.trycloudflare\.com#https://[hidden].trycloudflare.com#g' cloudflared.log | tail -n 40 || true
+          exit 1
+
+      # A fresh trycloudflare.com address can take a few seconds before it answers.
+      - name: Wait until public URL responds
+        shell: bash
+        run: |
+          PUBLIC_URL="$(cat public-url.txt)"
+          for i in {1..45}; do
+            if curl -fsS -m 10 "${PUBLIC_URL}/health" > /dev/null; then
+              echo "Public URL is reachable."
+              exit 0
+            fi
+            sleep 4
+          done
+          echo "::error::Public URL did not become reachable."
+          exit 1
+
+      # Tells the website "this bot exists, use it". Never prints the address.
+      - name: Register this bot with the website
+        shell: bash
+        run: |
+          cat > register.sh <<'REGEOF'
+          #!/usr/bin/env bash
+          # usage: register.sh register|unregister   (uses public-url.txt, BOT_SLOT, BOT_ALERT_KEY, SITE_BASE_URL)
+          ACTION="${1:-register}"
+          URL="$(cat public-url.txt 2>/dev/null || true)"
+          [ -n "$URL" ] || exit 1
+          BODY="$(printf '{"pool":{"action":"%s","slot":%s,"url":"%s"}}' "$ACTION" "$BOT_SLOT" "$URL")"
+          KEY="$(printf '%s' "${BOT_ALERT_KEY}" | tr -d '[:space:]')"
+          CODE="$(curl -sS -o /dev/null -m 20 -w '%{http_code}' -X POST "${SITE_BASE_URL}/api/bot-alert" \
+            -H 'Content-Type: application/json' -H "x-bot-alert-key: ${KEY}" \
+            --data "$BODY" 2>/dev/null || true)"
+          echo "$CODE" > register-last-code.txt
+          [ "$CODE" = "200" ]
+          REGEOF
+          chmod +x register.sh
+
+          if [ -z "${BOT_ALERT_KEY:-}" ]; then
+            echo "::warning::Secret BOT_ALERT_KEY is missing, so the website cannot learn about this bot."
+            exit 0
+          fi
+
+          # The website may still be starting (or restarting): try for up to 10 minutes.
+          for i in {1..60}; do
+            if bash register.sh register; then
+              echo "Bot slot ${BOT_SLOT} is registered with the website."
+              echo "## Bot slot ${BOT_SLOT} is online and registered" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            CODE="$(cat register-last-code.txt 2>/dev/null || echo 000)"
+            echo "The website did not accept the registration yet (HTTP ${CODE}). Trying again in 10 seconds..."
+            sleep 10
+          done
+          echo "::warning::Could not register after 10 minutes (last answer HTTP ${CODE}). The watchdog keeps trying."
+          if [ "$CODE" = "403" ]; then
+            echo "::warning::HTTP 403 usually means Cloudflare is blocking this request: turn off Bot Fight Mode or add a WAF skip rule for /api/bot-alert."
+          fi
+          exit 0
+
+      - name: Keep bot online (watchdog)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SESSION_WRITE_TOKEN: ${{ secrets.SESSION_WRITE_TOKEN }}
+        run: |
+          # Every slot lives a little shorter than the one before it (slot 1 = 340 min, slot 2 = 335 ...),
+          # so the replacements are spread out and never all restart at the same moment.
+          LIFETIME=$((340 - (BOT_SLOT - 1) * 5))
+          if [ "$LIFETIME" -lt 60 ]; then LIFETIME=60; fi
+          JOB_START="${JOB_START_EPOCH:-$(date +%s)}"
+          END_AT=$((JOB_START + LIFETIME * 60))
+          HARD_END=$((JOB_START + 355 * 60))
+          if [ "$END_AT" -gt "$HARD_END" ]; then END_AT="$HARD_END"; fi
+          # 15 minutes before the end the replacement run is started.
+          HANDOFF_AT=$((END_AT - 15 * 60))
+          # 4 minutes before the end this bot leaves the list (no new pictures) and finishes the ones it has.
+          DRAIN_AT=$((END_AT - 4 * 60))
+          HANDOFF_DONE=0
+          DRAINED=0
+          echo "Slot ${BOT_SLOT}: this run lives about ${LIFETIME} minutes."
+          echo "- Slot ${BOT_SLOT} lives about ${LIFETIME} minutes, then a replacement takes over" >> "$GITHUB_STEP_SUMMARY"
+
+          node_up() {
+            curl -fsS -m 10 "http://127.0.0.1:${BOT_PORT}/health" > /dev/null 2>&1
+          }
+
+          restart_node() {
+            echo "[watchdog] $(date -u +%T) bot server is down, restarting it."
+            pkill -f "node server.js" 2>/dev/null || true
+            sleep 2
+            pkill -9 -f "node server.js" 2>/dev/null || true
+            nohup xvfb-run -a npm start >> bot.log 2>&1 &
+            echo $! > bot.pid
+            local i
+            for i in {1..30}; do
+              if node_up; then echo "[watchdog] bot server is back."; return 0; fi
+              sleep 2
+            done
+            echo "[watchdog] bot server did not come back yet."
+            return 1
+          }
+
+          public_up() {
+            local URL
+            URL="$(cat public-url.txt 2>/dev/null || true)"
+            [ -n "$URL" ] && curl -fsS -m 15 "${URL}/health" > /dev/null 2>&1
+          }
+
+          restart_tunnel() {
+            echo "[watchdog] $(date -u +%T) public tunnel is down, starting a new one."
+            bash register.sh unregister > /dev/null 2>&1 || true
+            if [ -f cloudflared.pid ]; then kill "$(cat cloudflared.pid)" 2>/dev/null || true; fi
+            sleep 2
+            : > cloudflared.log
+            nohup ./cloudflared tunnel --no-autoupdate --url "http://127.0.0.1:${BOT_PORT}" > cloudflared.log 2>&1 &
+            echo $! > cloudflared.pid
+            local i j NEW_URL
+            for i in {1..30}; do
+              NEW_URL="$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)"
+              if [ -n "$NEW_URL" ]; then
+                echo "::add-mask::$NEW_URL"
+                printf '%s\n' "$NEW_URL" > public-url.txt
+                for j in {1..45}; do
+                  if curl -fsS -m 10 "${NEW_URL}/health" > /dev/null 2>&1; then break; fi
+                  sleep 4
+                done
+                bash register.sh register > /dev/null 2>&1 || true
+                echo "[watchdog] new tunnel is up and registered."
+                return 0
+              fi
+              sleep 2
+            done
+            echo "[watchdog] no new tunnel address yet."
+            return 1
+          }
+
+          # Only slot 1 saves renewed Google cookies back into the secrets (avoids many bots writing the same secret).
+          push_cookies() {
+            [ "$BOT_SLOT" = "1" ] || return 0
+            [ -n "$SESSION_WRITE_TOKEN" ] || return 0
+            [ -d fresh-sessions ] || return 0
+            local f N
+            for f in fresh-sessions/gemini-session-*.json; do
+              [ -f "$f" ] || continue
+              N="${f##*-}"; N="${N%.json}"
+              jq -e '.cookies | map(.name) | (index("SID") != null) and (index("__Secure-1PSID") != null)' "$f" > /dev/null 2>&1 || continue
+              if [ -f "pushed-${N}.json" ] && cmp -s "$f" "pushed-${N}.json"; then continue; fi
+              if GH_TOKEN="$SESSION_WRITE_TOKEN" gh secret set "GEMINI_SESSION_JSON_${N}" --repo "$GITHUB_REPOSITORY" < "$f" > /dev/null 2>&1; then
+                cp "$f" "pushed-${N}.json"
+                echo "Renewed Google cookies saved for session ${N}."
+              else
+                echo "::warning::Could not save renewed cookies for session ${N}."
+              fi
+            done
+          }
+          LAST_PUSH=$(date +%s)
+
+          LOCAL_FAILS=0
+          PUBLIC_FAILS=0
+          BEAT_FAILS=0
+
+          while [ "$(date +%s)" -lt "$END_AT" ]; do
+            REMAINING=$((END_AT - $(date +%s)))
+            if [ "$REMAINING" -gt 30 ]; then sleep 30; else sleep "$REMAINING"; fi
+            [ "$(date +%s)" -ge "$END_AT" ] && break
+
+            if [ "$HANDOFF_DONE" -eq 0 ] && [ "$(date +%s)" -ge "$HANDOFF_AT" ]; then
+              HANDOFF_DONE=1
+              echo "Starting the replacement run for slot ${BOT_SLOT}."
+              gh workflow run bot-pool.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f slot="$BOT_SLOT" \
+                || echo "::warning::Could not start the replacement; the Launcher (every 30 minutes) will start it."
+            fi
+
+            if [ "$DRAINED" -eq 0 ] && [ "$(date +%s)" -ge "$DRAIN_AT" ]; then
+              DRAINED=1
+              bash register.sh unregister > /dev/null 2>&1 || true
+              echo "Slot ${BOT_SLOT} left the list. It now finishes its running pictures."
+            fi
+            [ "$DRAINED" -eq 1 ] && continue
+
+            if [ $(( $(date +%s) - LAST_PUSH )) -ge 3600 ]; then
+              LAST_PUSH=$(date +%s)
+              push_cookies || true
+            fi
+
+            if node_up; then
+              LOCAL_FAILS=0
+            else
+              LOCAL_FAILS=$((LOCAL_FAILS + 1))
+              echo "[watchdog] local health check failed (${LOCAL_FAILS}/3)"
+              if [ "$LOCAL_FAILS" -ge 3 ]; then
+                restart_node || true
+                LOCAL_FAILS=0
+              fi
+              continue
+            fi
+
+            if public_up; then
+              PUBLIC_FAILS=0
+            else
+              PUBLIC_FAILS=$((PUBLIC_FAILS + 1))
+              echo "[watchdog] public check failed (${PUBLIC_FAILS}/3)"
+              if [ "$PUBLIC_FAILS" -ge 3 ]; then
+                restart_tunnel || true
+                PUBLIC_FAILS=0
+              fi
+              continue
+            fi
+
+            # Heartbeat: tells the website "I am still alive" (an entry expires after 90 seconds).
+            if bash register.sh register > /dev/null 2>&1; then
+              BEAT_FAILS=0
+            else
+              BEAT_FAILS=$((BEAT_FAILS + 1))
+              echo "[watchdog] heartbeat failed (${BEAT_FAILS}), HTTP $(cat register-last-code.txt 2>/dev/null || echo 000)"
+            fi
+          done
+
+          push_cookies || true
+          echo "Watchdog finished."
+
+      - name: Show logs
+        if: always()
+        shell: bash
+        run: |
+          echo "----- bot.log -----"
+          tail -n 300 bot.log || true
+          echo "----- cloudflared.log (last 40 lines) -----"
+          sed -E 's#https://[-a-z0-9]+\.trycloudflare\.com#https://[hidden].trycloudflare.com#g' cloudflared.log | tail -n 40 || true
+
+      - name: Cleanup
+        if: always()
+        shell: bash
+        run: |
+          bash register.sh unregister > /dev/null 2>&1 || true
+          if [ -f cloudflared.pid ]; then kill "$(cat cloudflared.pid)" 2>/dev/null || true; fi
+          if [ -f bot.pid ]; then kill "$(cat bot.pid)" 2>/dev/null || true; fi
+          pkill -f "node server.js" 2>/dev/null || true
+          pkill -f "cloudflared tunnel" 2>/dev/null || true

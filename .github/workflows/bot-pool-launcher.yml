@@ -1,0 +1,57 @@
+name: Bot Pool Launcher
+
+# Starts the bots of the pool: one "Bot Pool" run per slot (1, 2, 3 ...).
+#  - Run it by hand to start the pool (you can type how many bots).
+#  - Every 30 minutes it also checks the pool and starts any slot that is not running.
+# Pool size when nothing is typed: repository variable BOT_POOL_SIZE, otherwise 18.
+# GitHub's free plan allows 20 jobs at the same time: 1 website + 18 bots leaves 1 spare job
+# for the hand-over between old and new runs, so please do not set the size above 18.
+
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: "How many bots (for example 2 to test, 18 for the full pool)"
+        required: false
+        default: ""
+        type: string
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  topup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start the missing bots
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COUNT_INPUT: ${{ inputs.count }}
+          COUNT_VAR: ${{ vars.BOT_POOL_SIZE }}
+        run: |
+          COUNT="${COUNT_INPUT:-${COUNT_VAR:-18}}"
+          case "$COUNT" in ''|*[!0-9]*) echo "::error::count must be a number."; exit 1 ;; esac
+          if [ "$COUNT" -gt 19 ]; then COUNT=19; fi
+          echo "Pool size: $COUNT"
+
+          ACTIVE="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow bot-pool.yml --limit 200 \
+            --json displayTitle,status \
+            | jq -r '.[] | select(.status == "in_progress" or .status == "queued" or .status == "waiting" or .status == "pending") | .displayTitle')"
+
+          STARTED=0
+          for S in $(seq 1 "$COUNT"); do
+            if grep -qx "Bot slot ${S}" <<< "$ACTIVE"; then
+              echo "Slot $S is already running or waiting."
+            else
+              echo "Starting slot $S."
+              gh workflow run bot-pool.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f slot="$S" \
+                && STARTED=$((STARTED + 1)) || echo "::warning::Could not start slot $S."
+              sleep 2
+            fi
+          done
+          echo "Started $STARTED bot(s)."
+          echo "## Bot pool: started $STARTED, size $COUNT" >> "$GITHUB_STEP_SUMMARY"
