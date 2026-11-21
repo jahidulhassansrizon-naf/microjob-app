@@ -6,7 +6,7 @@ import AIGeneration from "@/models/AIGeneration";
 import { connectDB } from "@/lib/db";
 import { hasActiveSubscription as hasActiveToolAccess } from "@/app/api/_lib/requireActiveSubscription";
 import { requireToolAccess } from "@/app/api/_lib/requireActiveSubscription";
-import { getBotUrl } from "@/app/api/_lib/botUrl";
+import { takeBot } from "@/app/api/_lib/botUrl";
 import { acquireGenerationLock, generationBusyResponse } from "@/app/api/_lib/generationLock";
 import { enforceGenerationLimit, markGenerationResult } from "@/app/api/_lib/generationGuard";
 
@@ -212,14 +212,32 @@ async function getSourceImage(
   };
 }
 
+// Sends the picture to the bot that prepared a page for this visitor (or the least busy bot),
+// and frees that bot's place in the count when the picture is finished or cancelled.
 async function callRenderService(
   blob: Blob,
   filename: string,
   prompt: string,
   secondImage?: { blob: Blob; filename: string } | null,
   clientSignal?: AbortSignal,
+  userKey?: string,
 ): Promise<string> {
-  const RENDER_URL = await getBotUrl();
+  const bot = await takeBot(userKey);
+  try {
+    return await callRenderServiceAt(bot.url, blob, filename, prompt, secondImage, clientSignal);
+  } finally {
+    bot.release();
+  }
+}
+
+async function callRenderServiceAt(
+  RENDER_URL: string,
+  blob: Blob,
+  filename: string,
+  prompt: string,
+  secondImage?: { blob: Blob; filename: string } | null,
+  clientSignal?: AbortSignal,
+): Promise<string> {
   if (!RENDER_URL) {
     throw new Error("The Gemini bot URL is not set (Global Config botUrl / GEMINI_RENDER_URL).");
   }
@@ -461,6 +479,7 @@ export async function POST(req: Request) {
       prompt,
       secondSource,
       req.signal,
+      userId,
     );
 
     await markGenerationResult(generationLogId, true);

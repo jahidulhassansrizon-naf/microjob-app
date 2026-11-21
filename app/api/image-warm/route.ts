@@ -7,7 +7,7 @@ import {
   hasActiveSubscription as hasActiveToolAccess,
   requireToolAccess,
 } from "@/app/api/_lib/requireActiveSubscription";
-import { getBotUrl } from "@/app/api/_lib/botUrl";
+import { assignBot, getBotUrl, peekBot } from "@/app/api/_lib/botUrl";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -101,7 +101,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const botUrl = await getBotUrl();
+    // A visitor who chose a photo (strong hint) gets ONE bot that prepares a page for them; their
+    // picture is later sent to the same bot. Plain "I am here" hints use that bot if there is one.
+    const botUrl = strong ? await assignBot(userId) : (await peekBot(userId)) || (await getBotUrl());
     if (!botUrl) return NextResponse.json({ ok: true, skipped: true });
 
     // The bot gets an anonymous key, never the real account id.
